@@ -1,0 +1,134 @@
+{
+    "docs": [
+        {
+            "location": "/", 
+            "text": "Introduction\n\n\nHomebot is an affordable open source home-built robot designed for experimentation.\n\n\nThis project is in beta status. Much of the documentation is incomplete.\n\n\n\n\nDisclaimer\n\n\nThis package is free software; the copyright holder gives unlimited permission to copy and/or distribute it, with or without modifications, as long as this notice is preserved. This package is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY, to the extent permitted by law; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. Some information described herein may be potentially dangerous if misused. Follow these instructions are your own risk.\n\n\nPhilosophy\n\n\nThis project has been constructed with the following philosophies in mind:\n\n\n\n\n\n\nOpenness\n\n\nThere are several other \"open source\" robotics projects, but most only open source some of the software. Usually, large portions of the software are propreitary and most, if not all, of the hardware is proprietary. All of this project's software is open source and uses \nROS\n as the framework. Most of the hardware is open source as well. The CAD files for all structural components are provided, and the core electronics are based on open hardware like the Raspberry Pi and Arduino. However, due to time and resource constraints, some propreitary off-the-shelf components were used.\n\n\n\n\n\n\nModularity\n\n\nThe mechanical design is based on modular components attached to a basic skeleton. Parts can be swapped out or redesigned and replaced without necessarily redesigning other components. \n\n\n\n\n\n\nFeatures\n\n\nThe default hardware configuration is composed of:\n\n\n\n\n1 Raspberry Pi 3 functioning as the main computer\n\n\n2 Arudino microcontrollers for IO expansion and handling\n\n\n\n\nSensors include:\n\n\n\n\n3 edge/cliff sensors\n\n\n3 contact/bumper sensors\n\n\n3 ultrasonic range finders\n\n\n1 IMU (combined acclerometer, gyroscope and magnetometer)\n\n\n2 microphones\n\n\n1 5MP camera configured as a laser range finder with a functional distance of 3 meters\n\n\n2 temperature sensors\n\n\n\n\nA simple web-based user-interface is provided for operating the robot remotely and monitoring system status.\n\n\nPrerequisites\n\n\nAlthough great effort has been made to make these instructions clear and the design as simple as possible, constructing a robot is complicated and requires a wide breadth of knowledge. This documentation assumes you have basic experience in:\n\n\n\n\n\n\nMechanics\n\n\nYou should have an understanding of basic physics, as well as how to assemble simple mechanical components. If you passed highschool physics and can assemble Ikea furniture, you should be set.\n\n\n\n\n\n\nElectronics\n\n\nYou should be able to read basic electricial circuit schematics, and how to wire, solder and etch simple circuit boards.\n\n\n\n\n\n\nSoftware\n\n\nYou should have an intermediate understanding of Python and C programming as well as basic network, database and Linux systems adminstration.\n\n\n\n\n\n\nOnward!\n\n\n\n\nAllocate the appropriate tools\n\n\nAllocate the appropriate parts and supplies\n\n\nSetup your work environment\n\n\nFabricate and assemble the hardware\n\n\nConfigure and test the software\n\n\nExperiment", 
+            "title": "Home"
+        }, 
+        {
+            "location": "/#introduction", 
+            "text": "Homebot is an affordable open source home-built robot designed for experimentation.  This project is in beta status. Much of the documentation is incomplete.", 
+            "title": "Introduction"
+        }, 
+        {
+            "location": "/#disclaimer", 
+            "text": "This package is free software; the copyright holder gives unlimited permission to copy and/or distribute it, with or without modifications, as long as this notice is preserved. This package is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY, to the extent permitted by law; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. Some information described herein may be potentially dangerous if misused. Follow these instructions are your own risk.", 
+            "title": "Disclaimer"
+        }, 
+        {
+            "location": "/#philosophy", 
+            "text": "This project has been constructed with the following philosophies in mind:    Openness  There are several other \"open source\" robotics projects, but most only open source some of the software. Usually, large portions of the software are propreitary and most, if not all, of the hardware is proprietary. All of this project's software is open source and uses  ROS  as the framework. Most of the hardware is open source as well. The CAD files for all structural components are provided, and the core electronics are based on open hardware like the Raspberry Pi and Arduino. However, due to time and resource constraints, some propreitary off-the-shelf components were used.    Modularity  The mechanical design is based on modular components attached to a basic skeleton. Parts can be swapped out or redesigned and replaced without necessarily redesigning other components.", 
+            "title": "Philosophy"
+        }, 
+        {
+            "location": "/#features", 
+            "text": "The default hardware configuration is composed of:   1 Raspberry Pi 3 functioning as the main computer  2 Arudino microcontrollers for IO expansion and handling   Sensors include:   3 edge/cliff sensors  3 contact/bumper sensors  3 ultrasonic range finders  1 IMU (combined acclerometer, gyroscope and magnetometer)  2 microphones  1 5MP camera configured as a laser range finder with a functional distance of 3 meters  2 temperature sensors   A simple web-based user-interface is provided for operating the robot remotely and monitoring system status.", 
+            "title": "Features"
+        }, 
+        {
+            "location": "/#prerequisites", 
+            "text": "Although great effort has been made to make these instructions clear and the design as simple as possible, constructing a robot is complicated and requires a wide breadth of knowledge. This documentation assumes you have basic experience in:    Mechanics  You should have an understanding of basic physics, as well as how to assemble simple mechanical components. If you passed highschool physics and can assemble Ikea furniture, you should be set.    Electronics  You should be able to read basic electricial circuit schematics, and how to wire, solder and etch simple circuit boards.    Software  You should have an intermediate understanding of Python and C programming as well as basic network, database and Linux systems adminstration.", 
+            "title": "Prerequisites"
+        }, 
+        {
+            "location": "/#onward", 
+            "text": "Allocate the appropriate tools  Allocate the appropriate parts and supplies  Setup your work environment  Fabricate and assemble the hardware  Configure and test the software  Experiment", 
+            "title": "Onward!"
+        }, 
+        {
+            "location": "/tools/", 
+            "text": "General\n\n\nTo complete this project, you will need the following tools:\n\n\n\n\n\n\na good phillips head screwdriver\n\n\nI recommend a gyroscopically controlled electric screwdriver, since it will allow fast assembly while still allowing you to regulate speed to prevent stripping.\n\n\n\n\n\n\n\n\n\n\n\n\nwire strippers\n\n\n\n\n\n\n\n\n\n\nflush wire cutter\n\n\n\n\n\n\n\n\nexacto knife\n\n\n\n\n\n\n\n\ntweezers\n\n\n\n\n\n\n\n\nsoldering iron\n\n\n\n\n\n\n\n\nhelping hands\n\n\n\n\n\n\n\n\nheat gun\n\n\n\n\n\n\n\n\n3D Printing\n\n\nIf you want to 3D print the mechanical components yourself, you'll also need the following tools. If don't want to invest in a 3D printer, you can outsource the printing to one of many companies like \nShapeways.com\n or \nPonoko.com\n. \n\n\n\n\n\n\na 3d printer with a print volume of at least 15cm^3. All parts were originally developed and printed using a \nPrintrbot Simple Metal with heated bed\n.\n\n\n\n\n\n\n\n\n\n\n\n\n4-inch taping knife \n\n\n\n\n\n\n\n\ntapered pallet knife\n\n\n\n\n\n\n\n\nPCB Fabrication\n\n\nIf you plan to fabricate your own printed circuit boards, you'll need the additional tools.\n\n\n\n\n\n\nblack and white laser printer\n\n\n\n\n\n\n\n\n1qt plastic container\n\n\n\n\n\n\n\n\nair pump with bubbler\n\n\n\n\n\n\n\n\n\n\nlaminator\n\n\n\n\n\n\n\n\ntoaster oven or reflow oven", 
+            "title": "Tools"
+        }, 
+        {
+            "location": "/tools/#general", 
+            "text": "To complete this project, you will need the following tools:    a good phillips head screwdriver  I recommend a gyroscopically controlled electric screwdriver, since it will allow fast assembly while still allowing you to regulate speed to prevent stripping.       wire strippers      flush wire cutter     exacto knife     tweezers     soldering iron     helping hands     heat gun", 
+            "title": "General"
+        }, 
+        {
+            "location": "/tools/#3d-printing", 
+            "text": "If you want to 3D print the mechanical components yourself, you'll also need the following tools. If don't want to invest in a 3D printer, you can outsource the printing to one of many companies like  Shapeways.com  or  Ponoko.com .     a 3d printer with a print volume of at least 15cm^3. All parts were originally developed and printed using a  Printrbot Simple Metal with heated bed .       4-inch taping knife      tapered pallet knife", 
+            "title": "3D Printing"
+        }, 
+        {
+            "location": "/tools/#pcb-fabrication", 
+            "text": "If you plan to fabricate your own printed circuit boards, you'll need the additional tools.    black and white laser printer     1qt plastic container     air pump with bubbler      laminator     toaster oven or reflow oven", 
+            "title": "PCB Fabrication"
+        }, 
+        {
+            "location": "/parts/", 
+            "text": "Parts\n\n\nA complete list of parts, estimated prices, and suggested retail links is available \nhere\n.\n\n\nSupplies\n\n\n\n\n\n\n3040 3M Blue Painter's tape\n\n\n\n\n\n\nacetone\n\n\n\n\n\n\npaper towels\n\n\n\n\n\n\n1kg of red PLA filament\n\n\n\n\n\n\n0.5kg of black PLA filament\n\n\n\n\n\n\n0.5kg of black Ninjaflex filament\n\n\n\n\n\n\n60/40 solder\n\n\n\n\n\n\nPCB fabrication supplies\n\n\nIf you plan to fabricate your own PCB, you'll need the additional supplies.\n\n\n\n\n\n\nwhite vinegar\n\n\n\n\n\n\nhydrogen peroxide\n\n\n\n\n\n\nnon-iodized salt\n\n\n\n\n\n\nsingle side FR4 copper clad board\n\n\n\n\n\n\nPCB toner transfer paper", 
+            "title": "Parts & Supplies"
+        }, 
+        {
+            "location": "/parts/#parts", 
+            "text": "A complete list of parts, estimated prices, and suggested retail links is available  here .", 
+            "title": "Parts"
+        }, 
+        {
+            "location": "/parts/#supplies", 
+            "text": "3040 3M Blue Painter's tape    acetone    paper towels    1kg of red PLA filament    0.5kg of black PLA filament    0.5kg of black Ninjaflex filament    60/40 solder", 
+            "title": "Supplies"
+        }, 
+        {
+            "location": "/parts/#pcb-fabrication-supplies", 
+            "text": "If you plan to fabricate your own PCB, you'll need the additional supplies.    white vinegar    hydrogen peroxide    non-iodized salt    single side FR4 copper clad board    PCB toner transfer paper", 
+            "title": "PCB fabrication supplies"
+        }, 
+        {
+            "location": "/setup/", 
+            "text": "Software Setup\n\n\nStructure\n\n\nConfiguring your robot will require two computers. The first is the Raspberry Pi physically located on the robot. The second is the deployment machine, where the robot's base code and configuration will be managed from and eventually deployed to the Raspberry Pi. Both computers are assumed to be running Linux.\n\n\nConfiguring the Deployment Machine\n\n\nAssuming your deployment machine is one you're reading this documentation from, your localhost, start by checking out this project via git. Open a terminal in a directory where you keep your Git projects and run:\n\n\ngit clone https://github.com/chrisspen/homebot.git\n\n\n\nInitialize your deployment environment by running:\n\n\n./bootstrap\n\n\n\nThis command creates a Python virtual environment and installs a few required packages.\n\n\nNote, any command presented in this guide beginning with \"fab\" should be run in a terminal from the project's root directory. Also, that terminal must first have your virtual environment activated by running:\n\n\n. ./shell\n\n\n\nSet your custom settings by running:\n\n\ncp roles/local/settings_local.yaml.template roles/local/settings_local.yaml\n\n\n\nBy default, it's assumed your deployment machine is running Ubuntu 16.04. Edit this file to select a different OS.\n\n\nNext, install ROS by running:\n\n\n. ./shell\nfab local ros.configure\n\n\n\nNew Install Checklist\n\n\nDecide on the hostname for your robot. For all intents and purposes, the robot will function like a Linux server\n\n\n\n\n\n\nEnsure you've purged the domain name from your local router's DHCP cache, or it could interfere with the install.\n\n\n$ ping \n\nping: unknown host \n\n\n\n\n\n\nPurge all old SSH keys:\n\n\nfab prod host.purge_keys\n\n\n\n\n\n\nInstalling the Operating System\n\n\n\n\n\n\nSet your custom settings by running:\n\n\ncp roles/prod/settings_local.yaml.template roles/prod/settings_local.yaml\n\n\n\n\n\n\nThis file represents your custom software configurations to the robot and will override any defaults.\n\n\nEdit the values in this file to suite your preferences. At the very least, you'll need to specify your wifi SSID and password so you can access the robot remotely.\n\n\n\n\n\n\nInsert an SD card into the card reader on your deployment machine and run:\n\n\nfab local rpi.init_raspbian_disk\n\n\n\n\n\n\nInsert card into Pi and power on.\n\n\n\n\n\n\nBegin installation using:\n\n\nfab prod deploy.run\n\n\n\n\n\n\nNote, this may take up to 5 hours to complete.", 
+            "title": "Setup"
+        }, 
+        {
+            "location": "/setup/#software-setup", 
+            "text": "", 
+            "title": "Software Setup"
+        }, 
+        {
+            "location": "/setup/#structure", 
+            "text": "Configuring your robot will require two computers. The first is the Raspberry Pi physically located on the robot. The second is the deployment machine, where the robot's base code and configuration will be managed from and eventually deployed to the Raspberry Pi. Both computers are assumed to be running Linux.", 
+            "title": "Structure"
+        }, 
+        {
+            "location": "/setup/#configuring-the-deployment-machine", 
+            "text": "Assuming your deployment machine is one you're reading this documentation from, your localhost, start by checking out this project via git. Open a terminal in a directory where you keep your Git projects and run:  git clone https://github.com/chrisspen/homebot.git  Initialize your deployment environment by running:  ./bootstrap  This command creates a Python virtual environment and installs a few required packages.  Note, any command presented in this guide beginning with \"fab\" should be run in a terminal from the project's root directory. Also, that terminal must first have your virtual environment activated by running:  . ./shell  Set your custom settings by running:  cp roles/local/settings_local.yaml.template roles/local/settings_local.yaml  By default, it's assumed your deployment machine is running Ubuntu 16.04. Edit this file to select a different OS.  Next, install ROS by running:  . ./shell\nfab local ros.configure", 
+            "title": "Configuring the Deployment Machine"
+        }, 
+        {
+            "location": "/setup/#new-install-checklist", 
+            "text": "Decide on the hostname for your robot. For all intents and purposes, the robot will function like a Linux server    Ensure you've purged the domain name from your local router's DHCP cache, or it could interfere with the install.  $ ping  \nping: unknown host     Purge all old SSH keys:  fab prod host.purge_keys", 
+            "title": "New Install Checklist"
+        }, 
+        {
+            "location": "/setup/#installing-the-operating-system", 
+            "text": "Set your custom settings by running:  cp roles/prod/settings_local.yaml.template roles/prod/settings_local.yaml    This file represents your custom software configurations to the robot and will override any defaults.  Edit the values in this file to suite your preferences. At the very least, you'll need to specify your wifi SSID and password so you can access the robot remotely.    Insert an SD card into the card reader on your deployment machine and run:  fab local rpi.init_raspbian_disk    Insert card into Pi and power on.    Begin installation using:  fab prod deploy.run    Note, this may take up to 5 hours to complete.", 
+            "title": "Installing the Operating System"
+        }, 
+        {
+            "location": "/hardware/", 
+            "text": "todo", 
+            "title": "Hardware"
+        }, 
+        {
+            "location": "/software/", 
+            "text": "todo", 
+            "title": "Software"
+        }, 
+        {
+            "location": "/experiment/", 
+            "text": "todo", 
+            "title": "Experiment"
+        }, 
+        {
+            "location": "/development/", 
+            "text": "These are some miscellaneous notes about project development.\n\n\nDocumentation\n\n\nTo run the \ndocumentation server\n locally:\n\n\nmkdocs serve -a :9999\n\n\n\nTo \ndeploy documentation\n, run:\n\n\nmkdocs gh-deploy --clean", 
+            "title": "Development"
+        }, 
+        {
+            "location": "/development/#documentation", 
+            "text": "To run the  documentation server  locally:  mkdocs serve -a :9999  To  deploy documentation , run:  mkdocs gh-deploy --clean", 
+            "title": "Documentation"
+        }
+    ]
+}
