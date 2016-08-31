@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html class="js flexbox canvas canvastext webgl no-touch geolocation postmessage no-websqldatabase indexeddb hashchange history draganddrop websockets rgba hsla multiplebgs backgroundsize borderimage borderradius boxshadow textshadow opacity cssanimations csscolumns cssgradients no-cssreflections csstransforms csstransforms3d csstransitions fontface generatedcontent video audio localstorage sessionstorage webworkers applicationcache svg inlinesvg smil svgclippaths js-ready" lang="en-US"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+<script src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/308175db61" type="text/javascript"></script><script src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/nr-686.js"></script><script src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/ga.js" async="" type="text/javascript"></script><script type="text/javascript">window.NREUM||(NREUM={});NREUM.info={"beacon":"bam.nr-data.net","errorBeacon":"bam.nr-data.net","licenseKey":"308175db61","applicationID":"3238541","transactionName":"cVZXRUFeWghRShtEVlVcSh5AWVkT","queueTime":0,"applicationTime":86,"agent":"js-agent.newrelic.com/nr-686.min.js"}</script>
+<script type="text/javascript">(window.NREUM||(NREUM={})).loader_config={xpid:"UQUGWV5XGwACV1lXAwA="};window.NREUM||(NREUM={}),__nr_require=function(t,e,n){function r(n){if(!e[n]){var o=e[n]={exports:{}};t[n][0].call(o.exports,function(e){var o=t[n][1][e];return r(o?o:e)},o,o.exports)}return e[n].exports}if("function"==typeof __nr_require)return __nr_require;for(var o=0;o<n.length;o++)r(n[o]);return r}({QJf3ax:[function(t,e){function n(t){function e(e,n,a){t&&t(e,n,a),a||(a={});for(var c=s(e),u=c.length,f=i(a,o,r),d=0;u>d;d++)c[d].apply(f,n);return f}function a(t,e){u[t]=s(t).concat(e)}function s(t){return u[t]||[]}function c(){return n(e)}var u={};return{on:a,emit:e,create:c,listeners:s,_events:u}}function r(){return{}}var o="nr@context",i=t("gos");e.exports=n()},{gos:"7eSDFh"}],ee:[function(t,e){e.exports=t("QJf3ax")},{}],3:[function(t){function e(t){try{i.console&&console.log(t)}catch(e){}}var n,r=t("ee"),o=t(1),i={};try{n=localStorage.getItem("__nr_flags").split(","),console&&"function"==typeof console.log&&(i.console=!0,-1!==n.indexOf("dev")&&(i.dev=!0),-1!==n.indexOf("nr_dev")&&(i.nrDev=!0))}catch(a){}i.nrDev&&r.on("internal-error",function(t){e(t.stack)}),i.dev&&r.on("fn-err",function(t,n,r){e(r.stack)}),i.dev&&(e("NR AGENT IN DEVELOPMENT MODE"),e("flags: "+o(i,function(t){return t}).join(", ")))},{1:20,ee:"QJf3ax"}],4:[function(t){function e(t,e,n,i,s){try{c?c-=1:r("err",[s||new UncaughtException(t,e,n)])}catch(u){try{r("ierr",[u,(new Date).getTime(),!0])}catch(f){}}return"function"==typeof a?a.apply(this,o(arguments)):!1}function UncaughtException(t,e,n){this.message=t||"Uncaught error with no additional information",this.sourceURL=e,this.line=n}function n(t){r("err",[t,(new Date).getTime()])}var r=t("handle"),o=t(6),i=t("ee"),a=window.onerror,s=!1,c=0;t("loader").features.err=!0,t(3),window.onerror=e;try{throw new Error}catch(u){"stack"in u&&(t(4),t(5),"addEventListener"in window&&t(1),window.XMLHttpRequest&&XMLHttpRequest.prototype&&XMLHttpRequest.prototype.addEventListener&&window.XMLHttpRequest&&XMLHttpRequest.prototype&&XMLHttpRequest.prototype.addEventListener&&!/CriOS/.test(navigator.userAgent)&&t(2),s=!0)}i.on("fn-start",function(){s&&(c+=1)}),i.on("fn-err",function(t,e,r){s&&(this.thrown=!0,n(r))}),i.on("fn-end",function(){s&&!this.thrown&&c>0&&(c-=1)}),i.on("internal-error",function(t){r("ierr",[t,(new Date).getTime(),!0])})},{1:5,2:8,3:3,4:7,5:6,6:21,ee:"QJf3ax",handle:"D5DuLP",loader:"G9z0Bl"}],5:[function(t,e){function n(t){i.inPlace(t,["addEventListener","removeEventListener"],"-",r)}function r(t){return t[1]}var o=t("ee").create(),i=t(1)(o),a=t("gos");if(e.exports=o,n(window),"getPrototypeOf"in Object){for(var s=document;s&&!s.hasOwnProperty("addEventListener");)s=Object.getPrototypeOf(s);s&&n(s);for(var c=XMLHttpRequest.prototype;c&&!c.hasOwnProperty("addEventListener");)c=Object.getPrototypeOf(c);c&&n(c)}else XMLHttpRequest.prototype.hasOwnProperty("addEventListener")&&n(XMLHttpRequest.prototype);o.on("addEventListener-start",function(t){if(t[1]){var e=t[1];"function"==typeof e?this.wrapped=t[1]=a(e,"nr@wrapped",function(){return i(e,"fn-",null,e.name||"anonymous")}):"function"==typeof e.handleEvent&&i.inPlace(e,["handleEvent"],"fn-")}}),o.on("removeEventListener-start",function(t){var e=this.wrapped;e&&(t[1]=e)})},{1:22,ee:"QJf3ax",gos:"7eSDFh"}],6:[function(t,e){var n=t("ee").create(),r=t(1)(n);e.exports=n,r.inPlace(window,["requestAnimationFrame","mozRequestAnimationFrame","webkitRequestAnimationFrame","msRequestAnimationFrame"],"raf-"),n.on("raf-start",function(t){t[0]=r(t[0],"fn-")})},{1:22,ee:"QJf3ax"}],7:[function(t,e){function n(t,e,n){t[0]=o(t[0],"fn-",null,n)}var r=t("ee").create(),o=t(1)(r);e.exports=r,o.inPlace(window,["setTimeout","setInterval","setImmediate"],"setTimer-"),r.on("setTimer-start",n)},{1:22,ee:"QJf3ax"}],8:[function(t,e){function n(){u.inPlace(this,p,"fn-")}function r(t,e){u.inPlace(e,["onreadystatechange"],"fn-")}function o(t,e){return e}function i(t,e){for(var n in t)e[n]=t[n];return e}var a=t("ee").create(),s=t(1),c=t(2),u=c(a),f=c(s),d=window.XMLHttpRequest,p=["onload","onerror","onabort","onloadstart","onloadend","onprogress","ontimeout"];e.exports=a,window.XMLHttpRequest=function(t){var e=new d(t);try{a.emit("new-xhr",[],e),f.inPlace(e,["addEventListener","removeEventListener"],"-",o),e.addEventListener("readystatechange",n,!1)}catch(r){try{a.emit("internal-error",[r])}catch(i){}}return e},i(d,XMLHttpRequest),XMLHttpRequest.prototype=d.prototype,u.inPlace(XMLHttpRequest.prototype,["open","send"],"-xhr-",o),a.on("send-xhr-start",r),a.on("open-xhr-start",r)},{1:5,2:22,ee:"QJf3ax"}],9:[function(t){function e(t){var e=this.params,r=this.metrics;if(!this.ended){this.ended=!0;for(var i=0;c>i;i++)t.removeEventListener(s[i],this.listener,!1);if(!e.aborted){if(r.duration=(new Date).getTime()-this.startTime,4===t.readyState){e.status=t.status;var a=t.responseType,u="arraybuffer"===a||"blob"===a||"json"===a?t.response:t.responseText,f=n(u);if(f&&(r.rxSize=f),this.sameOrigin){var d=t.getResponseHeader("X-NewRelic-App-Data");d&&(e.cat=d.split(", ").pop())}}else e.status=0;r.cbTime=this.cbTime,o("xhr",[e,r,this.startTime])}}}function n(t){if("string"==typeof t&&t.length)return t.length;if("object"!=typeof t)return void 0;if("undefined"!=typeof ArrayBuffer&&t instanceof ArrayBuffer&&t.byteLength)return t.byteLength;if("undefined"!=typeof Blob&&t instanceof Blob&&t.size)return t.size;if("undefined"!=typeof FormData&&t instanceof FormData)return void 0;try{return JSON.stringify(t).length}catch(e){return void 0}}function r(t,e){var n=i(e),r=t.params;r.host=n.hostname+":"+n.port,r.pathname=n.pathname,t.sameOrigin=n.sameOrigin}if(window.XMLHttpRequest&&XMLHttpRequest.prototype&&XMLHttpRequest.prototype.addEventListener&&!/CriOS/.test(navigator.userAgent)){t("loader").features.xhr=!0;var o=t("handle"),i=t(2),a=t("ee"),s=["load","error","abort","timeout"],c=s.length,u=t(1);t(4),t(3),a.on("new-xhr",function(){this.totalCbs=0,this.called=0,this.cbTime=0,this.end=e,this.ended=!1,this.xhrGuids={}}),a.on("open-xhr-start",function(t){this.params={method:t[0]},r(this,t[1]),this.metrics={}}),a.on("open-xhr-end",function(t,e){"loader_config"in NREUM&&"xpid"in NREUM.loader_config&&this.sameOrigin&&e.setRequestHeader("X-NewRelic-ID",NREUM.loader_config.xpid)}),a.on("send-xhr-start",function(t,e){var r=this.metrics,o=t[0],i=this;if(r&&o){var u=n(o);u&&(r.txSize=u)}this.startTime=(new Date).getTime(),this.listener=function(t){try{"abort"===t.type&&(i.params.aborted=!0),("load"!==t.type||i.called===i.totalCbs&&(i.onloadCalled||"function"!=typeof e.onload))&&i.end(e)}catch(n){try{a.emit("internal-error",[n])}catch(r){}}};for(var f=0;c>f;f++)e.addEventListener(s[f],this.listener,!1)}),a.on("xhr-cb-time",function(t,e,n){this.cbTime+=t,e?this.onloadCalled=!0:this.called+=1,this.called!==this.totalCbs||!this.onloadCalled&&"function"==typeof n.onload||this.end(n)}),a.on("xhr-load-added",function(t,e){var n=""+u(t)+!!e;this.xhrGuids&&!this.xhrGuids[n]&&(this.xhrGuids[n]=!0,this.totalCbs+=1)}),a.on("xhr-load-removed",function(t,e){var n=""+u(t)+!!e;this.xhrGuids&&this.xhrGuids[n]&&(delete this.xhrGuids[n],this.totalCbs-=1)}),a.on("addEventListener-end",function(t,e){e instanceof XMLHttpRequest&&"load"===t[0]&&a.emit("xhr-load-added",[t[1],t[2]],e)}),a.on("removeEventListener-end",function(t,e){e instanceof XMLHttpRequest&&"load"===t[0]&&a.emit("xhr-load-removed",[t[1],t[2]],e)}),a.on("fn-start",function(t,e,n){e instanceof XMLHttpRequest&&("onload"===n&&(this.onload=!0),("load"===(t[0]&&t[0].type)||this.onload)&&(this.xhrCbStart=(new Date).getTime()))}),a.on("fn-end",function(t,e){this.xhrCbStart&&a.emit("xhr-cb-time",[(new Date).getTime()-this.xhrCbStart,this.onload,e],e)})}},{1:"XL7HBI",2:10,3:8,4:5,ee:"QJf3ax",handle:"D5DuLP",loader:"G9z0Bl"}],10:[function(t,e){e.exports=function(t){var e=document.createElement("a"),n=window.location,r={};e.href=t,r.port=e.port;var o=e.href.split("://");return!r.port&&o[1]&&(r.port=o[1].split("/")[0].split("@").pop().split(":")[1]),r.port&&"0"!==r.port||(r.port="https"===o[0]?"443":"80"),r.hostname=e.hostname||n.hostname,r.pathname=e.pathname,r.protocol=o[0],"/"!==r.pathname.charAt(0)&&(r.pathname="/"+r.pathname),r.sameOrigin=!e.hostname||e.hostname===document.domain&&e.port===n.port&&e.protocol===n.protocol,r}},{}],11:[function(t,e){function n(t){return function(){r(t,[(new Date).getTime()].concat(i(arguments)))}}var r=t("handle"),o=t(1),i=t(2);"undefined"==typeof window.newrelic&&(newrelic=window.NREUM);var a=["setPageViewName","addPageAction","setCustomAttribute","finished","addToTrace","inlineHit","noticeError"];o(a,function(t,e){window.NREUM[e]=n("api-"+e)}),e.exports=window.NREUM},{1:20,2:21,handle:"D5DuLP"}],gos:[function(t,e){e.exports=t("7eSDFh")},{}],"7eSDFh":[function(t,e){function n(t,e,n){if(r.call(t,e))return t[e];var o=n();if(Object.defineProperty&&Object.keys)try{return Object.defineProperty(t,e,{value:o,writable:!0,enumerable:!1}),o}catch(i){}return t[e]=o,o}var r=Object.prototype.hasOwnProperty;e.exports=n},{}],D5DuLP:[function(t,e){function n(t,e,n){return r.listeners(t).length?r.emit(t,e,n):void(r.q&&(r.q[t]||(r.q[t]=[]),r.q[t].push(e)))}var r=t("ee").create();e.exports=n,n.ee=r,r.q={}},{ee:"QJf3ax"}],handle:[function(t,e){e.exports=t("D5DuLP")},{}],XL7HBI:[function(t,e){function n(t){var e=typeof t;return!t||"object"!==e&&"function"!==e?-1:t===window?0:i(t,o,function(){return r++})}var r=1,o="nr@id",i=t("gos");e.exports=n},{gos:"7eSDFh"}],id:[function(t,e){e.exports=t("XL7HBI")},{}],G9z0Bl:[function(t,e){function n(){var t=p.info=NREUM.info,e=u.getElementsByTagName("script")[0];if(t&&t.licenseKey&&t.applicationID&&e){s(d,function(e,n){e in t||(t[e]=n)});var n="https"===f.split(":")[0]||t.sslForHttp;p.proto=n?"https://":"http://",a("mark",["onload",i()]);var r=u.createElement("script");r.src=p.proto+t.agent,e.parentNode.insertBefore(r,e)}}function r(){"complete"===u.readyState&&o()}function o(){a("mark",["domContent",i()])}function i(){return(new Date).getTime()}var a=t("handle"),s=t(1),c=window,u=c.document;t(2);var f=(""+location).split("?")[0],d={beacon:"bam.nr-data.net",errorBeacon:"bam.nr-data.net",agent:"js-agent.newrelic.com/nr-686.min.js"},p=e.exports={offset:i(),origin:f,features:{}};u.addEventListener?(u.addEventListener("DOMContentLoaded",o,!1),c.addEventListener("load",n,!1)):(u.attachEvent("onreadystatechange",r),c.attachEvent("onload",n)),a("mark",["firstbyte",i()])},{1:20,2:11,handle:"D5DuLP"}],loader:[function(t,e){e.exports=t("G9z0Bl")},{}],20:[function(t,e){function n(t,e){var n=[],o="",i=0;for(o in t)r.call(t,o)&&(n[i]=e(o,t[o]),i+=1);return n}var r=Object.prototype.hasOwnProperty;e.exports=n},{}],21:[function(t,e){function n(t,e,n){e||(e=0),"undefined"==typeof n&&(n=t?t.length:0);for(var r=-1,o=n-e||0,i=Array(0>o?0:o);++r<o;)i[r]=t[e+r];return i}e.exports=n},{}],22:[function(t,e){function n(t){return!(t&&"function"==typeof t&&t.apply&&!t[i])}var r=t("ee"),o=t(1),i="nr@wrapper",a=Object.prototype.hasOwnProperty;e.exports=function(t){function e(t,e,r,a){function nrWrapper(){var n,i,s,u;try{i=this,n=o(arguments),s=r&&r(n,i)||{}}catch(d){f([d,"",[n,i,a],s])}c(e+"start",[n,i,a],s);try{return u=t.apply(i,n)}catch(p){throw c(e+"err",[n,i,p],s),p}finally{c(e+"end",[n,i,u],s)}}return n(t)?t:(e||(e=""),nrWrapper[i]=!0,u(t,nrWrapper),nrWrapper)}function s(t,r,o,i){o||(o="");var a,s,c,u="-"===o.charAt(0);for(c=0;c<r.length;c++)s=r[c],a=t[s],n(a)||(t[s]=e(a,u?s+o:o,i,s))}function c(e,n,r){try{t.emit(e,n,r)}catch(o){f([o,e,n,r])}}function u(t,e){if(Object.defineProperty&&Object.keys)try{var n=Object.keys(t);return n.forEach(function(n){Object.defineProperty(e,n,{get:function(){return t[n]},set:function(e){return t[n]=e,e}})}),e}catch(r){f([r])}for(var o in t)a.call(t,o)&&(e[o]=t[o]);return e}function f(e){try{t.emit("internal-error",e)}catch(n){}}return t||(t=r),e.inPlace=s,e.flag=i,e}},{1:21,ee:"QJf3ax"}]},{},["G9z0Bl",4,9]);</script>
+  <link rel="shortcut icon" type="image/x-icon" href="https://learn.adafruit.com/assets/favicon-0c79bd4bc582e6d4cf3afe417bd1e28120527c09d92c08a6464690c5bf6b85f4.ico">
+    <title>Using DC Motors | Adafruit DC and Stepper Motor HAT for Raspberry Pi | Adafruit Learning System</title>
+  <meta name="csrf-param" content="authenticity_token">
+<meta name="csrf-token" content="BD0vQpaQ+esZvl/Fx/4+ToCqX9tYENNbG08J1aGF7BWnkZUL7KnImSrtUAWoDOiU+w1CO1NwIuKNCcK0MebE6g==">
+  <link rel="alternate" type="application/atom+xml" title="ATOM" href="https://learn.adafruit.com/feed">
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="https://learn.adafruit.com/feed.rss">
+  <link rel="stylesheet" media="screen" href="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/fonts.html">
+  <link rel="stylesheet" media="screen" href="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/application-0221dfe1cd745343724e0317b61e9fb83ee78705d2635355.css">
+  <!--[if lt IE 9]>
+    <script src="/assets/ie.html5.js"></script>
+    <script src="/assets/ie.respond.js"></script>
+  <![endif]-->
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@adafruit">
+  <meta name="twitter:title" content="Adafruit DC and Stepper Motor HAT for Raspberry Pi">
+  <meta name="twitter:description" content="Stackable Steppers and DC motor control for your Raspberry Pi">
+  <meta name="twitter:image:src" content="https://learn.adafruit.com/system/guides/images/000/000/887/medium800/motorhat.jpg">
+  <meta name="twitter:domain" content="https://learn.adafruit.com">
+
+  <link rel="canonical" href="https://learn.adafruit.com/adafruit-dc-and-stepper-motor-hat-for-raspberry-pi/using-dc-motors">
+<style id="fit-vids-style">.fluid-width-video-wrapper{width:100%;position:relative;padding:0;}.fluid-width-video-wrapper iframe,.fluid-width-video-wrapper object,.fluid-width-video-wrapper embed {position:absolute;top:0;left:0;width:100%;height:100%;}</style></head>
+
+<body class="application pages show">
+  <div id="outer-wrapper">
+    <div id="inner-wrapper">
+      
+      <header id="adafruit-header">
+    <div id="small-header-content" class="container visible-xs">
+    <a id="small-header-menu-button" class="menu-link" href="#small-header-nav">
+      <i class="fa fa-bars"> </i>
+    </a>
+    <div class="small-header-logo">
+      <a href="https://www.adafruit.com/">
+        <img id="small-logo" alt="Adafruit Logo" title="Adafruit" src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/adafruit_logo_small.png" height="50" width="50">
+</a>    </div>
+    <a class="small-header-cart" href="https://www.adafruit.com/shopping_cart">
+      <span class="small-cart-count">0</span>
+      <i class="fa fa-shopping-cart"></i>
+</a>  </div>
+    <nav id="small-header-nav" role="navigation" class="visible-xs">
+      <div class="block">
+        <ul>
+          <li>
+            <div id="small-search-wrapper">
+              <div id="small-search-inner-wrapper">
+                <form action="https://learn.adafruit.com/search" method="get">
+                  <label for="mobile-search" style="display:none;">Search</label>
+                  <input id="mobile-search" name="q" placeholder="Search Adafruit" type="text">
+                  <i class="fa fa-search"></i>
+                </form>
+              </div>
+            </div>
+          </li>
+          <li>
+            <a href="https://www.adafruit.com/categories">SHOP</a>
+          </li>
+          <li>
+            <a href="https://blog.adafruit.com/">BLOG</a>
+          </li>
+          <li>
+            <a href="https://learn.adafruit.com/">LEARN</a>
+          </li>
+          <li>
+            <a href="https://forums.adafruit.com/">FORUMS</a>
+          </li>
+          <li>
+            <a href="https://www.youtube.com/adafruit">VIDEOS</a>
+          </li>
+            <li>
+              <a href="https://accounts.adafruit.com/">MY ACCOUNT</a>
+            </li>
+            <li>
+              <a rel="nofollow" data-method="delete" href="https://learn.adafruit.com/users/sign_out">SIGN OUT</a>
+            </li>
+          <li>
+            <a class="close-btn" id="small-nav-close-button" href="#top">CLOSE MENU</a>
+          </li>
+        </ul>
+
+    </div>
+  </nav>
+
+  <div id="header-content" class="container hidden-xs">
+    <div id="header-profile">
+      <a id="header-cart" href="https://www.adafruit.com/shopping_cart">0 Items <i class="fa fa-shopping-cart"></i></a>      <div id="account">
+          <span class="name">Hello, Chris Spencer</span> | <a rel="nofollow" data-method="delete" href="https://learn.adafruit.com/users/sign_out">Sign Out</a> | <a href="https://accounts.adafruit.com/">My Account</a>
+      </div>
+      <div id="search-wrapper">
+        <form action="https://learn.adafruit.com/search" method="get">
+          <label for="search" style="display:none;">Search</label>
+          <span style="position: relative; display: inline-block;" class="twitter-typeahead"><input style="position: absolute; top: 0px; left: 0px; border-color: transparent; box-shadow: none; background: rgb(0, 0, 0) none repeat scroll 0% 0%;" class="tt-hint" autocomplete="off" spellcheck="off" disabled="disabled" type="text"><input dir="auto" style="position: relative; vertical-align: top; background-color: transparent;" spellcheck="false" autocomplete="off" class="tt-query" id="search" name="q" type="text"><span style="position: absolute; left: -9999px; visibility: hidden; white-space: nowrap; font-family: &quot;Gotham SSm A&quot;,&quot;Gotham SSm B&quot;; font-size: 12px; font-style: normal; font-variant: normal; font-weight: 300; word-spacing: 0px; letter-spacing: 0px; text-indent: 0px; text-rendering: optimizelegibility; text-transform: none;"></span><span style="position: absolute; top: 100%; left: 0px; z-index: 100; display: none;" class="tt-dropdown-menu"></span></span>
+          <i class="fa fa-search"></i>
+          <input style="visibility: hidden; position: fixed;" type="submit">
+        </form>
+      </div>
+    </div>
+    <div id="navigation">
+      <a href="https://www.adafruit.com/">
+        <img id="logo" alt="Adafruit Logo" title="Adafruit" src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/logo_2x.png" height="60" width="172">
+</a>        <nav class="hover-menu">
+    <ul>
+      <li id="nav-shop"><a href="https://www.adafruit.com/">SHOP</a>
+        <div class="flyouts">
+<div class="flyout">
+<div class="container">
+<div class="flyout-content row"><div class="column col-lg-6 col-md-6 col-sm-6">
+<div class="title categories">
+PRODUCT CATEGORIES <br class="hidden-lg"><a href="http://www.adafruit.com/categories">(SEE ALL 28)</a>
+</div>
+<div class="row">
+<div class="col-lg-6 col-md-6 col-sm-6">
+<ul class="links categories"><li><a href="http://www.adafruit.com/category/17">ARDUINO (134)</a></li>
+<li><a href="http://www.adafruit.com/category/105">RASPBERRY PI (320)</a></li>
+<li><a href="http://www.adafruit.com/category/75">BEAGLEBONE (27)</a></li>
+<li><a href="http://www.adafruit.com/category/168">NEOPIXELS (38)</a></li>
+<li><a href="http://www.adafruit.com/category/65">WEARABLES (100)</a></li>
+<li><a href="http://www.adafruit.com/category/117">YOUNG ENGINEERS (84)</a></li>
+<li><a href="http://www.adafruit.com/category/290">COSPLAY/COSTUMING (148)</a></li>
+<li><a href="http://www.adafruit.com/category/307">HALLOWEEN (210)</a></li>
+<li><a href="http://www.adafruit.com/category/82">PROTOTYPING (172)</a></li>
+<li><a href="http://www.adafruit.com/category/203">KITS &amp; PROJECTS (144)</a></li>
+<li><a href="http://www.adafruit.com/category/328">RESELLER &amp; UNIVERSITY PACKS (2)</a></li>
+<li><a href="http://www.adafruit.com/category/196">BOARDS (173)</a></li>
+<li><a href="http://www.adafruit.com/category/63">LCDS &amp; DISPLAYS (100)</a></li>
+<li><a href="http://www.adafruit.com/category/37">LEDS (229)</a></li>
+</ul>
+</div>
+<div class="col-lg-6 col-md-6 col-sm-6">
+<ul class="links"><li><a href="http://www.adafruit.com/category/44">POWER (154)</a></li>
+<li><a href="http://www.adafruit.com/category/33">CABLES (117)</a></li>
+<li><a href="http://www.adafruit.com/category/8">TOOLS (155)</a></li>
+<li><a href="http://www.adafruit.com/category/227">ROBOTICS &amp; CNC (129)</a></li>
+<li><a href="http://www.adafruit.com/category/234">ACCESSORIES (112)</a></li>
+<li><a href="http://www.adafruit.com/category/54">COMPONENTS &amp; PARTS (266)</a></li>
+<li><a href="http://www.adafruit.com/category/35">SENSORS (166)</a></li>
+<li><a href="http://www.adafruit.com/category/50">EL WIRE/TAPE/PANEL (82)</a></li>
+<li><a href="http://www.adafruit.com/category/128">3D PRINTING (59)</a></li>
+<li><a href="http://www.adafruit.com/category/40">BOOKS (92)</a></li>
+<li><a href="http://www.adafruit.com/category/254">SOFTWARE (10)</a></li>
+<li><a href="http://www.adafruit.com/category/112">WIRELESS (82)</a></li>
+<li><a href="http://www.adafruit.com/category/14">GIFT CERTIFICATES (4)</a></li>
+<li><a href="http://www.adafruit.com/category/342">INTERNET OF THINGS - IOT (24)</a></li>
+</ul>
+</div>
+</div>
+</div><div class="column col-lg-3 col-md-3 col-sm-6 new-column">
+<div class="title new">
+NEW PRODUCTS <a href="http://www.adafruit.com/new"><br class="hidden-lg">(SEE ALL 27)</a>
+</div>
+<ul class="links new"><li>
+<a href="http://www.adafruit.com/product/2664"><img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/x2664-00.jpg" alt="CadSoft EAGLE Hobbyist PCB Design Software V7 BBB Combo Pack - Includes BeagleBone Black Rev C"></a>
+<a href="http://www.adafruit.com/product/2664" class="name">CadSoft EAGLE Hobbyist PCB Design Software V7 BBB Combo Pack - Includes BeagleBone Black Rev C<span class="price">$179.00</span></a>
+<div class="clear"></div>
+</li><li>
+<a href="http://www.adafruit.com/product/2663"><img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/x2663-00.jpg" alt="CadSoft EAGLE Hobbyist PCB Design Software V7 RasPi Combo Pack - Includes Raspberry Pi 2, Model B"></a>
+<a href="http://www.adafruit.com/product/2663" class="name">CadSoft EAGLE Hobbyist PCB Design Software V7 RasPi Combo Pack - Includes Raspberry Pi 2, Model B<span class="price">$169.00</span></a>
+<div class="clear"></div>
+</li><li>
+<a href="http://www.adafruit.com/product/2676"><img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/x2676-00.jpg" alt="USB Power &amp; Data Signal Extender - 30+ meters / 100+ feet"></a>
+<a href="http://www.adafruit.com/product/2676" class="name">USB Power &amp; Data Signal Extender - 30+ meters / 100+ feet<span class="price">$17.50</span></a>
+<div class="clear"></div>
+</li><li>
+<a href="http://www.adafruit.com/product/2680"><img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/x2680-00.jpg" alt="Huzzah! Adafruit.io Internet of Things ESP8266 WiFi Starter Kit"></a>
+<a href="http://www.adafruit.com/product/2680" class="name">Huzzah! Adafruit.io Internet of Things ESP8266 WiFi Starter Kit<span class="price">$37.50</span></a>
+<div class="clear"></div>
+</li><li>
+<a href="http://www.adafruit.com/product/2678"><img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/x2678-00.jpg" alt="Huzzah! Adafruit.io Internet of Things CC3000 WiFi Starter Kit"></a>
+<a href="http://www.adafruit.com/product/2678" class="name">Huzzah! Adafruit.io Internet of Things CC3000 WiFi Starter Kit<span class="price">$59.95</span></a>
+<div class="clear"></div>
+</li></ul>
+</div><div class="column col-lg-3 col-md-3 hidden-sm">
+<div class="title featured">
+FEATURED PRODUCTS <a href="http://www.adafruit.com/featured"><br class="hidden-lg">(SEE ALL 45)</a>
+</div>
+<ul class="links featured"><li>
+<a href="http://www.adafruit.com/product/2468"><img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/x2468-01.jpg" alt="Adafruit FONA 800 Shield - Voice/Data Cellular GSM for Arduino"></a>
+<a href="http://www.adafruit.com/product/2468" class="name">Adafruit FONA 800 Shield - Voice/Data Cellular GSM for Arduino<span class="price">$39.95</span></a>
+<div class="clear"></div>
+</li><li>
+<a href="http://www.adafruit.com/product/2534"><img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/x2534-04.jpg" alt="Adafruit VESA Mount Plus for Raspberry Pi 2 / B+ / A+"></a>
+<a href="http://www.adafruit.com/product/2534" class="name">Adafruit VESA Mount Plus for Raspberry Pi 2 / B+ / A+<span class="price">$9.95</span></a>
+<div class="clear"></div>
+</li><li>
+<a href="http://www.adafruit.com/product/2590"><img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/x2590-01.jpg" alt="Adafruit Metro Mini 328 - 5V 16MHz"></a>
+<a href="http://www.adafruit.com/product/2590" class="name">Adafruit Metro Mini 328 - 5V 16MHz<span class="price">$14.95</span></a>
+<div class="clear"></div>
+</li><li>
+<a href="http://www.adafruit.com/product/2465"><img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/x2465-08.jpg" alt="PowerBoost 1000 Charger - Rechargeable 5V Lipo USB Boost @ 1A"></a>
+<a href="http://www.adafruit.com/product/2465" class="name">PowerBoost 1000 Charger - Rechargeable 5V Lipo USB Boost @ 1A<span class="price">$19.95</span></a>
+<div class="clear"></div>
+</li><li>
+<a href="http://www.adafruit.com/product/2479"><img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/x2479-00.jpg" alt="Adafruit Bluefruit LE UART Friend - Bluetooth Low Energy (BLE)"></a>
+<a href="http://www.adafruit.com/product/2479" class="name">Adafruit Bluefruit LE UART Friend - Bluetooth Low Energy (BLE)<span class="price">$17.50</span></a>
+<div class="clear"></div>
+</li> </ul>
+</div></div>
+</div>
+</div>
+</div>
+      </li>
+      <li id="nav-blog"><a href="https://blog.adafruit.com/">BLOG</a>
+          <div class="flyouts">
+    <div class="flyout">
+      <div class="container">
+        <div class="flyout-content row">
+
+          <div class="column col-lg-6 col-md-6 col-sm-6">
+            <div class="title categories">
+              POPULAR CATEGORIES <br class="hidden-lg"><a href="https://blog.adafruit.com/categories/">(SEE ALL 169)</a>
+            </div>
+            <div class="row">
+              <div class="col-lg-6 col-md-6 col-sm-6">
+                <ul class="links categories">
+																	<li><a href="https://blog.adafruit.com/category/3d-printing/">3D PRINTING (3400)</a>
+																	</li><li><a href="https://blog.adafruit.com/category/art/">ART (3357)</a>
+																	</li><li><a href="https://blog.adafruit.com/category/raspberry-pi/">RASPBERRY PI (2982)</a>
+																	</li><li><a href="https://blog.adafruit.com/category/random/">RANDOM (2756)</a>
+																	</li><li><a href="https://blog.adafruit.com/category/arduino/">ARDUINO (2291)</a>
+																	</li><li><a href="https://blog.adafruit.com/category/wearables/">WEARABLES (2259)</a>
+																	</li><li><a href="https://blog.adafruit.com/category/science/">SCIENCE (1351)</a>
+																	</li><li><a href="https://blog.adafruit.com/category/robotics/">ROBOTICS (1218)</a>
+																	</li><li><a href="https://blog.adafruit.com/category/ledslcds/">LEDS-LCDS (1214)</a>
+																	</li><li><a href="https://blog.adafruit.com/category/costuming/">COSTUMING (1167)</a>
+																																																																								
+																																																																								
+																																																																								
+																																																																								
+																																																																								
+																																																																								
+																																																																								
+																																																																								
+																																																																								
+																																																																								
+																																																																								
+																																																																								
+																																																																								
+																							              </li></ul></div>
+              <div class="col-lg-6 col-md-6 col-sm-6">
+                <ul class="links categories">
+																																																																													<li><a href="https://blog.adafruit.com/category/maker-business/">MAKER BUSINESS (1152)</a>
+																	</li><li><a href="https://blog.adafruit.com/category/ee/">EE (1126)</a>
+																	</li><li><a href="https://blog.adafruit.com/category/cosplay/">COSPLAY (1035)</a>
+																	</li><li><a href="https://blog.adafruit.com/category/announce/">ANNOUNCE (1000)</a>
+																	</li><li><a href="https://blog.adafruit.com/category/educators/">EDUCATORS (987)</a>
+																	</li><li><a href="https://blog.adafruit.com/category/ask-an-engineer/">ASK-AN-ENGINEER (911)</a>
+																	</li><li><a href="https://blog.adafruit.com/category/community/">COMMUNITY (853)</a>
+																	</li><li><a href="https://blog.adafruit.com/category/opensourcehardware/">OPEN SOURCE HARDWARE (794)</a>
+																	</li><li><a href="https://blog.adafruit.com/category/tutorials/">TUTORIALS (701)</a>
+																	</li><li><a href="https://blog.adafruit.com/category/adafruit-learning-system/">ADAFRUIT LEARNING SYSTEM (550)</a>
+																																																																								
+																																																																								
+																																																																								
+																																																																								
+																																																																								
+																																																																								
+																																																																								
+																																																																								
+																																																																								
+																																																																								
+																																																																								
+																																																																								
+																																			                </li></ul>
+              </div>
+            </div>
+          </div> 
+          <div class="column col-lg-3 col-md-3 col-sm-3">
+			            <div class="title new">
+              NEW POSTS <br class="hidden-lg"><a href="https://blog.adafruit.com/">(SEE ALL)</a>
+            </div>
+            <ul class="links new">
+									<li>
+						<a href="https://blog.adafruit.com/2015/08/16/this-is-why-we-cant-have-drone-things/"><img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/adafruit_3160-131x150.jpg"></a>						<span class="blog-flyout-datetime">August 16, 2015 at 10:13 am</span>
+						<a href="https://blog.adafruit.com/2015/08/16/this-is-why-we-cant-have-drone-things/" class="name">This is why we can’t have drone…</a>
+						<div class="clear"></div>
+					</li>
+									<li>
+						<a href="https://blog.adafruit.com/2015/08/16/bitcoin-xt-fork/"><img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/1600-00-300x225.jpg"></a>						<span class="blog-flyout-datetime">August 16, 2015 at 8:38 am</span>
+						<a href="https://blog.adafruit.com/2015/08/16/bitcoin-xt-fork/" class="name">Bitcoin XT Fork</a>
+						<div class="clear"></div>
+					</li>
+									<li>
+						<a href="https://blog.adafruit.com/2015/08/16/hacked-cat-feeder-allows-your-pet-to-hunt-for-their-dinner-arduino/"><img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/hacked-cat-feeder-allows-your-pe-300x164.jpg"></a>						<span class="blog-flyout-datetime">August 16, 2015 at 3:00 am</span>
+						<a href="https://blog.adafruit.com/2015/08/16/hacked-cat-feeder-allows-your-pet-to-hunt-for-their-dinner-arduino/" class="name">Hacked cat feeder allows your pet to hunt for…</a>
+						<div class="clear"></div>
+					</li>
+				            </ul>
+          </div>
+          <div class="column col-lg-3 col-md-3 col-sm-3">
+			            <div class="title featured">
+              FEATURED POSTS <br class="hidden-lg"><a href="https://blog.adafruit.com/category/featured">(SEE ALL 71)</a>
+            </div>
+            <ul class="links featured">
+									<li>
+						<a href="https://blog.adafruit.com/2015/08/13/inc5000-inc-adafruit-is-614-out-of-5000-companies-inc-5000-top-10-in-manufacturing-in-usa-ny-grew-742/"><img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/NYmetroarea-300x161.jpg"></a>						<span class="blog-flyout-datetime">August 13, 2015 at 9:46 am</span>
+						<a href="https://blog.adafruit.com/2015/08/13/inc5000-inc-adafruit-is-614-out-of-5000-companies-inc-5000-top-10-in-manufacturing-in-usa-ny-grew-742/" class="name">@Inc5000 @Inc Adafruit is #614 out of 5,000…</a>
+						<div class="clear"></div>
+					</li>
+									<li>
+						<a href="https://blog.adafruit.com/2015/08/12/two-years-of-wearable-electronics-with-becky-stern-852015-live-2pm-et-wearables/"><img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/adafruit_wearables_2yrs_blog-300x101.jpg"></a>						<span class="blog-flyout-datetime">August 12, 2015 at 12:30 pm</span>
+						<a href="https://blog.adafruit.com/2015/08/12/two-years-of-wearable-electronics-with-becky-stern-852015-live-2pm-et-wearables/" class="name">Two Years of Wearable Electronics with Becky Stern…</a>
+						<div class="clear"></div>
+					</li>
+									<li>
+						<a href="https://blog.adafruit.com/2015/08/10/hello-windows-10-iot-core-windowsblog-windows10iotcore/"><img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/windows_iot1-300x101.jpg"></a>						<span class="blog-flyout-datetime">August 10, 2015 at 2:13 pm</span>
+						<a href="https://blog.adafruit.com/2015/08/10/hello-windows-10-iot-core-windowsblog-windows10iotcore/" class="name">Hello, Windows 10 IoT Core! @windowsblog…</a>
+						<div class="clear"></div>
+					</li>
+				            </ul>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+      </li>
+      <li id="nav-learn"><a href="https://learn.adafruit.com/">LEARN</a>
+          <div class="flyouts">
+    <div class="flyout">
+      <div class="container">
+        <div class="flyout-content row">
+
+          <div class="column col-lg-6 col-md-6 col-sm-6">
+            <div class="title categories">
+              GUIDE CATEGORIES <br class="hidden-lg"><a href="https://learn.adafruit.com/">(SEE ALL 832)</a>
+            </div>
+            <div class="row">
+              <div class="col-lg-6 col-md-6 col-sm-6">
+                <ul class="links categories">
+                    <li><a href="https://learn.adafruit.com/category/components">COMPONENTS (42)</a></li>
+                    <li><a href="https://learn.adafruit.com/category/sensors">SENSORS (153)</a></li>
+                    <li><a href="https://learn.adafruit.com/category/hacks">HACKS (32)</a></li>
+                    <li><a href="https://learn.adafruit.com/category/microcomputers">MICROCOMPUTERS (10)</a></li>
+                    <li><a href="https://learn.adafruit.com/category/adafruit-products">ADAFRUIT PRODUCTS (240)</a></li>
+                    <li><a href="https://learn.adafruit.com/category/maker-business">MAKER BUSINESS (22)</a></li>
+                    <li><a href="https://learn.adafruit.com/category/projects">PROJECTS (103)</a></li>
+                    <li><a href="https://learn.adafruit.com/category/leds">LEDS (145)</a></li>
+                    <li><a href="https://learn.adafruit.com/category/raspberry-pi">RASPBERRY PI (169)</a></li>
+                    <li><a href="https://learn.adafruit.com/category/braincrafts">BRAINCRAFTS (32)</a></li>
+                    <li><a href="https://learn.adafruit.com/category/lcds-and-displays">LCDS &amp; DISPLAYS (49)</a></li>
+                    <li><a href="https://learn.adafruit.com/category/el">EL WIRE/TAPE/PANEL (12)</a></li>
+                    <li><a href="https://learn.adafruit.com/category/tools">TOOLS (43)</a></li>
+                </ul>
+              </div>
+              <div class="col-lg-6 col-md-6 col-sm-6">
+                <ul class="links categories">
+                    <li><a href="https://learn.adafruit.com/category/microcontrollers">MICROCONTROLLERS (72)</a></li>
+                    <li><a href="https://learn.adafruit.com/category/learn-arduino">LEARN ARDUINO (38)</a></li>
+                    <li><a href="https://learn.adafruit.com/category/customer-projects">CUSTOMER PROJECTS (17)</a></li>
+                    <li><a href="https://learn.adafruit.com/category/beaglebone">BEAGLEBONE (36)</a></li>
+                    <li><a href="https://learn.adafruit.com/category/circuit-playground">CIRCUIT PLAYGROUND (9)</a></li>
+                    <li><a href="https://learn.adafruit.com/category/3d-printing">3D PRINTING (112)</a></li>
+                    <li><a href="https://learn.adafruit.com/category/trinket">TRINKET (67)</a></li>
+                    <li><a href="https://learn.adafruit.com/category/robotics">ROBOTICS (15)</a></li>
+                    <li><a href="https://learn.adafruit.com/category/collins-lab">COLLIN'S LAB (7)</a></li>
+                    <li><a href="https://learn.adafruit.com/category/community-support">COMMUNITY SUPPORT (22)</a></li>
+                    <li><a href="https://learn.adafruit.com/category/wearables">WEARABLES (142)</a></li>
+                    <li><a href="https://learn.adafruit.com/category/adafruit-io">ADAFRUIT IO (16)</a></li>
+                </ul>
+              </div>
+            </div>
+          </div> 
+          <div class="column col-lg-3 col-md-3 col-sm-3">
+            <div class="title new">
+              NEW GUIDES <br class="hidden-lg"><a href="https://learn.adafruit.com/guides/latest">(SEE ALL 51)</a>
+            </div>
+            <ul class="links new">
+                    <li>
+                      <a href="https://learn.adafruit.com/diy-rechargeable-led-makeup-compact"><img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/DIY-LED-makeup-compact-mirror-thumbnail.jpg" alt="DIY Rechargeable LED Makeup Compact"></a>
+                      <a href="https://learn.adafruit.com/diy-rechargeable-led-makeup-compact" class="name">DIY RECHARGEABLE LED MAKEUP COMPACT</a>
+                      <div class="clear"></div>
+                    </li>
+                    <li>
+                      <a href="https://learn.adafruit.com/dash-hacking-bare-metal-stm32-programming"><img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/20150807_0003.jpg" alt="Dash Hacking: Bare-Metal STM32 Programming"></a>
+                      <a href="https://learn.adafruit.com/dash-hacking-bare-metal-stm32-programming" class="name">DASH HACKING: BARE-METAL STM32 PROGRAMMING</a>
+                      <div class="clear"></div>
+                    </li>
+                    <li>
+                      <a href="https://learn.adafruit.com/bluefruit-le-micro-atmega32u4-microcontroller-usb-bluetooth-le-in-one"><img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/thumb.jpg" alt="Introducing Bluefruit LE Micro"></a>
+                      <a href="https://learn.adafruit.com/bluefruit-le-micro-atmega32u4-microcontroller-usb-bluetooth-le-in-one" class="name">INTRODUCING BLUEFRUIT LE MICRO</a>
+                      <div class="clear"></div>
+                    </li>
+                    <li>
+                      <a href="https://learn.adafruit.com/talking-d20-20-sided-gaming-die"><img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/hand-a.jpg" alt="Talking d20 20-Sided Gaming Die"></a>
+                      <a href="https://learn.adafruit.com/talking-d20-20-sided-gaming-die" class="name">TALKING D20 20-SIDED GAMING DIE</a>
+                      <div class="clear"></div>
+                    </li>
+            </ul>
+          </div>
+          <div class="column col-lg-3 col-md-3 col-sm-3">
+            <div class="title featured">
+              FEATURED GUIDES <br class="hidden-lg"><a href="https://learn.adafruit.com/guides/featured">(SEE ALL 125)</a>
+            </div>
+            <ul class="links featured">
+                    <li>
+                      <a href="https://learn.adafruit.com/electronic-demon-costume"><img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/RarFace.jpg" alt="Electronic Demon Costume"></a>
+                      <a href="https://learn.adafruit.com/electronic-demon-costume" class="name">ELECTRONIC DEMON COSTUME</a>
+                      <div class="clear"></div>
+                    </li>
+                    <li>
+                      <a href="https://learn.adafruit.com/trinket-slash-gemma-space-invader-pendant"><img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/pendant-anim-small.gif" alt="Trinket / Gemma Space Invader Pendant"></a>
+                      <a href="https://learn.adafruit.com/trinket-slash-gemma-space-invader-pendant" class="name">TRINKET / GEMMA SPACE INVADER PENDANT</a>
+                      <div class="clear"></div>
+                    </li>
+                    <li>
+                      <a href="https://learn.adafruit.com/adafruit-led-sequins"><img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/leds_adafruit-led-sequins-hat-12.jpg" alt="Adafruit LED Sequins"></a>
+                      <a href="https://learn.adafruit.com/adafruit-led-sequins" class="name">ADAFRUIT LED SEQUINS</a>
+                      <div class="clear"></div>
+                    </li>
+                    <li>
+                      <a href="https://learn.adafruit.com/guggenhat-bluetooth-le-wearable-neopixel-marquee-scrolling-led-hat-display"><img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/anim2-small.gif" alt="Make a Guggenhat: Bluetooth-connected wearable NeoPixel marquee hat"></a>
+                      <a href="https://learn.adafruit.com/guggenhat-bluetooth-le-wearable-neopixel-marquee-scrolling-led-hat-display" class="name">MAKE A GUGGENHAT: BLUETOOTH-CONNECTED WEARABLE NEOPIXEL MARQUEE HAT</a>
+                      <div class="clear"></div>
+                    </li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+      </li>
+      <li id="nav-forums"><a href="https://forums.adafruit.com/">FORUMS</a>
+      </li>
+      <li id="nav-forums"><a href="https://www.youtube.com/adafruit">VIDEOS</a>
+      </li>
+    </ul>
+  </nav>
+
+    </div>
+  </div>
+</header>
+
+      <div id="main-content">
+        <div id="page-wrapper">
+	<div id="categories-block" class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+  <div id="categories-content" class="container">
+      <span class="category page-home-link"><a href="https://learn.adafruit.com/">
+        <i class="fa fa-home"></i>
+      </a></span>
+        <span class="category ">
+    <a href="https://learn.adafruit.com/category/raspberry-pi">RASPBERRY PI</a>
+  </span>
+  <span class="category ">
+    <a href="https://learn.adafruit.com/category/robotics">ROBOTICS</a>
+  </span>
+
+      
+      <span id="guide-favorite">
+    <a data-original-title="Favorite this guide?" class="favorites-link category right red" title="" data-toggle="tooltip" data-placement="left" data-remote="true" rel="nofollow" data-method="post" href="https://learn.adafruit.com/guides/887/favorites.js">
+      <i class="fa fa-heart-o"></i>
+</a></span>
+    <div class="clear"></div>
+  </div>
+</div>
+<div class="clear"></div>
+
+		<div id="content-wrapper" class="container" data-page-id="5031" data-guide-id="887">
+			<div class="row">
+				<div class="sidebar-left-wrapper hidden-phone hidden-tablet col-lg-two-and-half col-md-3 col-sm-4 col-xs-12">
+					<div style="width: 230px;" class="sidebar-left-content" data-clampedwidth=".sidebar-left-wrapper">
+							<nav class="sidebar-left">
+		<div class="title-bar">
+			<img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/motorhat.jpg" class="img-responsive">
+	    <div class="title">
+		    <h1><a href="https://learn.adafruit.com/adafruit-dc-and-stepper-motor-hat-for-raspberry-pi/overview">Adafruit DC and Stepper Motor HAT for Raspberry Pi</a></h1>
+		    <span class="tagline"><a href="https://learn.adafruit.com/adafruit-dc-and-stepper-motor-hat-for-raspberry-pi/overview">Stackable Steppers and DC motor control for your Raspberry Pi</a></span>
+		  </div>
+	  </div>
+	  <ul class="page-parent nav">
+			  <li class="">
+      <a class="sidebar-parent" href="https://learn.adafruit.com/adafruit-dc-and-stepper-motor-hat-for-raspberry-pi/overview">Overview</a>
+      <span class="page-draft-status">
+      </span>
+</li>
+  <li class="">
+      <a class="sidebar-parent" href="https://learn.adafruit.com/adafruit-dc-and-stepper-motor-hat-for-raspberry-pi/assembly">Assembly</a>
+      <span class="page-draft-status">
+      </span>
+</li>
+  <li class="">
+      <a class="sidebar-parent" href="https://learn.adafruit.com/adafruit-dc-and-stepper-motor-hat-for-raspberry-pi/powering-motors">Powering Motors</a>
+      <span class="page-draft-status">
+      </span>
+</li>
+  <li class="">
+      <a class="sidebar-parent" href="https://learn.adafruit.com/adafruit-dc-and-stepper-motor-hat-for-raspberry-pi/installing-software">Installing Software</a>
+      <span class="page-draft-status">
+      </span>
+</li>
+  <li class="active">
+      <a class="sidebar-parent" href="https://learn.adafruit.com/adafruit-dc-and-stepper-motor-hat-for-raspberry-pi/using-dc-motors">Using DC Motors</a>
+      <span class="page-draft-status">
+      </span>
+</li>
+  <li class="">
+      <a class="sidebar-parent" href="https://learn.adafruit.com/adafruit-dc-and-stepper-motor-hat-for-raspberry-pi/using-stepper-motors">Using Stepper Motors</a>
+      <span class="page-draft-status">
+      </span>
+</li>
+  <li class="">
+      <a class="sidebar-parent" href="https://learn.adafruit.com/adafruit-dc-and-stepper-motor-hat-for-raspberry-pi/stacking-hats">Stacking HATs</a>
+      <span class="page-draft-status">
+      </span>
+</li>
+  <li class="">
+      <a class="sidebar-parent" href="https://learn.adafruit.com/adafruit-dc-and-stepper-motor-hat-for-raspberry-pi/downloads">Downloads</a>
+      <span class="page-draft-status">
+      </span>
+</li>
+
+			<li class="single-page-spacer"></li>
+	      <li class="single-page-link"><a href="https://learn.adafruit.com/adafruit-dc-and-stepper-motor-hat-for-raspberry-pi?view=all">Single Page</a></li>
+			<li><a href="https://learn.adafruit.com/downloads/pdf/adafruit-dc-and-stepper-motor-hat-for-raspberry-pi.pdf">Download PDF</a></li>
+	  </ul>
+	</nav>
+	  <header class="sidebar-meta hidden-xs">
+    <h4>Contributors</h4>
+      <div><a href="https://learn.adafruit.com/users/adafruit2">lady ada</a></div>
+  </header>
+
+	  <header class="sidebar-meta hidden-xs">
+    <a class="feedback-link" title="Feedback? Corrections?" rel="nofollow" data-remote="true" data-method="get" href="https://learn.adafruit.com/pages/5031/settings_modal">
+          Feedback?  Corrections?
+</a>  </header>
+
+
+					</div>
+				</div>
+					<article class="col-lg-7 col-md-6 col-sm-8 col-xs-12">
+					<div class="content">
+							<div class="page-title-wrapper">
+								<h1 class="headline">
+									<span id="using-dc-motors">Using DC Motors</span>
+								</h1>
+								    <a class="author" style="background-color: rgb(228, 13, 132);" data-hover-color="#c20b70" data-default-color="#e40d84" href="https://learn.adafruit.com/users/adafruit2">
+        <img alt="Author Gravatar Image" class="user-gravatar load-gravatar" data-gravatar_hash="3f7ca151e1f7f7dead8b2db60aa744c1" src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/3f7ca151e1f7f7dead8b2db60aa744c1.png" height="30" width="30">
+        <span class="name">LADY ADA</span>
+</a>    <div class="clear"></div>
+
+							</div>
+							<div class="page-content">
+									      <div class="row-fluid build-text">
+        <p>DC motors are used for all sort of robotic projects.<br><br>The
+ Motor HAT can drive up to 4 DC motors bi-directionally. That means they
+ can be driven forwards and backwards. The speed can also be varied at 
+0.5% increments using the high-quality built in PWM. This means the 
+speed is very smooth and won't vary!<br><br>Note that the H-bridge chip 
+is not meant for driving continuous loads over 1.2A or motors that peak 
+over 3A, so this is for small motors. Check the datasheet for 
+information about the motor to verify its OK!</p>
+<h1>
+<a href="#connecting-dc-motors" class="anchor-link"><span class="fa fa-link"></span></a><span id="connecting-dc-motors" class="anchor-link-target"></span>Connecting DC Motors</h1>
+<p>To connect a motor, simply solder two wires to the terminals and then connect them to either the <strong>M1</strong>, <strong>M2</strong>, <strong>M3</strong>, or <strong>M4. </strong>If your motor is running 'backwards' from the way you like, just swap the wires in the terminal block</p>
+<p>For this demo, please connect it to <strong>M3</strong></p>
+<p>Now go into the Adafruit-Motor-HAT-Python/examples folder and run <strong>sudo python DCTest.py</strong> to watch your motor spin back and forth.</p>
+      </div>
+        <div class="row-fluid build-image">
+          <a href="https://learn.adafruit.com/assets/22674">
+            <img class="22674-asset img-responsive" src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/raspberry_pi_dcmotor.jpg" alt="raspberry_pi_dcmotor.jpg">
+</a>        </div>
+      <div class="row-fluid build-text">
+        
+      
+      <h1>
+<a href="#dc-motor-control-walkthru" class="anchor-link"><span class="fa fa-link"></span></a><span id="dc-motor-control-walkthru" class="anchor-link-target"></span>DC motor control walkthru</h1>
+<p>Here's a walkthru of the code which shows you everything the MotorHAT library can do and how to do it.</p>
+<p>Start with importing at least these libraries:</p>
+    
+    
+      </div>
+      <div class="build-code">
+        <div class="code-copy-container" style="position: absolute; visibility: visible;">
+           <div class="code-copy-button">Copy Code</div>
+           <div class="zero-clipboard" style="position:absolute; left:0px; top:0px; width:63px; height:14px; z-index:99"><embed id="ZeroClipboardMovie_1" src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/ZeroClipboard.swf" loop="false" menu="false" quality="best" bgcolor="#ffffff" name="ZeroClipboardMovie_1" allowscriptaccess="always" allowfullscreen="false" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" flashvars="id=1&amp;width=63&amp;height=14" wmode="transparent" height="14" width="63" align="middle"><div class="here">here</div></div>
+        </div>
+        <pre class="code-text-only" style="display: none;">#!/usr/bin/python
+from Adafruit_MotorHAT import Adafruit_MotorHAT, Adafruit_DCMotor
+
+import time
+import atexit</pre>
+        <pre class="prettyprint linenums"><ol class="linenums"><li class="L0"><span class="com">#!/usr/bin/python</span></li><li class="L1"><span class="kwd">from</span><span class="pln"> </span><span class="typ">Adafruit_MotorHAT</span><span class="pln"> </span><span class="kwd">import</span><span class="pln"> </span><span class="typ">Adafruit_MotorHAT</span><span class="pun">,</span><span class="pln"> </span><span class="typ">Adafruit_DCMotor</span></li><li class="L2"><span class="pln">&nbsp;</span></li><li class="L3"><span class="kwd">import</span><span class="pln"> time</span></li><li class="L4"><span class="kwd">import</span><span class="pln"> atexit</span></li></ol></pre>
+      </div>
+      <div class="row-fluid build-text">
+        
+      
+      <p>The MotorHAT library contains a few different classes, one is 
+the MotorHAT class itself which is the main PWM controller. You'll 
+always need to create an object, and set the address. By default the 
+address is 0x60 (see the stacking HAT page on why you may want to change
+ the address)</p>
+    
+    
+      </div>
+      <div class="build-code">
+        <div class="code-copy-container" style="position: absolute; visibility: visible;">
+           <div class="code-copy-button">Copy Code</div>
+           <div class="zero-clipboard" style="position:absolute; left:0px; top:0px; width:63px; height:14px; z-index:99"><embed id="ZeroClipboardMovie_2" src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/ZeroClipboard.swf" loop="false" menu="false" quality="best" bgcolor="#ffffff" name="ZeroClipboardMovie_2" allowscriptaccess="always" allowfullscreen="false" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" flashvars="id=2&amp;width=63&amp;height=14" wmode="transparent" height="14" width="63" align="middle"><div class="here">here</div></div>
+        </div>
+        <pre class="code-text-only" style="display: none;"># create a default object, no changes to I2C address or frequency
+mh = Adafruit_MotorHAT(addr=0x61)</pre>
+        <pre class="prettyprint linenums"><ol class="linenums"><li class="L0"><span class="com"># create a default object, no changes to I2C address or frequency</span></li><li class="L1"><span class="pln">mh </span><span class="pun">=</span><span class="pln"> </span><span class="typ">Adafruit_MotorHAT</span><span class="pun">(</span><span class="pln">addr</span><span class="pun">=</span><span class="lit">0x61</span><span class="pun">)</span></li></ol></pre>
+      </div>
+      <div class="row-fluid build-text">
+        
+      
+      <p>The PWM driver is 'free running' - that means that even if the 
+python code or Pi linux kernel crashes, the PWM driver will still 
+continue to work. This is good because it lets the Pi focus on linuxy 
+things while the PWM driver does its PWMy things. <strong>But it means that the motors DO NOT STOP when the python code quits</strong></p>
+<p><strong>For that reason, we strongly recommend this 'at exit' code</strong> when using DC motors, it will do its best to shut down all the motors.</p>
+    
+    
+      </div>
+      <div class="build-code">
+        <div class="code-copy-container" style="position: absolute; visibility: visible;">
+           <div class="code-copy-button">Copy Code</div>
+           <div class="zero-clipboard" style="position:absolute; left:0px; top:0px; width:63px; height:14px; z-index:99"><embed id="ZeroClipboardMovie_3" src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/ZeroClipboard.swf" loop="false" menu="false" quality="best" bgcolor="#ffffff" name="ZeroClipboardMovie_3" allowscriptaccess="always" allowfullscreen="false" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" flashvars="id=3&amp;width=63&amp;height=14" wmode="transparent" height="14" width="63" align="middle"><div class="here">here</div></div>
+        </div>
+        <pre class="code-text-only" style="display: none;"># recommended for auto-disabling motors on shutdown!
+def turnOffMotors():
+	mh.getMotor(1).run(Adafruit_MotorHAT.RELEASE)
+	mh.getMotor(2).run(Adafruit_MotorHAT.RELEASE)
+	mh.getMotor(3).run(Adafruit_MotorHAT.RELEASE)
+	mh.getMotor(4).run(Adafruit_MotorHAT.RELEASE)
+
+atexit.register(turnOffMotors)</pre>
+        <pre class="prettyprint linenums"><ol class="linenums"><li class="L0"><span class="com"># recommended for auto-disabling motors on shutdown!</span></li><li class="L1"><span class="kwd">def</span><span class="pln"> turnOffMotors</span><span class="pun">():</span></li><li class="L2"><span class="pln">	mh</span><span class="pun">.</span><span class="pln">getMotor</span><span class="pun">(</span><span class="lit">1</span><span class="pun">).</span><span class="pln">run</span><span class="pun">(</span><span class="typ">Adafruit_MotorHAT</span><span class="pun">.</span><span class="pln">RELEASE</span><span class="pun">)</span></li><li class="L3"><span class="pln">	mh</span><span class="pun">.</span><span class="pln">getMotor</span><span class="pun">(</span><span class="lit">2</span><span class="pun">).</span><span class="pln">run</span><span class="pun">(</span><span class="typ">Adafruit_MotorHAT</span><span class="pun">.</span><span class="pln">RELEASE</span><span class="pun">)</span></li><li class="L4"><span class="pln">	mh</span><span class="pun">.</span><span class="pln">getMotor</span><span class="pun">(</span><span class="lit">3</span><span class="pun">).</span><span class="pln">run</span><span class="pun">(</span><span class="typ">Adafruit_MotorHAT</span><span class="pun">.</span><span class="pln">RELEASE</span><span class="pun">)</span></li><li class="L5"><span class="pln">	mh</span><span class="pun">.</span><span class="pln">getMotor</span><span class="pun">(</span><span class="lit">4</span><span class="pun">).</span><span class="pln">run</span><span class="pun">(</span><span class="typ">Adafruit_MotorHAT</span><span class="pun">.</span><span class="pln">RELEASE</span><span class="pun">)</span></li><li class="L6"><span class="pln">&nbsp;</span></li><li class="L7"><span class="pln">atexit</span><span class="pun">.</span><span class="kwd">register</span><span class="pun">(</span><span class="pln">turnOffMotors</span><span class="pun">)</span></li></ol></pre>
+      </div>
+      <div class="row-fluid build-text">
+        
+      
+      <h1>
+<a href="#creating-the-dc-motor-object" class="anchor-link"><span class="fa fa-link"></span></a><span id="creating-the-dc-motor-object" class="anchor-link-target"></span>Creating the DC motor object</h1>
+<p>OK now that you have the motor HAT object, note that each HAT can control up to 4 motors. And you can have multiple HATs!</p>
+<p>To create the actual DC motor object, you can request it from the MotorHAT object you created above with <strong>getMotor(<em>num</em>)</strong> with a value between 1 and 4, for the terminal number that the motor is attached to</p>
+    
+    
+      </div>
+      <div class="build-code">
+        <div class="code-copy-container" style="position: absolute; visibility: visible;">
+           <div class="code-copy-button">Copy Code</div>
+           <div class="zero-clipboard" style="position:absolute; left:0px; top:0px; width:63px; height:14px; z-index:99"><embed id="ZeroClipboardMovie_4" src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/ZeroClipboard.swf" loop="false" menu="false" quality="best" bgcolor="#ffffff" name="ZeroClipboardMovie_4" allowscriptaccess="always" allowfullscreen="false" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" flashvars="id=4&amp;width=63&amp;height=14" wmode="transparent" height="14" width="63" align="middle"><div class="here">here</div></div>
+        </div>
+        <pre class="code-text-only" style="display: none;">myMotor = mh.getMotor(3)</pre>
+        <pre class="prettyprint linenums"><ol class="linenums"><li class="L0"><span class="pln">myMotor </span><span class="pun">=</span><span class="pln"> mh</span><span class="pun">.</span><span class="pln">getMotor</span><span class="pun">(</span><span class="lit">3</span><span class="pun">)</span></li></ol></pre>
+      </div>
+      <div class="row-fluid build-text">
+        
+      
+      <p>DC motors are simple beasts, you can basically only set the speed and direction.</p>
+<h1>
+<a href="#setting-dc-motor-speed" class="anchor-link"><span class="fa fa-link"></span></a><span id="setting-dc-motor-speed" class="anchor-link-target"></span>Setting DC Motor Speed</h1>
+<p>To set the speed, call <strong>setSpeed(<em>speed</em>)</strong> where speed varies from 0 (off) to 255 (maximum!). This is the PWM duty cycle of the motor</p>
+    
+    
+      </div>
+      <div class="build-code">
+        <div class="code-copy-container" style="position: absolute; visibility: visible;">
+           <div class="code-copy-button">Copy Code</div>
+           <div class="zero-clipboard" style="position:absolute; left:0px; top:0px; width:63px; height:14px; z-index:99"><embed id="ZeroClipboardMovie_5" src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/ZeroClipboard.swf" loop="false" menu="false" quality="best" bgcolor="#ffffff" name="ZeroClipboardMovie_5" allowscriptaccess="always" allowfullscreen="false" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" flashvars="id=5&amp;width=63&amp;height=14" wmode="transparent" height="14" width="63" align="middle"><div class="here">here</div></div>
+        </div>
+        <pre class="code-text-only" style="display: none;"># set the speed to start, from 0 (off) to 255 (max speed)
+myMotor.setSpeed(150)</pre>
+        <pre class="prettyprint linenums"><ol class="linenums"><li class="L0"><span class="com"># set the speed to start, from 0 (off) to 255 (max speed)</span></li><li class="L1"><span class="pln">myMotor</span><span class="pun">.</span><span class="pln">setSpeed</span><span class="pun">(</span><span class="lit">150</span><span class="pun">)</span></li></ol></pre>
+      </div>
+      <div class="row-fluid build-text">
+        
+      
+      <h1>
+<a href="#setting-dc-motor-direction" class="anchor-link"><span class="fa fa-link"></span></a><span id="setting-dc-motor-direction" class="anchor-link-target"></span>Setting DC Motor Direction</h1>
+<p>To set the direction, call <strong>run(</strong><em><strong>direction</strong></em><strong>) </strong>where <em>direction</em> is a constant from one of the following:</p>
+<ul>
+<li>
+<strong>Adafruit_MotorHAT.FORWARD</strong> - DC motor spins forward</li>
+<li>
+<strong>Adafruit_MotorHAT.BACKWARD</strong> - DC motor spins forward</li>
+<li>
+<strong>Adafruit_MotorHAT.RELEASE</strong> - DC motor is 'off', not spinning but will also not hold its place.</li>
+</ul>
+    
+    
+      </div>
+      <div class="build-code">
+        <div class="code-copy-container" style="position: absolute; visibility: visible;">
+           <div class="code-copy-button">Copy Code</div>
+           <div class="zero-clipboard" style="position:absolute; left:0px; top:0px; width:63px; height:14px; z-index:99"><embed id="ZeroClipboardMovie_6" src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/ZeroClipboard.swf" loop="false" menu="false" quality="best" bgcolor="#ffffff" name="ZeroClipboardMovie_6" allowscriptaccess="always" allowfullscreen="false" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" flashvars="id=6&amp;width=63&amp;height=14" wmode="transparent" height="14" width="63" align="middle"><div class="here">here</div></div>
+        </div>
+        <pre class="code-text-only" style="display: none;">while (True):
+	print "Forward! "
+	myMotor.run(Adafruit_MotorHAT.FORWARD)
+
+	print "\tSpeed up..."
+	for i in range(255):
+		myMotor.setSpeed(i)
+		time.sleep(0.01)
+
+	print "\tSlow down..."
+	for i in reversed(range(255)):
+		myMotor.setSpeed(i)
+		time.sleep(0.01)
+
+	print "Backward! "
+	myMotor.run(Adafruit_MotorHAT.BACKWARD)
+
+	print "\tSpeed up..."
+	for i in range(255):
+		myMotor.setSpeed(i)
+		time.sleep(0.01)
+
+	print "\tSlow down..."
+	for i in reversed(range(255)):
+		myMotor.setSpeed(i)
+		time.sleep(0.01)
+
+	print "Release"
+	myMotor.run(Adafruit_MotorHAT.RELEASE)
+	time.sleep(1.0)</pre>
+        <pre class="prettyprint linenums"><ol class="linenums"><li class="L0"><span class="kwd">while</span><span class="pln"> </span><span class="pun">(</span><span class="kwd">True</span><span class="pun">):</span></li><li class="L1"><span class="pln">	</span><span class="kwd">print</span><span class="pln"> </span><span class="str">"Forward! "</span></li><li class="L2"><span class="pln">	myMotor</span><span class="pun">.</span><span class="pln">run</span><span class="pun">(</span><span class="typ">Adafruit_MotorHAT</span><span class="pun">.</span><span class="pln">FORWARD</span><span class="pun">)</span></li><li class="L3"><span class="pln">&nbsp;</span></li><li class="L4"><span class="pln">	</span><span class="kwd">print</span><span class="pln"> </span><span class="str">"\tSpeed up..."</span></li><li class="L5"><span class="pln">	</span><span class="kwd">for</span><span class="pln"> i </span><span class="kwd">in</span><span class="pln"> range</span><span class="pun">(</span><span class="lit">255</span><span class="pun">):</span></li><li class="L6"><span class="pln">		myMotor</span><span class="pun">.</span><span class="pln">setSpeed</span><span class="pun">(</span><span class="pln">i</span><span class="pun">)</span></li><li class="L7"><span class="pln">		time</span><span class="pun">.</span><span class="pln">sleep</span><span class="pun">(</span><span class="lit">0.01</span><span class="pun">)</span></li><li class="L8"><span class="pln">&nbsp;</span></li><li class="L9"><span class="pln">	</span><span class="kwd">print</span><span class="pln"> </span><span class="str">"\tSlow down..."</span></li><li class="L0"><span class="pln">	</span><span class="kwd">for</span><span class="pln"> i </span><span class="kwd">in</span><span class="pln"> reversed</span><span class="pun">(</span><span class="pln">range</span><span class="pun">(</span><span class="lit">255</span><span class="pun">)):</span></li><li class="L1"><span class="pln">		myMotor</span><span class="pun">.</span><span class="pln">setSpeed</span><span class="pun">(</span><span class="pln">i</span><span class="pun">)</span></li><li class="L2"><span class="pln">		time</span><span class="pun">.</span><span class="pln">sleep</span><span class="pun">(</span><span class="lit">0.01</span><span class="pun">)</span></li><li class="L3"><span class="pln">&nbsp;</span></li><li class="L4"><span class="pln">	</span><span class="kwd">print</span><span class="pln"> </span><span class="str">"Backward! "</span></li><li class="L5"><span class="pln">	myMotor</span><span class="pun">.</span><span class="pln">run</span><span class="pun">(</span><span class="typ">Adafruit_MotorHAT</span><span class="pun">.</span><span class="pln">BACKWARD</span><span class="pun">)</span></li><li class="L6"><span class="pln">&nbsp;</span></li><li class="L7"><span class="pln">	</span><span class="kwd">print</span><span class="pln"> </span><span class="str">"\tSpeed up..."</span></li><li class="L8"><span class="pln">	</span><span class="kwd">for</span><span class="pln"> i </span><span class="kwd">in</span><span class="pln"> range</span><span class="pun">(</span><span class="lit">255</span><span class="pun">):</span></li><li class="L9"><span class="pln">		myMotor</span><span class="pun">.</span><span class="pln">setSpeed</span><span class="pun">(</span><span class="pln">i</span><span class="pun">)</span></li><li class="L0"><span class="pln">		time</span><span class="pun">.</span><span class="pln">sleep</span><span class="pun">(</span><span class="lit">0.01</span><span class="pun">)</span></li><li class="L1"><span class="pln">&nbsp;</span></li><li class="L2"><span class="pln">	</span><span class="kwd">print</span><span class="pln"> </span><span class="str">"\tSlow down..."</span></li><li class="L3"><span class="pln">	</span><span class="kwd">for</span><span class="pln"> i </span><span class="kwd">in</span><span class="pln"> reversed</span><span class="pun">(</span><span class="pln">range</span><span class="pun">(</span><span class="lit">255</span><span class="pun">)):</span></li><li class="L4"><span class="pln">		myMotor</span><span class="pun">.</span><span class="pln">setSpeed</span><span class="pun">(</span><span class="pln">i</span><span class="pun">)</span></li><li class="L5"><span class="pln">		time</span><span class="pun">.</span><span class="pln">sleep</span><span class="pun">(</span><span class="lit">0.01</span><span class="pun">)</span></li><li class="L6"><span class="pln">&nbsp;</span></li><li class="L7"><span class="pln">	</span><span class="kwd">print</span><span class="pln"> </span><span class="str">"Release"</span></li><li class="L8"><span class="pln">	myMotor</span><span class="pun">.</span><span class="pln">run</span><span class="pun">(</span><span class="typ">Adafruit_MotorHAT</span><span class="pun">.</span><span class="pln">RELEASE</span><span class="pun">)</span></li><li class="L9"><span class="pln">	time</span><span class="pun">.</span><span class="pln">sleep</span><span class="pun">(</span><span class="lit">1.0</span><span class="pun">)</span></li></ol></pre>
+      </div>
+
+								<div class="page-navigation">
+										<a class="previous-page" href="https://learn.adafruit.com/adafruit-dc-and-stepper-motor-hat-for-raspberry-pi/installing-software">
+											<i class="fa fa-chevron-left"></i>INSTALLING SOFTWARE
+</a>										<a class="next-page" href="https://learn.adafruit.com/adafruit-dc-and-stepper-motor-hat-for-raspberry-pi/using-stepper-motors">
+											USING STEPPER MOTORS<i class="fa fa-chevron-right"></i>
+</a>									<div class="clear"></div>
+								</div>
+								<span class="page-last-updated">Last updated on 2015-05-04 at 04.27.56 PM</span>
+									<span class="page-last-updated">Published on 2015-01-27 at 01.29.59 PM</span>
+							</div>
+					</div>
+				</article>
+				<div class="col-lg-two-and-half col-md-3 hidden-sm hidden-xs">
+  <header class="sidebar-right">
+    <div class="sidebar-right-content">
+      
+        <div class="product-wrapper">
+    <div class="product-image">
+      <a href="http://www.adafruit.com/product/2348">
+          <img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/2348-01.jpg" alt="2348-01.jpg" class="img-responsive" height="233">
+</a>    </div>
+    <div class="product-details">
+      <span class="product-price">$22.50</span>
+      <div class="product-title">Adafruit DC &amp; Stepper Motor HAT for Raspberry Pi - Mini Kit</div>
+        <a id="2348-product" class="product-buy" data-pid="2348" data-qty="1" href="http://www.adafruit.com/product/2348">
+          ADD TO CART
+</a>    </div>
+  </div>
+  <div class="product-wrapper">
+    <div class="product-image">
+      <a href="http://www.adafruit.com/product/368">
+          <img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/368-03.jpg" alt="368-03.jpg" class="img-responsive" height="233">
+</a>    </div>
+    <div class="product-details">
+      <span class="product-price">$2.00</span>
+      <div class="product-title">Female DC Power adapter - 2.1mm jack to screw terminal block</div>
+        <a id="368-product" class="product-buy" data-pid="368" data-qty="1" href="http://www.adafruit.com/product/368">
+          ADD TO CART
+</a>    </div>
+  </div>
+  <div class="product-wrapper">
+    <div class="product-image">
+      <a href="http://www.adafruit.com/product/324">
+          <img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/324-03.jpg" alt="324-03.jpg" class="img-responsive" height="233">
+</a>    </div>
+    <div class="product-details">
+      <span class="product-price">$14.00</span>
+      <div class="product-title">Stepper motor - NEMA-17 size - 200 steps/rev, 12V 350mA</div>
+        <a id="324-product" class="product-buy" data-pid="324" data-qty="1" href="http://www.adafruit.com/product/324">
+          ADD TO CART
+</a>    </div>
+  </div>
+  <div class="product-wrapper">
+    <div class="product-image">
+      <a href="http://www.adafruit.com/product/711">
+          <img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/711-06.jpg" alt="711-06.jpg" class="img-responsive" height="233">
+</a>    </div>
+    <div class="product-details">
+      <span class="product-price">$1.95</span>
+      <div class="product-title">DC Toy / Hobby Motor - 130 Size</div>
+        <a id="711-product" class="product-buy" data-pid="711" data-qty="1" href="http://www.adafruit.com/product/711">
+          ADD TO CART
+</a>    </div>
+  </div>
+  <div class="product-wrapper">
+    <div class="product-image">
+      <a href="http://www.adafruit.com/product/248">
+          <img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/248-00.jpg" alt="248-00.jpg" class="img-responsive" height="233">
+</a>    </div>
+    <div class="product-details">
+      <span class="product-price">$5.00</span>
+      <div class="product-title">6 x AA battery holder with 5.5mm/2.1mm plug</div>
+        <a id="248-product" class="product-buy" data-pid="248" data-qty="1" href="http://www.adafruit.com/product/248">
+          ADD TO CART
+</a>    </div>
+  </div>
+  <div class="product-wrapper">
+    <div class="product-image">
+      <a href="http://www.adafruit.com/product/830">
+          <img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/830-00.jpg" alt="830-00.jpg" class="img-responsive" height="233">
+</a>    </div>
+    <div class="product-details">
+      <span class="product-price">$2.95</span>
+      <div class="product-title">4 x AA Battery Holder with On/Off Switch</div>
+        <a id="830-product" class="product-buy" data-pid="830" data-qty="1" href="http://www.adafruit.com/product/830">
+          ADD TO CART
+</a>    </div>
+  </div>
+  <div class="product-wrapper">
+    <div class="product-image">
+      <a href="http://www.adafruit.com/product/875">
+          <img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/875-00.jpg" alt="875-00.jpg" class="img-responsive" height="233">
+</a>    </div>
+    <div class="product-details">
+      <span class="product-price">$5.95</span>
+      <div class="product-title">8 x AA battery holder with 5.5mm/2.1mm Plug and On/Off Switch</div>
+        <a id="875-product" class="product-buy" data-pid="875" data-qty="1" href="http://www.adafruit.com/product/875">
+          ADD TO CART
+</a>    </div>
+  </div>
+
+        <div class="add-all-to-cart-container">
+          <a class="add-all-to-cart" href="#">ADD ALL TO CART</a>
+          <div class="add-all-to-cart-progress"></div>
+        </div>
+      <div class="clear"></div>
+    </div>
+  </header>
+</div>
+
+			</div>
+		</div>
+			<div class="related-guides-wrapper container">
+  <div class="row">
+    <div class="related-guides-title col-lg-12">
+      <h2>
+        RELATED GUIDES
+      </h2>
+    </div>
+  </div>
+  <div class="related-guides-content row">
+    	<div class="855-guide masonry-block col-lg-3 col-md-3 col-sm-4 col-xs-12">
+        <div class="guide-block">
+            <div class="title-bar">
+                <div class="guide-categories">
+                    <ul>
+                            <li class="category ">
+                                <a href="https://learn.adafruit.com/category/leds">LEDS</a>
+                            </li>
+                            <li class="category child-category">
+                                    <a href="https://learn.adafruit.com/category/leds">LEDS</a>
+                                    <span class="category-link-spacer">/</span>
+                                <a href="https://learn.adafruit.com/category/led-strips">LED STRIPS</a>
+                            </li>
+                    </ul>
+                </div>
+                <a href="https://learn.adafruit.com/adafruit-dotstar-leds">
+                    <img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/dotstar-icon.jpg" class="img-responsive guide-image" data-standard-image="/system/guides/images/000/000/855/medium310/dotstar-icon.jpg?1419375086" data-mobile-image="/system/guides/images/000/000/855/medium800/dotstar-icon.jpg?1419375086">
+</a>                <div class="title">
+                    <h5>
+                        <a href="https://learn.adafruit.com/adafruit-dotstar-leds">
+                            Adafruit DotStar LEDs<br>
+</a>                    </h5>
+                                    <div class="tagline">
+                    <a href="https://learn.adafruit.com/adafruit-dotstar-leds">
+                    Imagine NeoPixels with a double shot of espresso…
+</a>                </div>
+                </div>
+            </div>
+
+            <div class="details">
+
+                <div class="description">
+                    <a href="https://learn.adafruit.com/adafruit-dotstar-leds">
+                        NeoPixel LEDs are the bee's knees, but in a few 
+scenarios they come up short…connecting odd microcontrollers that can’t 
+match their strict timing, or fast-moving persistence-of-vision 
+displays. Adafruit DotStar strips deliver high speed PWM and an 
+easy-to-drive two-wire interface, bridging the gaps in the spectrum of 
+awesome.
+</a>                </div>
+                    <a class="author" style="background-color: #FF6302;" data-hover-color="#d95402" data-default-color="#FF6302" href="https://learn.adafruit.com/users/pburgess">
+        <img alt="Author Gravatar Image" class="user-gravatar load-gravatar" data-gravatar_hash="7d19195b95e1d03ac4c6437aeaed9d15" src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/7d19195b95e1d03ac4c6437aeaed9d15.jpeg" height="30" width="30">
+        <span class="name">PHILLIP BURGESS</span>
+</a>    <div class="clear"></div>
+
+            </div>
+
+
+        </div>
+	</div>
+	<div class="552-guide masonry-block col-lg-3 col-md-3 col-sm-4 col-xs-12">
+        <div class="guide-block">
+            <div class="title-bar">
+                <div class="guide-categories">
+                    <ul>
+                            <li class="category ">
+                                <a href="https://learn.adafruit.com/category/components">COMPONENTS</a>
+                            </li>
+                            <li class="category ">
+                                <a href="https://learn.adafruit.com/category/robotics">ROBOTICS</a>
+                            </li>
+                    </ul>
+                </div>
+                    <div class="guide-type featured-guide">
+                        <a href="https://learn.adafruit.com/guides/featured">FEATURED</a>
+                    </div>
+                <a href="https://learn.adafruit.com/adafruit-motor-selection-guide">
+                    <img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/IMG_4846.jpg" class="img-responsive guide-image" data-standard-image="/system/guides/images/000/000/552/medium310/IMG_4846.jpg?1400437430" data-mobile-image="/system/guides/images/000/000/552/medium800/IMG_4846.jpg?1400437430">
+</a>                <div class="title">
+                    <h5>
+                        <a href="https://learn.adafruit.com/adafruit-motor-selection-guide">
+                            Adafruit Motor Selection Guide<br>
+</a>                    </h5>
+                                    <div class="tagline">
+                    <a href="https://learn.adafruit.com/adafruit-motor-selection-guide">
+                    Choose the right motor (and controller) for the job!
+</a>                </div>
+                </div>
+            </div>
+
+            <div class="details">
+
+                <div class="description">
+                    <a href="https://learn.adafruit.com/adafruit-motor-selection-guide">
+                        There are many types of motors. Big ones, small 
+ones, fast ones, strong ones. Whether you need brute strength, blinding 
+speed or delicate precision movement, there is a motor designed for the 
+task. This guide will help you find to the right motor for your project.
+</a>                </div>
+                    <a class="author" style="background-color: #FF6302;" data-hover-color="#d95402" data-default-color="#FF6302" href="https://learn.adafruit.com/users/adafruit_support_bill">
+        <img alt="Author Gravatar Image" class="user-gravatar load-gravatar" data-gravatar_hash="d41d8cd98f00b204e9800998ecf8427e" src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/d41d8cd98f00b204e9800998ecf8427e.jpeg" height="30" width="30">
+        <span class="name">BILL EARL</span>
+</a>    <div class="clear"></div>
+
+            </div>
+
+
+        </div>
+	</div>
+	<div class="457-guide masonry-block col-lg-3 col-md-3 col-sm-4 col-xs-12">
+        <div class="guide-block">
+            <div class="title-bar">
+                <div class="guide-categories">
+                    <ul>
+                            <li class="category child-category">
+                                    <a href="https://learn.adafruit.com/category/leds">LEDS</a>
+                                    <span class="category-link-spacer">/</span>
+                                <a href="https://learn.adafruit.com/category/led-strips">LED STRIPS</a>
+                            </li>
+                    </ul>
+                </div>
+                <a href="https://learn.adafruit.com/wifi-controlled-led-christmahanukwanzaa-tree">
+                    <img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/DSC00359_title.jpg" class="img-responsive guide-image" data-standard-image="/system/guides/images/000/000/457/medium310/DSC00359_title.jpg?1396716575" data-mobile-image="/system/guides/images/000/000/457/medium800/DSC00359_title.jpg?1396716575">
+</a>                <div class="title">
+                    <h5>
+                        <a href="https://learn.adafruit.com/wifi-controlled-led-christmahanukwanzaa-tree">
+                            WiFi Controlled LED Christmahanukwanzaa Tree<br>
+</a>                    </h5>
+                                    <div class="tagline">
+                    <a href="https://learn.adafruit.com/wifi-controlled-led-christmahanukwanzaa-tree">
+                    Control NeoPixels through the web to light up a tree for any holiday occasion!
+</a>                </div>
+                </div>
+            </div>
+
+            <div class="details">
+
+                <div class="description">
+                    <a href="https://learn.adafruit.com/wifi-controlled-led-christmahanukwanzaa-tree">
+                        Control the colors of a NeoPixel strip over a 
+WiFi network using either an Arduino Yun or CC3000 &amp; regular 
+Arduino.
+</a>                </div>
+                    <a class="author" style="background-color: #00cd56;" data-hover-color="#00ae49" data-default-color="#00cd56" href="https://learn.adafruit.com/users/tdicola">
+        <img alt="Author Gravatar Image" class="user-gravatar load-gravatar" data-gravatar_hash="aeabe842a307a6d1eaf5eeec3d28598f" src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/aeabe842a307a6d1eaf5eeec3d28598f.jpeg" height="30" width="30">
+        <span class="name">TONY DICOLA</span>
+</a>    <div class="clear"></div>
+
+            </div>
+
+
+        </div>
+	</div>
+	<div class="324-guide masonry-block col-lg-3 col-md-3 col-sm-4 col-xs-12">
+        <div class="guide-block">
+            <div class="title-bar">
+                <div class="guide-categories">
+                    <ul>
+                            <li class="category ">
+                                <a href="https://learn.adafruit.com/category/beaglebone">BEAGLEBONE</a>
+                            </li>
+                    </ul>
+                </div>
+                <a href="https://learn.adafruit.com/controlling-a-servo-with-a-beaglebone-black">
+                    <img src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/project_big_servo_web.jpg" class="img-responsive guide-image" data-standard-image="/system/guides/images/000/000/324/medium310/project_big_servo_web.jpg?1396718772" data-mobile-image="/system/guides/images/000/000/324/medium800/project_big_servo_web.jpg?1396718772">
+</a>                <div class="title">
+                    <h5>
+                        <a href="https://learn.adafruit.com/controlling-a-servo-with-a-beaglebone-black">
+                            Controlling a Servo with a BeagleBone Black<br>
+</a>                    </h5>
+                                    <div class="tagline">
+                    <a href="https://learn.adafruit.com/controlling-a-servo-with-a-beaglebone-black">
+                    Use a BeagleBone Black and Python to set the position of a servo
+</a>                </div>
+                </div>
+            </div>
+
+            <div class="details">
+
+                <div class="description">
+                    <a href="https://learn.adafruit.com/controlling-a-servo-with-a-beaglebone-black">
+                        In this tutorial, you will learn how to control a servo from Python using a BeagleBone Black (BBB).
+
+A Python test program will allow you to set the angle of the servo between 0 and 180 degrees.
+</a>                </div>
+                    <a class="author" style="background-color: #FF6302;" data-hover-color="#d95402" data-default-color="#FF6302" href="https://learn.adafruit.com/users/simonmonk">
+        <img alt="Author Gravatar Image" class="user-gravatar load-gravatar" data-gravatar_hash="d41d8cd98f00b204e9800998ecf8427e" src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/d41d8cd98f00b204e9800998ecf8427e.jpeg" height="30" width="30">
+        <span class="name">SIMON MONK</span>
+</a>    <div class="clear"></div>
+
+            </div>
+
+
+        </div>
+	</div>
+
+  </div>
+</div>
+
+		<div class="footer-spacer"></div>
+</div>
+
+
+
+  <div class="modal fade" id="notify-modal">
+    <div class="modal-dialog">
+      <div class="modal-content">  
+        <div class="modal-header">
+          <a href="#" class="close" data-dismiss="modal">×</a>
+          <h5>OUT OF STOCK NOTIFICATION</h5>
+        </div>
+        <div class="modal-body">
+          <p class="notify-modal-form-header"></p>
+          <div class="notify-modal-products"></div>
+          <form id="notify-modal-form" name="back_in_stock_notification">
+            <p class="notify-modal-form-notice"></p>
+            <div class="notify-modal-break"></div>
+            <div class="form-group">
+              <label class="inputLabel" for="name">YOUR NAME</label>
+              <input size="25" maxlength="64" name="name" type="text">
+            </div>
+
+            <div class="form-group">
+              <label class="inputLabel" for="email">YOUR EMAIL</label>
+              <input size="25" maxlength="96" name="email" type="email">
+            </div>
+          
+            <input name="daigo" style="display:none;" type="text">
+            <input name="notify_me" value="true" type="hidden">
+          </form>
+          <div id="notify-modal-success" style="display:none">
+            <p>You have been successfully subscribed to the Notification
+ List for this product and will therefore receive an e-mail from us when
+ it is back in stock!</p>
+            <p>For security reasons, an e-mail has been sent to you 
+acknowledging your subscription. Please remember that this subscription 
+will not result in you receiving any e-mail from us about anything other
+ than the restocking of this item.</p>
+            <p>If, for any reason, you would like to unsubscribe from 
+the Notification List for this product you will find details of how to 
+do so in the e-mail that has just been sent to you!</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <a href="#" id="close-notify" style="display: none" data-dismiss="modal" data-target="#notify-modal">CLOSE</a>
+          <a href="#" id="submit-notify" rel="nofollow" class="blue-button">NOTIFY ME</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+      </div>
+        <footer id="adafruit-footer">
+    <div id="footer-content" class="container">
+      <div class="row">
+        <div class=" col-lg-6 col-md-6 col-sm-4 col-xs-12">
+          <nav>
+            <ul>
+              <li><a href="http://www.adafruit.com/contact_us">CONTACT</a></li>
+              <li><a href="http://www.adafruit.com/support">SUPPORT</a>
+              </li><li><a href="http://www.adafruit.com/distributors">DISTRIBUTORS</a></li>
+              <li><a href="http://www.adafruit.com/educators">EDUCATORS</a></li>
+              <li><a href="http://www.adafruit.com/jobs">JOBS</a></li>
+              <li><a href="http://www.adafruit.com/faq">FAQ</a></li>
+              <li><a href="http://www.adafruit.com/shippinginfo/">SHIPPING &amp; RETURNS</a></li>
+              <li><a href="http://www.adafruit.com/terms_of_service/">TERMS OF SERVICE</a></li>
+              <li><a href="http://www.adafruit.com/privacy">PRIVACY &amp; LEGAL</a></li>
+              <li><a href="http://www.adafruit.com/about">ABOUT US</a></li>
+            </ul>
+          </nav>
+          <div id="footer-copyright">
+            <a href="http://nytm.org/made-in-nyc/">ENGINEERED IN NYC</a> <span>Adafruit&nbsp;®</span>
+          </div>
+        </div>
+        <div class="col-lg-6 col-md-6 col-sm-8 hidden-xs">
+          <div id="footer-quote" class="">
+            
+"People who are really serious about software should make their own hardware"
+            <span class="quote-author">- <a href="http://en.wikiquote.org/wiki/Alan_Kay">Alan Kay</a>
+</span>
+          </div>
+          
+        </div>
+        <div id="footer-seals">
+          <img class="img-responsive" src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/seals_2x.jpg" alt="Seals 2x">
+        </div>
+      </div>
+    </div>
+  </footer>
+
+    </div>
+  </div>
+
+    <!-- Google Analytics -->
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-7723544-1']);
+      _gaq.push(['_setDomainName', 'adafruit.com']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+
+    </script>
+  <script src="Using%20DC%20Motors%20%7C%20Adafruit%20DC%20and%20Stepper%20Motor%20HAT%20for%20Raspberry%20Pi%20%7C%20Adafruit%20Learning%20System_files/application-735d3ed7d84ebc4e04c5d8f9e22f39658210ac858fd763d84.js"></script>
+  <script type="application/ld+json">
+    {
+      "@context": "http://schema.org",
+      "@type": "WebSite",
+      "url": "https://learn.adafruit.com/",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://learn.adafruit.com/search?q={search_term}",
+        "query-input": "required name=search_term"
+      }
+    }
+  </script>
+
+
+</body></html>

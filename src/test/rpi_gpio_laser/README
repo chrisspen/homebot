@@ -1,0 +1,16 @@
+Control a 3V 35mA laser from a GPIO pin.
+
+Vin----[ R1 ]-----[ R2 ]---GND
+                 |
+                 |
+                 |
+               Vout
+               
+>>> Vout = lambda Vin, R1, R2: Vin * R2/float(R1 + R2)
+>>> Vout(Vin=5, R1=10000, R2=20000)
+3.3
+
+References:
+
+    http://electronics.stackexchange.com/questions/80437/using-a-microcontroller-to-turn-on-led-strip?noredirect=1#comment157839_80437
+    https://www.raspberrypi.org/forums/viewtopic.php?f=44&t=92169

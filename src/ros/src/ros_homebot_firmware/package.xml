@@ -1,0 +1,13 @@
+<package>
+  <name>ros_homebot_firmware</name>
+  <version>0.2.0</version>
+  <description>
+    ROS Arduino Firmware.
+  </description>
+  <author>Chris Spencer</author>
+  <maintainer email="chrisspen@gmail.com">Chris Spencer</maintainer>
+  <license>BSD</license>
+  <url></url>
+  
+  <buildtool_depend>catkin</buildtool_depend>
+</package>

@@ -1,0 +1,2 @@
+#!/bin/bash
+rostopic pub toggle_led std_msgs/Empty --once

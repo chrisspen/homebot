@@ -1,0 +1,6 @@
+Test controlling neck/head pan motor from Arduino.
+
+Note, motor must have a separate power supply, otherwise it jitters considerably and/or causes the Arduino to reset.
+
+https://www.arduino.cc/en/Tutorial/PWM
+https://www.arduino.cc/en/Reference/AnalogWrite

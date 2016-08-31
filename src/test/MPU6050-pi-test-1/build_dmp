@@ -1,0 +1,7 @@
+#!/bin/bash
+[ -f ./demo_dmp ] && rm ./demo_dmp
+PATH_I2CDEVLIB=/tmp/i2cdevlib/
+time gcc -o demo_dmp demo_dmp.cpp \
+ -I ${PATH_I2CDEVLIB}RaspberryPi_bcm2835/I2Cdev ${PATH_I2CDEVLIB}RaspberryPi_bcm2835/I2Cdev/I2Cdev.cpp \
+ -I ${PATH_I2CDEVLIB}Arduino/MPU6050/ ${PATH_I2CDEVLIB}Arduino/MPU6050/MPU6050.cpp -l bcm2835 -l m
+echo "Now run with: sudo ./demo_dmp"

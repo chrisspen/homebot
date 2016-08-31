@@ -1,0 +1,44 @@
+Describes the messages and services provided by the nodes.
+
+http://wiki.ros.org/msg
+
+    Each field consists of a type and a name, separated by a space, i.e.:
+    
+        fieldtype1 fieldname1
+        fieldtype2 fieldname2
+        fieldtype3 fieldname3
+    
+    For example:
+    
+        int32 x
+        int32 y
+
+http://wiki.ros.org/srv
+
+    Format:
+        
+        <request>
+        ----
+        <response>
+
+See all available message types with:
+
+    rosmsg list
+
+Check message with:
+
+    rosmsg show ros_homebot_msgs/Pong
+    rosmsg show ros_homebot_msgs/PacketRead
+
+Check service with:
+
+    rossrv show ros_homebot_msgs/AnalogWrite
+
+See a list of available topics with:
+
+    rostopic list |grep -i arduino
+
+Read a stream of messages with:
+
+    rostopic echo /torso_arduino/pong
+    rostopic echo /torso_arduino/packet_read

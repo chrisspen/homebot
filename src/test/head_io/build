@@ -1,0 +1,12 @@
+#!/bin/bash
+set -e
+
+[ ! -f src/ArduinoPinout.h ] && ln -s ../../../firmware/head_arduino/src/ArduinoPinout.h src/ArduinoPinout.h
+[ ! -f src/NeckPositionSensor.h ] && ln -s ../../../firmware/head_arduino/src/NeckPositionSensor.h src/NeckPositionSensor.h
+[ ! -f src/PanMotor.h ] && ln -s ../../../firmware/head_arduino/src/PanMotor.h src/PanMotor.h
+[ ! -f src/SerialPort.h ] && ln -s ../../../firmware/head_arduino/src/SerialPort.h src/SerialPort.h
+
+ano build
+ano upload
+#sleep 3; ano serial
+#Press Ctrl+A Ctrl+X to exit.

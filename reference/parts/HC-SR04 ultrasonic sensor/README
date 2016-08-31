@@ -1,0 +1,5 @@
+HC-SR04
+
+Note, even though it has two pins for Trig and Echo, these can be shorted to create a three-pin interface.
+
+https://bitbucket.org/teckel12/arduino-new-ping/wiki/Home#!examples

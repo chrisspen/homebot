@@ -1,0 +1,17 @@
+inherits: all
+
+hosts: ['localhost']
+
+is_local: true
+
+project_home: .
+
+services:
+#-   avahi
+#-   rpi
+#-   avahi
+#-   nm
+#-   mail
+-   ros
+
+#nm_check_enabled: true

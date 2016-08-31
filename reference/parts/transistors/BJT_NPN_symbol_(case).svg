@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="77"
+   height="77"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.48.4 r9939"
+   sodipodi:docname="BJT_NPN_symbol_(case).svg">
+  <metadata
+     id="metadata20">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs18" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="1"
+     inkscape:pageshadow="2"
+     inkscape:window-width="795"
+     inkscape:window-height="480"
+     id="namedview16"
+     showgrid="false"
+     inkscape:zoom="3.0649351"
+     inkscape:cx="98.697034"
+     inkscape:cy="38.5"
+     inkscape:window-x="0"
+     inkscape:window-y="27"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg2" />
+  <rect
+     style="color:#000000;fill:#ffffff;stroke:none;stroke-width:0.28999998999999999;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:0.28999999999999998, 0.28999999999999998;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;fill-opacity:1"
+     id="rect2987"
+     width="77.326271"
+     height="77.326271"
+     x="0.32627118"
+     y="0.32627118" />
+  <g
+     font-size="18px"
+     font-family="Times New Roman"
+     id="g4">
+    <text
+       y="34"
+       id="text6">B</text>
+    <text
+       x="64"
+       y="17"
+       id="text8">C</text>
+    <text
+       x="64"
+       y="74"
+       id="text10">E</text>
+  </g>
+  <g
+     stroke="#000"
+     stroke-width="3.6"
+     fill="none"
+     id="g12">
+    <path
+       d="m56,2v14L36,30m0,16l20,14v14M6,38H34.3m0-17v34m1.4,0V21M46,56l3-4 4,6zM14,37a28,28 0 1,1 0,2"
+       id="path14" />
+  </g>
+</svg>

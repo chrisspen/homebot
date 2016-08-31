@@ -1,0 +1,18 @@
+Reads acceleration and rotation data.
+
+References:
+
+    http://playground.arduino.cc/Main/MPU-6050
+    http://mediatechnology.leiden.edu/openaccess/arduino
+    http://diyhacking.com/arduino-mpu-6050-imu-sensor-tutorial/
+    http://www.i2cdevlib.com/devices/mpu6050#source
+
+CD+- = A4,A5,Gnd,Vcc = SDA,SCL,Gnd,Vcc
+SDA=A4=D
+SCL=A5=C
+
+Note, the device send 14 bytes representing 7 2-byte (16-bit) numbers. The documentation postfixes them with H for high and L for low.
+
+This example reads two at a time directly into a 16-bit integer.
+
+    http://playground.arduino.cc/Main/MPU-6050#short

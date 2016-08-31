@@ -1,0 +1,18 @@
+<package>
+  <name>ros_homebot_teleop</name>
+  <version>0.2.0</version>
+  <description>
+    ROS Arduino Python.
+  </description>
+  <author>Chris Spencer</author>
+  <maintainer email="chrisspen@gmail.com">Chris Spencer</maintainer>
+  <license>BSD</license>
+  <url></url>
+  
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <run_depend>rospy</run_depend>
+  <run_depend>ros_homebot_msgs</run_depend>
+  <run_depend>ros_homebot_python</run_depend>
+  
+</package>

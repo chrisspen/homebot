@@ -1,0 +1,3 @@
+Tests the Arduino's ability to switch a 12V supply using a power mosfet.
+
+See the head_power circuit.

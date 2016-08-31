@@ -1,0 +1,9 @@
+#!/bin/bash
+set -e
+
+[ ! -f src/ArduinoPinout.h ] && ln -s ../../../firmware/head_arduino/src/ArduinoPinout.h src/ArduinoPinout.h
+
+ano build
+ano upload
+sleep 3; ano serial
+#Press Ctrl+A Ctrl+X to exit.

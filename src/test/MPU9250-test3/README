@@ -1,0 +1,5 @@
+Reads CALIBRATED acceleration, gyroscope and compass data from an MPU9250.
+
+https://github.com/kriswiner/MPU-9250
+
+DOES NOT WORK

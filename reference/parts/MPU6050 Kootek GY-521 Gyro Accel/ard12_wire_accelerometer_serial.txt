@@ -1,0 +1,44 @@
+// This example read 14 values from an MPU-6050 digital accelerometer/gyroscope,
+// using the Wire library for Arduino. It sends these values over the serial line
+// to a PC.
+// These values are 6 bytes acceleration measurements, 2 bytes temperature
+// measurement, 6 bytes gyroscope measurements.
+
+#include<Wire.h>
+
+const int address=0x68;              // I2C address of the MPU-6050 accelerometer
+
+void setup(){
+  // the following lines of code init the Wire library and wake-up the accelerometer
+  Wire.begin();
+  Wire.beginTransmission(address);   // speak with I2C address 0x68
+  Wire.write(0x6B);
+  Wire.write(0);
+  Wire.endTransmission(true);
+  // initiate serial communication with the PC
+  Serial.begin(57600);
+}
+
+void loop(){
+  Wire.beginTransmission(address);
+  Wire.write(0x3B);                   // starting action at register 0x3B
+  Wire.endTransmission(false);
+
+  Wire.requestFrom(address,14,true);  // request values from 14 registers (0x3B .. 0x48)
+  Serial.write('#');                  // ... and send them over the serial line
+  Serial.write(Wire.read());          // ACCEL_XOUT_H
+  Serial.write(Wire.read());          // ACCEL_XOUT_L
+  Serial.write(Wire.read());          // ACCEL_YOUT_H
+  Serial.write(Wire.read());          // ACCEL_YOUT_L
+  Serial.write(Wire.read());          // ACCEL_ZOUT_H
+  Serial.write(Wire.read());          // ACCEL_ZOUT_L
+  Serial.write(Wire.read());          // TEMP_OUT_H
+  Serial.write(Wire.read());          // TEMP_OUT_L
+  Serial.write(Wire.read());          // GYRO_XOUT_H
+  Serial.write(Wire.read());          // GYRO_XOUT_L
+  Serial.write(Wire.read());          // GYRO_YOUT_H
+  Serial.write(Wire.read());          // GYRO_YOUT_L
+  Serial.write(Wire.read());          // GYRO_ZOUT_H
+  Serial.write(Wire.read());          // GYRO_ZOUT_L
+  delay(500);                         // wait 0.5 seconds
+}

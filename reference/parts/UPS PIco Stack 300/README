@@ -1,0 +1,72 @@
+http://www.pimodulescart.com/shop/item.aspx?itemid=5
+
+Ordered Item contains:
+
+    UPS PIco PCB with all described below long list features
+    LiPO Battery 300 mAh
+    6 Pin header for 1-wire, A/D1 A/D2 (not soldered)
+    Gold Plated Reset Pin
+    Buzzer (not soldered)
+    Rubber Spacer
+
+Ordered Item does not contain and should be ordered separately if needed for specific application:
+
+    Infrared Receiver
+    PIco Fan Kit
+    PIco LiPO Battery 3000 mAh
+
+ 
+System Overview
+
+The UPS PIco is an advanced uninterruptible power supply for the Raspberry Pi® that adds a wealth of innovative power back-up functionality and development features to the innovative microcomputer!
+
+The standard UPS PIco is equipped with a 300mAh LiPO battery specially designed to enable safe shutdown during a power cut. Additionally, this can be easily upgraded to the extended 3000mAh version, which enables prolonged use of a Raspberry Pi for up to 8 hours without a power supply connected!
+
+The UPS PIco features an embedded measurement system that continuously checks the powering voltage of the Raspberry Pi®. When the cable power on the Raspberry Pi® is absent, insufficient, or the device detects a power failure, the UPS Pico automatically switches to the unit’s battery source. The module then continues to check the voltage on the Pi and switches automatically back to the regular cable supply when power is once again available.
+
+The UPS PIco is powered and the battery pack intelligently charged via the GPIO pins on the Raspberry Pi®, so no additional cabling or power supply is required.
+
+The UPS PIco is designed to be 100% compliant with HAT standards for the Raspberry Pi® B+ and A+, and is mechanically compatible with the original Raspberry Pi® models A and B when an extension header is used. In addition to this, because the UPS Pico requires no external powering and fits within the footprint of the Raspberry Pi®, it is compatible with most cases.
+
+The UPS PIco can also be equipped with an optional Infra-Red Receiver which is routed directly to GPIO18 via the PCB. This opens the door for remote operation of the Raspberry Pi and UPS Pico!
+
+Finally, the UPS Pico features an implemented Automatic Temperature Control PWM FAN controller, and can be equipped with a micro fan kit, which enables the use of the Raspberry Pi® in extreme conditions including very high temperature environments.
+Applications
+
+UPS PIco is equipped with plenty of features which make it an extremely useful tool for Raspberry Pi® project development. It not only provides powering continuity, but also offers extra user programmable LEDs, Sensors, buttons and I/O’s. The unit also features a dedicated 10-bit analogue to digital converter with two channels making it the perfect board for remote and unmanned sensor deployment.  These extra features result in the UPS Pico being a superior all-in-one device perfect for many innovative projects, and embedded applications.
+Features
+
+The list of features of the UPS PIco is as follows:
+
+    Raspberry Pi B+ HAT Compliant
+    Plug and Play
+    Smart Uninterruptible Power Supply (UPS)
+    Integrated LiPO Battery (8-10 Minutes of Power Back-Up)
+    Intelligent Automatic Charger
+    No Additional External Power Required
+    Additional 3000 mAh Battery for 8 Hours Run-Time (Not Included)
+    5V 2A Power Backup (Peak Output 5V 3A)
+    Integrated Software Simulated Real Time Clock (RTC) with Battery Back-Up
+    File Safe Shutdown Functionality
+    Raspberry Pi B+ Activity Pin
+    PWM FAN control (Fan Not Included)
+    2 User Defined LEDs
+    2 User Defined Buttons
+    Integrated Buzzer for UPS and User Applications
+    Status Monitoring - Powering Voltage, UPS Battery Voltage and Temperature
+    I2C PIco Interface for Control and Monitoring
+    RS232 Raspberry Pi Interface for Control and Monitoring
+    XTEA Based Cryptography User Software Protection
+    2 Level  Watch-dog Functionality with FSSD and Hardware Reset
+    Raspberry Pi B+ Hardware Reset Button via Spring Test Pin (Not Included)
+    Jumpers for Raspberry Pi B+  Pin Functionality Selection
+    Event Driven, RTC Time Based, Raspberry Pi ON/OFF Scheduler
+    Stackable Header  for Add-On Boards
+    Boot Loader for Live Firmware Update
+    Compatible with Intelligent IR Remote Power ON/OFF (PowerMyPi)
+    Integrated ESD-Protected 2 Channel A/D 10 Bit Converters 0-5.2V
+    Integrated ESD-Protected 1-Wire Interface
+    Labeled J8 Raspberry Pi B+ GPIO Pins for Easy Plug & Play
+    Infra Red Receiver Sensor Interface (IR Not Included)
+    Upgradable with PIco Add-on Boards
+    Fits Inside Most Existing Cases

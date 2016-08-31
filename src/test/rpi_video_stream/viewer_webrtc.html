@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <title>UV4L Video Conferencing</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <link rel="stylesheet" href="http://cdn.webrtc-experiment.com/style.css">
+
+        <style>
+            audio,
+            video {
+                -moz-transition: all 1s ease;
+                -ms-transition: all 1s ease;
+                -o-transition: all 1s ease;
+                -webkit-transition: all 1s ease;
+                transition: all 1s ease;
+                vertical-align: top;
+            }
+        </style>
+        <script>
+            document.createElement('article');
+        </script>
+
+        <!-- scripts used for broadcasting -->
+        <script src="http://cdn.webrtc-experiment.com/firebase.js">
+        </script>
+        <script src="http://cdn.webrtc-experiment.com/RTCMultiConnection.js">
+        </script>
+    </head>
+
+    <body>
+        <article>
+            <section class="experiment">
+                <p>
+                    <small>
+                        This is a standard Web application allowing Multi-Peer-To-Peer Conferences between browsers and/or other WebRTC-compliant peers.
+                        You can optionally capture and stream Audio & Video from Local Media or from a Remote Peer running the UV4L Streaming Server (e.g. RaspberryPi 2 with Camera and Microphone).
+                        By default created sessions are listed publicly, but can be password protected. To make them private, click on Private Room first and share the link with other participants.
+                    </small>
+                </p>
+                <section>
+                    <label>Media</label>
+                    <select id="usermedia">
+                        <option value="remote">Remote Peer
+                        <option value="local">Local Devices
+                        <option value="nothing">Nothing
+                    </select>
+                    <label>&nbsp;Signalling Server</label>
+                    <input type="text" id="signalling_server" value="<host>:8080" title="<host>:<port> for Remote Peer (i.e. host running the UV4L Streaming Server, e.g. RPi address)"/>
+                    <br>
+                </section>
+                <section>
+                    <label>Session Name</label>
+                    <input type="text" id="conference-name" title="Session name">
+                    <button id="setup-new-conference" class="setup">Start New Conference</button>
+                    <br>
+                    <span>
+                        <label>Click here for Private Room:</label>
+                        <a href="" target="_blank" title="Click on this link to open a private room!">
+                            <code>
+                                <strong id="unique-token">#123456789</strong>
+                            </code>
+                        </a>
+                    </span>
+                </section>
+
+                <!-- list of all available broadcasting rooms -->
+                <table style="width: 100%;" id="rooms-list"></table>
+
+                <!-- local/remote videos container -->
+                <div id="videos-container"></div>
+            </section>
+
+            <script>
+                var ws = null;
+                var pc;
+                var pcConfig = {"iceServers": [
+                        {url: "stun:stun.l.google.com:19302"}
+                    ]};
+                var pcOptions = {
+                    optional: [
+                        {DtlsSrtpKeyAgreement: true}
+                    ]
+                };
+                var mediaConstraints = {
+                    optional: [],
+                    mandatory: {
+                        OfferToReceiveAudio: true,
+                        OfferToReceiveVideo: true
+                    }
+                };
+
+                RTCPeerConnection = window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
+                RTCSessionDescription = window.mozRTCSessionDescription || window.RTCSessionDescription;
+                RTCIceCandidate = window.mozRTCIceCandidate || window.RTCIceCandidate;
+                getUserMedia = navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
+                URL = window.webkitURL || window.URL;
+
+                function createPeerConnection() {
+                    try {
+                        pc = new RTCPeerConnection(pcConfig, pcOptions);
+                        pc.onicecandidate = onIceCandidate;
+                        pc.onaddstream = onRemoteStreamAdded;
+                        pc.onremovestream = onRemoteStreamRemoved;
+                        console.log("peer connection successfully created!");
+                    } catch (e) {
+                        console.log("createPeerConnection() failed");
+                    }
+                }
+
+                function onIceCandidate(event) {
+                    if (event.candidate) {
+                        var candidate = {
+                            sdpMLineIndex: event.candidate.sdpMLineIndex,
+                            sdpMid: event.candidate.sdpMid,
+                            candidate: event.candidate.candidate
+                        };
+                        var command = {
+                            command_id: "addicecandidate",
+                            data: JSON.stringify(candidate)
+                        };
+                        ws.send(JSON.stringify(command));
+                    } else {
+                        console.log("End of candidates.");
+                    }
+                }
+
+                function onRemoteStreamAdded(event) {
+                    connection.attachExternalStream(event.stream, false);
+                    if (!connection.isInitiator)
+                        connection.renegotiate();
+                }
+
+                function onRemoteStreamRemoved(event) {
+                    connection.removeStream(event.stream);
+                }
+
+                function start() {
+                    if ("WebSocket" in window) {
+                        server = document.getElementById("signalling_server").value.toLowerCase();
+
+                        ws = new WebSocket('ws://' + server + '/stream/webrtc');
+                        ws.onopen = function () {
+                            console.log("onopen()");
+                            createPeerConnection();
+                            var command = {
+                                command_id: "offer"
+                            };
+                            ws.send(JSON.stringify(command));
+                            console.log("onopen(), command=" + JSON.stringify(command));
+                        };
+
+                        ws.onmessage = function (evt) {
+                            var msg = JSON.parse(evt.data);
+                            //console.log("message=" + msg);
+                            console.log("type=" + msg.type);
+
+                            switch (msg.type) {
+                                case "offer":
+                                    pc.setRemoteDescription(new RTCSessionDescription(msg),
+                                            function onRemoteSdpSuccess() {
+                                                console.log('onRemoteSdpSucces()');
+                                                pc.createAnswer(function (sessionDescription) {
+                                                    pc.setLocalDescription(sessionDescription);
+                                                    var command = {
+                                                        command_id: "answer",
+                                                        data: JSON.stringify(sessionDescription)
+                                                    };
+                                                    ws.send(JSON.stringify(command));
+                                                    console.log(command);
+
+                                                }, function (error) {
+                                                    alert("Failed to createAnswer: " + error);
+
+                                                }, mediaConstraints);
+                                            },
+                                            function onRemoteSdpError(event) {
+                                                alert('Failed to setRemoteDescription: ' + event);
+                                            }
+                                    );
+
+                                    var command = {
+                                        command_id: "geticecandidate"
+                                    };
+                                    console.log(command);
+                                    ws.send(JSON.stringify(command));
+                                    break;
+
+                                case "answer":
+                                    break;
+
+                                case "message":
+                                    alert(msg.data);
+                                    break;
+
+                                case "geticecandidate":
+                                    var candidates = JSON.parse(msg.data);
+                                    for (var i = 0; i < candidates.length; i++) {
+                                        var elt = candidates[i];
+                                        var candidate = new RTCIceCandidate({sdpMLineIndex: elt.sdpMLineIndex, candidate: elt.candidate});
+                                        pc.addIceCandidate(candidate,
+                                                function () {
+                                                    console.log("IceCandidate added: " + JSON.stringify(candidate));
+                                                },
+                                                function (error) {
+                                                    console.log("addIceCandidate error: " + error);
+                                                }
+                                        );
+                                    }
+                                    document.documentElement.style.cursor = 'default';
+                                    break;
+                            }
+                        };
+
+                        ws.onclose = function (evt) {
+                            if (pc) {
+                                pc.close();
+                                pc = null;
+                            }
+                        };
+
+                        ws.onerror = function (evt) {
+                            alert("An error has occurred!");
+                            ws.close();
+                        };
+
+                    } else {
+                        alert("Sorry, this browser does not support WebSockets.");
+                    }
+                }
+
+                function stop() {
+                    if (pc) {
+                        pc.close();
+                        pc = null;
+                    }
+                    if (ws) {
+                        ws.close();
+                        ws = null;
+                    }
+                }
+
+                var connection = new RTCMultiConnection();
+                connection.session = {
+                    audio: true,
+                    video: true
+                };
+
+                connection.onstream = function (e) {
+                    e.mediaElement.width = 600;
+                    videosContainer.insertBefore(e.mediaElement, videosContainer.firstChild);
+                    scaleVideos();
+                };
+
+                connection.onstreamended = function (e) {
+                    e.mediaElement.style.opacity = 0;
+                    setTimeout(function () {
+                        if (e.mediaElement.parentNode) {
+                            e.mediaElement.parentNode.removeChild(e.mediaElement);
+                        }
+                        scaleVideos();
+                    }, 1000);
+                };
+
+                var sessions = {};
+                connection.onNewSession = function (session) {
+                    if (sessions[session.sessionid])
+                        return;
+                    sessions[session.sessionid] = session;
+
+                    var tr = document.createElement('tr');
+                    tr.innerHTML = '<td><strong>' + session.extra['session-name'] + '</strong> is running a conference!</td>' +
+                            '<td><button class="join">Join</button></td>';
+                    roomsList.insertBefore(tr, roomsList.firstChild);
+
+                    var joinRoomButton = tr.querySelector('.join');
+                    joinRoomButton.setAttribute('data-sessionid', session.sessionid);
+                    joinRoomButton.onclick = function () {
+                        this.disabled = true;
+
+                        var sessionid = this.getAttribute('data-sessionid');
+                        session = sessions[sessionid];
+
+                        if (!session)
+                            throw 'No such session exists.';
+
+                        // set password for person who is trying to join the room
+                        var password = prompt('Enter the password to join this room.');
+                        if (password == null) {
+                            return;
+                        }
+                        connection.extra.password = password;
+                        connection.dontCaptureUserMedia = (usermedia.value == 'local') ? false : true;
+                        connection.join(session);
+                        if (usermedia.value == 'remote')
+                            start();
+                    };
+                };
+
+                connection.onstatechange = function (state) {
+                    // state.userid == 'target-userid' || 'browser'
+                    // state.extra  == 'target-user-extra-data' || {}
+                    // state.name  == 'short name'
+                    // state.reason == 'longer description'
+                    if (state.name == 'request-rejected') {
+                        alert(state.reason);
+                    }
+                };
+
+                var usermedia = document.getElementById('usermedia');
+                var videosContainer = document.getElementById('videos-container') || document.body;
+                var roomsList = document.getElementById('rooms-list');
+
+                usermedia.addEventListener("change", function () {
+                    document.getElementById("signalling_server").disabled = (usermedia.options[usermedia.selectedIndex].value != "remote");
+                }, true);
+
+                document.getElementById('setup-new-conference').onclick = function () {
+                    this.disabled = true;
+                    connection.extra = {
+                        'session-name': document.getElementById('conference-name').value || 'Anonymous'
+                    };
+
+                    // room password has been set before calling "open" method
+                    var password = prompt('Setup password for this room!');
+                    if (password == null) {
+                        return;
+                    }
+                    connection.extra.password = password;
+                    connection.dontCaptureUserMedia = (usermedia.value == 'local') ? false : true;
+                    connection.open();
+                    if (usermedia.value == 'remote')
+                        start();
+                };
+
+                connection.onRequest = function (e) {
+                    // validating password in "onRequest"
+                    if (e.extra.password != connection.extra.password) {
+                        connection.reject(e);
+                        return;
+                    }
+                    connection.accept(e);
+                };
+
+                // setup signaling to search existing sessions
+                connection.connect();
+
+                (function () {
+                    var uniqueToken = document.getElementById('unique-token');
+                    if (uniqueToken)
+                        if (location.hash.length > 2)
+                            uniqueToken.parentNode.parentNode.parentNode.innerHTML = '<h2 style="text-align:center;"><a href="' + location.href + '" target="_blank">Share this link</a></h2>';
+                        else
+                            uniqueToken.innerHTML = uniqueToken.parentNode.parentNode.href = '#' + (Math.random() * new Date().getTime()).toString(36).toUpperCase().replace(/\./g, '-');
+                })();
+
+                function scaleVideos() {
+                    var videos = document.querySelectorAll('video'),
+                            length = videos.length,
+                            video;
+
+                    var minus = 130;
+                    var windowHeight = 700;
+                    var windowWidth = 600;
+                    var windowAspectRatio = windowWidth / windowHeight;
+                    var videoAspectRatio = 4 / 3;
+                    var blockAspectRatio;
+                    var tempVideoWidth = 0;
+                    var maxVideoWidth = 0;
+
+                    for (var i = length; i > 0; i--) {
+                        blockAspectRatio = i * videoAspectRatio / Math.ceil(length / i);
+                        if (blockAspectRatio <= windowAspectRatio) {
+                            tempVideoWidth = videoAspectRatio * windowHeight / Math.ceil(length / i);
+                        } else {
+                            tempVideoWidth = windowWidth / i;
+                        }
+                        if (tempVideoWidth > maxVideoWidth)
+                            maxVideoWidth = tempVideoWidth;
+                    }
+                    for (var i = 0; i < length; i++) {
+                        video = videos[i];
+                        if (video)
+                            video.width = maxVideoWidth - minus;
+                    }
+                }
+
+                window.onresize = scaleVideos;
+            </script>
+        </article>
+    </body>
+</html>

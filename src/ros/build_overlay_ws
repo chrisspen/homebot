@@ -1,0 +1,17 @@
+#!/bin/bash
+# Builds the overlay workspace for containing third-party code
+# we don't want to commit locally.
+set -e
+
+cd ..
+mkdir -p overlay/src
+cd overlay/src
+
+# Added dependencies here.
+[ ! -d rpi_gpio ] && git clone https://github.com/chrisspen/rpi_gpio.git rpi_gpio
+[ ! -d raspicam ] && git clone https://github.com/chrisspen/raspicam_node.git raspicam
+
+source /opt/ros/kinetic/setup.bash
+cd ..
+catkin_make
+#catkin_make --pkg rpi_gpio

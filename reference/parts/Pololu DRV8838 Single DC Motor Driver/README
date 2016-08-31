@@ -1,0 +1,23 @@
+https://www.pololu.com/product/2990
+
+This tiny breakout board for TI’s DRV8838 motor driver can deliver a continuous 1.7 A (1.8 A peak) to a single brushed DC motor. With an operating voltage range from 0 V to 11 V and built-in protection against reverse-voltage, under-voltage, over-current, and over-temperature, this driver is a great solution for powering a small, low-voltage motor. The carrier board has the form factor of a 10-pin DIP package, which makes it easy to use with standard solderless breadboards and 0.1″ perfboards.
+
+Size:   0.4″ × 0.5″
+Weight:     0.3 g
+
+Motor driver:   DRV8838
+Motor channels:     1
+Minimum operating voltage:  0 V
+Maximum operating voltage:  11 V
+Continuous output current per channel:  1.7 A2
+Peak output current per channel:    1.8 A
+Maximum PWM frequency:  250 kHz
+Minimum logic voltage:  1.8 V
+Maximum logic voltage:  7 V
+Reverse voltage protection?:    Y 
+
+Sleep   PH  EN  Result
+0       x   x   coast
+1       x   0   brake
+1       1   1   reverse
+1       0   1   forward

@@ -1,0 +1,4 @@
+description: Wiring of the RGB LED used in the head.
+status: production
+parts:
+    head_led.fzz: Simple wiring from the RGB pins 3 Arduino pins and a common ground.

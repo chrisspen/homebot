@@ -1,0 +1,5 @@
+https://learn.sparkfun.com/tutorials/voltage-dividers/all?print=1
+
+>>> Vout = lambda Vin, R1, R2: Vin * R2 / float(R1 + R2)
+>>> Vout(Vin=12, R1=1500000, R2=1000000)
+4.8

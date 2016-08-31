@@ -1,0 +1,31 @@
+THIS WAS A FAILURE. DOESN'T WORK AND CONSUMES NEARLY ALL OF THE UNO'S MEMORY JUST TO BLINK AN LED. DO NO USE.
+
+Test controlling head servo from Arduino.
+
+Note, servo must have a separate power supply, otherwise it jitters considerably and/or causes the Arduino to reset.
+
+Requires these packages:
+
+    sudo apt-get install ros-indigo-rosserial-arduino ros-indigo-rosserial ros-indigo-rosserial-client ros-indigo-angles
+
+In the lib directory, run:
+
+    rosrun rosserial_arduino make_libraries.py .
+
+Based on the ROS Arduino tutorials:
+
+    http://wiki.ros.org/rosserial_arduino/Tutorials/Blink
+
+After uploading and running the code on the Arduino, launch two new terminals:
+
+    roscore
+    
+and:
+
+    rosrun rosserial_python serial_node.py /dev/ttyACM0
+    rosrun rosserial_python serial_node.py _port:=/dev/ttyACM0
+    
+and then to actually blink:
+
+    rostopic pub toggle_led std_msgs/Empty --once
+    

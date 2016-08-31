@@ -1,0 +1,3 @@
+Tests basic IO.
+
+If the ground sensors, contact sensors or ultrasonic sensors detect an event, the D13 LED lights up.

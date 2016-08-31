@@ -1,0 +1,5 @@
+Tests Pololu Sharp GP2Y0D805Z0F Distance Sensor
+
+https://www.pololu.com/product/1132
+
+Arduino should simply look for a high/low signal on digital input pin 12.

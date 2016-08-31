@@ -1,0 +1,20 @@
+Kootek GY-521
+
+http://playground.arduino.cc/Main/MPU-6050
+
+http://www.amazon.com/Kootek-MPU-6050-MPU6050-sensors-Accelerometer/dp/B008BOPN40
+
+The pins of the MPU6050 are:
+
+    VCC – Power supply, 3.3 V
+    GND – Ground
+    SCL – I2C clock
+    SDA – I2C data
+    XDA – Second I2C bus data
+    XCL – Second I2C bus clock
+    ADO – Selection of I2C slave address 0x68(=low) 0x69(=high)
+    INT – Interrupt pin
+
+    Connect VCC to the 3.3V pin of the Raspberry pi (in case of B+ it’s pin 1)
+    Connect GND to the ground pin of the Raspberry pi (in case of B+ it’s pin 6)
+    Connect ADO to ground (this means the MPU6050 uses I2C address 0x68)

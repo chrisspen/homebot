@@ -1,0 +1,16 @@
+The AVRISP-mkII is used for field upgrades of Atmel 8-bit AVR microcontrollers with ISP or PDI interfaces. Using the included AVR Studio® software, designers can program tinyAVR and megaAVR devices using the ISP Interface, tinyAVR devices using the TPI interface, and AVR XMEGA devices using the PDI Interface. The AVR Studio online-help contains the most current information and a complete list of supported devices.
+
+Key Features
+
+    Programs both flash and EEPROM
+    Supports fuses and lock bit programming
+    Upgradeable for future device support
+    Supports target voltages from 1.8V to 5.5V
+    Adjustable ISP programming speed (50Hz to 8MHz SCK frequency)
+    USB 2.0 compliant (full speed, 12Mbps)
+    Powered from USB, does not require external power supply
+    Target interface protection
+    Short-circuit protection
+
+http://www.atmel.com/webdoc/avrispmkii/index.html
+http://www.atmel.com/tools/AVRISPMKII.aspx

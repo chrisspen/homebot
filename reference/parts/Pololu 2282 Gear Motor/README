@@ -1,0 +1,30 @@
+https://www.pololu.com/product/2282
+
+Pololu 2282 Gear Motor
+
+9.7:1 Metal Gearmotor 25Dx48L mm LP 6V with 48 CPR Encoder
+
+This gearmotor consists of a low-power, 6 V brushed DC motor combined with a 9.68:1 metal spur gearbox, and it has an integrated 48 CPR quadrature encoder on the motor shaft, which provides 464.64 counts per revolution of the gearbox’s output shaft. The gearmotor is cylindrical, with a diameter just under 25 mm, and the D-shaped output shaft is 4 mm in diameter and extends 12.5 mm from the face plate of the gearbox.
+
+Key specs at 6 V: 630 RPM and 150 mA free-run, 11 oz-in (0.79 kg-cm) and 2.4 A stall.
+
+You can use the following selection boxes to see all of our 25D metal gearmotor versions with integrated encoders:
+
+Using the Encoder
+
+A two-channel Hall effect encoder is used to sense the rotation of a magnetic disk on a rear protrusion of the motor shaft. The quadrature encoder provides a resolution of 48 counts per revolution of the motor shaft when counting both edges of both channels. To compute the counts per revolution of the gearbox output, multiply the gear ratio by 48. The motor/encoder has six color-coded, 11" (28 cm) leads terminated by a 1×6 female header with a 0.1″ pitch, as shown in the main product picture. This header works with standard 0.1″ male headers and our male jumper and precrimped wires. If this header is not convenient for your application, you can pull the crimped wires out of the header or cut the header off. The following table describes the wire functions:
+
+Color   Function
+Red     motor power (connects to one motor terminal)
+Black   motor power (connects to the other motor terminal)
+Green   encoder GND
+Blue    encoder Vcc (3.5 – 20 V)
+Yellow  encoder A output
+White   encoder B output
+
+s+-
+yellow/blue/green
+
+The Hall sensor requires an input voltage, Vcc, between 3.5 and 20 V and draws a maximum of 10 mA. The A and B outputs are square waves from 0 V to Vcc approximately 90° out of phase. The frequency of the transitions tells you the speed of the motor, and the order of the transitions tells you the direction. The following oscilloscope capture shows the A and B (yellow and white) encoder outputs using a motor voltage of 6 V and a Hall sensor Vcc of 5 V:
+
+By counting both the rising and falling edges of both the A and B outputs, it is possible to get 48 counts per revolution of the motor shaft. Using just a single edge of one channel results in 12 counts per revolution of the motor shaft, so the frequency of the A output in the above oscilloscope capture is 12 times the motor rotation frequency.

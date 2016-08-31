@@ -1,0 +1,8 @@
+description: Various circuits for connecting the battery to an Arduino's ADC pin to monitor battery voltage.
+
+status: reference-only
+
+parts:
+    battery_voltage_sensor_1.fzz: A simple voltage divider.
+    battery_voltage_sensor_2.fzz: A voltage divider with a transistor to selectively activate the divider, to minimize power loss.
+    battery_voltage_sensor_3.fzz: A more sophisticated but complicated version of circuit 2.

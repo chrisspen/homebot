@@ -1,0 +1,234 @@
+html, body{
+    height:100%; margin:0; padding:0;
+}
+body {
+  
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size: 14px;
+    line-height: 1.42857143;
+    color: #333;
+    background-color: #fff;
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+body.login{
+    background-color: #eee;
+    
+    height:100%; margin:0; padding:0;
+}
+
+.navbar > .container .navbar-brand, .navbar > .container-fluid .navbar-brand {
+    margin-left: 0px;
+}
+
+.wrapper {
+  margin-top: 80px;
+  margin-bottom: 80px;
+}
+
+.form-signin {
+  max-width: 380px;
+  padding: 15px 35px 45px;
+  margin: 0 auto;
+  background-color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+}
+.form-signin .form-signin-heading,
+.form-signin .checkbox {
+  margin-bottom: 30px;
+  text-align: center;
+}
+.form-signin .checkbox {
+  font-weight: normal;
+}
+.form-signin .form-control {
+  position: relative;
+  font-size: 16px;
+  height: auto;
+  padding: 10px;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+.form-signin .form-control:focus {
+  z-index: 2;
+}
+.form-signin input[type="text"] {
+  margin-bottom: -1px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.form-signin input[type="password"] {
+  margin-bottom: 20px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+.form-signin .checkbox{
+    padding-left: 20px;
+}
+
+.container-fluid{
+  height:100%;
+  display:table;
+  width: 100%;
+  padding: 0;
+}
+ 
+.row-fluid {height: 100%; display:table-cell; vertical-align: middle;}
+
+.centering {
+  float:none;
+  margin:0 auto;
+}
+
+/* Center Bootstrap modal vertically */
+.modal {
+  text-align: center;
+}
+.modal .centered{
+  text-align: center;
+}
+@media screen and (min-width: 768px) { 
+  .modal:before {
+    display: inline-block;
+    vertical-align: middle;
+    content: " ";
+    height: 100%;
+  }
+}
+.modal-dialog {
+  display: inline-block;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.blinker-lamp{
+    position: absolute;
+    width: 1em;
+    height: 1em;
+    background-color: #ccc;
+    border: 1px solid #666;
+}
+.blinker-lamp-on{
+    background-color: #8DFF33;
+}
+.blinker-lamp-failed{
+    background-color: red;
+}
+.circle {
+    border-radius: 50%;
+    margin-top: 8px; 
+    /* width and height can be anything, as long as they're equal */
+}
+
+.form-group > div{
+    margin-top: 0.5em;
+}
+table.controls{
+    color:#888;
+}
+table.controls th, table.controls td{
+    border-top: none!important;
+}
+fieldset{
+    border: 1px solid #e7e7e7;
+    border-radius: 5px;
+    padding: 0 5px 0 5px;
+}
+fieldset legend{
+    width:inherit; /* Or auto */
+    padding:0 10px; /* To give a bit of padding on the left and right */
+    border-bottom:none;
+    margin-bottom: 0px;
+}
+#main-screen{
+    width: 320px;
+    height: 240px;
+    border: 0px solid black;
+    margin: 10px auto 20px auto;
+    background-color: #999;
+}
+table th{
+    vertical-align: middle!important;
+}
+.jumbotron{
+    background-color: #f8f8f8;
+    border: 1px solid #e7e7e7;
+}
+.action-panel{
+    margin-bottom: 10px;
+}
+
+.row{
+    
+}
+.row .col-md-4{
+    padding-right: 0px;
+}
+.row .col-md-4:first-child{
+    padding-left: 0px;
+}
+.row .col-md-6{
+    padding-right: 0px;
+}
+.row .col-md-6:first-child{
+    padding-left: 0px;
+}
+
+.slider .slider-track-high{
+    background: white;
+}
+.slider .slider-track-low{
+    background: white;
+}
+.slider .slider-selection {
+    background: white;
+}
+.slider{
+    margin: 10px 30px 10px 8px;
+}
+.motor-drive{
+    text-align:center;
+}
+.motor-drive button{
+    width: 90px;
+    height: 46px;
+}
+#motor-drive-panel{
+    opacity: 0.5;
+}
+.motor-drive-enabled{
+    opacity: 1.0!important;
+}
+
+.motor-drive .btn-minimal{
+    padding: 6px 0;
+}
+
+#accelgyro_canvas{
+    /*background-color: #999;*/
+    width: 200px;
+    height: 200px;
+    border: 0px solid black;
+    margin: 20px auto 20px auto;
+    padding: 0px;
+    position: static; /* fixed or static */
+}
+#motor-drive-panel .slider.slider-horizontal{
+    width: 130px;
+}
+
+.system-metric{
+    padding: 5px;
+}
+
+.system-metric-container{
+    border: 1px solid #e7e7e7;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    padding: 8px;
+}

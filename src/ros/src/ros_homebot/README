@@ -1,0 +1,9 @@
+A "top level" metapackage for grouping all the other packages.
+
+Run with:
+
+    roslaunch ros_homebot all.launch
+
+To rebuild actions
+
+    catkin_make --pkg ros_homebot

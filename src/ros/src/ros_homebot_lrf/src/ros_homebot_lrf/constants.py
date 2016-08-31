@@ -1,0 +1,4 @@
+OFF = 0
+ON = 1
+
+MAX_LEVEL_VARIANCE = 10

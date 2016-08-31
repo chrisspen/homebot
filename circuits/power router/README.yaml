@@ -1,0 +1,4 @@
+description: A circuit to automatically switch load power from a battery to an external supply.
+status: reference-only
+parts:
+    power_router.fzz: The primary circuit. See "recharge plug" for an example of production use.

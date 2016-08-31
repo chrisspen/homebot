@@ -1,0 +1,8 @@
+#!/bin/bash
+virtualenv --no-site-packages .env
+. .env/bin/activate
+easy_install -U setuptools
+#python -c "import setuptools; print setuptools.__version__"
+sudo apt-get build-dep python-pygame libbox2d-dev libbox2d2.3.0 mercurial libfreetype6-dev swig
+pip install hg+http://bitbucket.org/pygame/pygame
+pip install Box2D

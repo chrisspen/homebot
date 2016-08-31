@@ -1,0 +1,748 @@
+{% extends "base.html" %}
+{% load static homebot %}
+
+{% block js %}{{ block.super }}
+    <link href="{% static 'css/bootstrap-switch.min.css' %}" rel="stylesheet">
+    <script src="{% static 'js/bootstrap-switch.min.js' %}"></script>
+    <link href="{% static 'css/bootstrap-slider.min.css' %}" rel="stylesheet">
+    <script src="{% static 'js/bootstrap-slider.min.js' %}"></script>
+    <script src="{% static 'js/three.min.js' %}"></script>
+    <script src="{% static 'js/socket.io.js' %}"></script>
+    <script src="{% static 'js/jquery.ba-throttle-debounce.min.js' %}"></script>
+    <script>
+    
+        var socket = io.connect("/echo");
+        
+        var head_timeout = null;
+        var torso_timeout = null;
+        var general_timeout = null;
+        var motor_drive_enabled = false;
+        var motors_running = false;
+        var motors_running_action = '{{ MOTOR_BREAK }}';
+        
+        var KEY_TO_MOTOR = {
+            //97: '{{ MOTOR_TURN_CCW }}', //a?
+            65: '{{ MOTOR_TURN_CCW }}', //a
+            //119: '{{ MOTOR_FORWARD }}', //w?
+            87: '{{ MOTOR_FORWARD }}', //w
+            //115: '{{ MOTOR_BREAK }}', //s?
+            83: '{{ MOTOR_BREAK }}', //s
+            //100: '{{ MOTOR_TURN_CW }}', //d?
+            68: '{{ MOTOR_TURN_CW }}', //d
+            //120: '{{ MOTOR_REVERSE }}' //x?
+            88: '{{ MOTOR_REVERSE }}' //x
+        };
+        
+        $(function() {
+
+            $(document).ready(function(){
+                
+                $("input.switched").bootstrapSwitch();
+                
+                // Init sliders.
+                $("#head_tilt_position").slider({id:'head_tilt_position_slider'});
+                $("#head_pan_position").slider({id: 'head_pan_position_slider'});
+                $("#torso_motor_speed").slider({id: 'torso_motor_speed_slider'}).on('slide', motor_speed_change);
+                $("#torso_motor_acceleration").slider({id:'torso_motor_acceleration_slider'});
+                
+                $("#head_tilt_position").on('change', $.debounce(250, update_head_tilt));
+                $("#head_pan_position").on('change', $.debounce(250, update_head_pan));
+                
+                $("#torso_motor_speed").on('change', $.debounce(250, update_motor_speed));
+                $("#torso_motor_acceleration").on('change', $.debounce(250, update_motor_accel));
+                
+                motor_speed_change();
+                
+                // Disable motor controls.
+                update_motor_enabled(false);
+            });
+            
+            var motor_speed_change = function(){
+                var value = $("#torso_motor_speed").data('slider').getValue()/{{ MOTOR_MAX_SPEED }};
+                var r = Math.round(value * 255);
+                var g = Math.round((1 - value) * 255);
+                var b = 0;
+                var rgb = 'rgb('+r+','+g+','+b+')';
+                $('#torso_motor_speed_slider .slider-selection').css('background-color', rgb);
+            }
+            window.motor_speed_change = motor_speed_change;
+
+            var update_motor_speed = function(){
+                if(!motor_drive_enabled) return;
+                var value = $("#torso_motor_speed").data('slider').getValue();
+                console.log('speed change:'+value)
+                motor_change();
+            }
+            window.update_motor_speed = update_motor_speed;
+            
+            var update_motor_accel = function(){
+                if(!motor_drive_enabled) return;
+                var value = $("#torso_motor_acceleration").data('slider').getValue();
+                console.log('accel change:'+value)
+                socket.emit("{% socketio_event_name TORSO ID_MOTOR_ACCEL %}", value);
+            }
+            window.update_motor_accel = update_motor_accel;
+
+            var update_head_tilt = function(){
+                var value = $("#head_tilt_position").data('slider').getValue();
+                socket.emit("{% socketio_event_name HEAD ID_TILT_ANGLE %}", value);
+            }
+            window.update_head_tilt = update_head_tilt;
+            
+            var update_head_pan = function(){
+                var value = $("#head_pan_position").data('slider').getValue();
+                socket.emit("{% socketio_event_name HEAD ID_PAN_ANGLE %}", value);
+            }
+            window.update_head_pan = update_head_pan;
+
+            $(document).keydown(function(e) {
+                //console.log(e.which)
+                if(e.which == 13) {
+                    // enter pressed
+                }
+                if(motor_drive_enabled && !motors_running && e.which in KEY_TO_MOTOR){
+                    console.log('motor command:'+e.which);
+                    motor_change(e);
+                }
+            });
+            
+            $(document).keyup(function(e) {
+                console.log(e.which)
+                if(e.which == 13) {
+                    // enter pressed
+                }
+                if(motor_drive_enabled && e.which in KEY_TO_MOTOR){
+                    console.log('motor command:'+e.which);
+                    motor_break();
+                }
+            });
+                        
+            socket.on('connect', function () {
+                console.log('connected!');
+                hide_message_modal();
+            });
+            
+            socket.on('disconnect', function () {
+                console.log('disconnected!');
+                show_disconnected_modal();
+            });
+            
+            socket.on('update_count', function(data) {
+                clearTimeout(general_timeout);
+                if(data.count){
+                    $('#count').html(data.count);
+                }
+                hide_message_modal();
+                general_timeout = setTimeout(function(){
+                    show_disconnected_modal();
+                }, 5000);
+            });
+            
+            socket.on('{% socketio_event_name_in HEAD ID_PONG %}', function(data) {
+                $('#head_pong').parent().children().first().removeClass('blinker-lamp-failed');
+                $('#head_pong').removeClass('blinker-lamp-failed').fadeToggle();
+                clearTimeout(head_timeout);
+                head_timeout = setTimeout(function(){
+                    $('#head_pong').show().addClass('blinker-lamp-failed');
+                }, 5000);
+            });
+            
+            socket.on('{% socketio_event_name_in TORSO ID_PONG %}', function(data) {
+                $('#torso_pong').parent().children().first().removeClass('blinker-lamp-failed');
+                $('#torso_pong').removeClass('blinker-lamp-failed').fadeToggle();
+                clearTimeout(torso_timeout);
+                torso_timeout = setTimeout(function(){
+                    $('#torso_pong').show().addClass('blinker-lamp-failed');
+                }, 5000);
+            });
+            
+            socket.on('{% socketio_event_name_in TORSO ID_BATTERY_TEMP %}', function(data) {
+                $('#torso_battery_temperature').html(data.temperature.toFixed(2))
+            });
+            
+            socket.on('{% socketio_event_name_in TORSO ID_ARDUINO_TEMP %}', function(data) {
+                $('#torso_arduino_temperature').html(data.temperature.toFixed(2))
+            });
+            
+            socket.on('{% socketio_event_name_in TORSO ID_BATTERY_VOLTAGE %}', function(data) {
+                $('#torso_battery_voltage').html(data.voltage.toFixed(2))
+            });
+            
+            socket.on('{% socketio_event_name_in TORSO ID_EXTERNAL_POWER %}', function(data) {
+                $('#torso_external_power').html(data.state)
+            });
+            
+            socket.on('{% socketio_event_name_in TORSO ID_BATTERY_CHARGE_RATIO %}', function(data) {
+                $('#torso_battery_charge_ratio').html(data.charge)
+            });
+        
+            socket.on('{% socketio_event_name_in TORSO ID_BUMPER %}', function(data) {
+                $('#torso_bumper_'+data.index).html(data.state)
+            });
+        
+            socket.on('{% socketio_event_name_in TORSO ID_EDGE %}', function(data) {
+                $('#torso_edge_'+data.index).html(data.state)
+            });
+        
+            socket.on('{% socketio_event_name_in TORSO ID_ULTRASONIC %}', function(data) {
+                $('#torso_ultrasonic_'+data.index).html(data.distance)
+            });
+        
+            {#socket.on('{% socketio_event_name_in TORSO ID_ACCELGYRO %}', function(data) {#}
+            {#    $('#torso_accel_gyro').html(data.ax+' '+data.ay+' '+data.az+' '+data.gx+' '+data.gy+' '+data.gz)#}
+            {#});#}
+        
+            socket.on('cpu_usage', function(data){
+                $('#cpu_usage').html('' + data.percent_used + '%');
+            });
+        
+            socket.on('memory_usage', function(data){
+                $('#memory_usage').html('' + data.used_gbytes + '/' + data.total_gbytes + 'MB (' + data.percent_used + '%)');
+            });
+        
+            socket.on('disk_usage', function(data){
+                $('#disk_usage').html('' + data.used_gbytes + '/' + data.total_gbytes + 'GB (' + data.percent_used + '%)');
+            });
+            
+            $('#head_led_auto').on('switchChange.bootstrapSwitch', function(event, state) {
+                socket.emit("{% socketio_event_name HEAD ID_LED_AUTO %}", state);
+            });
+        
+            $('#head_led').on('switchChange.bootstrapSwitch', function(event, state) {
+                socket.emit("{% socketio_event_name HEAD ID_LED %}", state);
+            });
+            
+            $('#torso_led_auto').on('switchChange.bootstrapSwitch', function(event, state) {
+                socket.emit("{% socketio_event_name TORSO ID_LED_AUTO %}", state);
+            });
+        
+            $('#torso_led').on('switchChange.bootstrapSwitch', function(event, state) {
+                socket.emit("{% socketio_event_name TORSO ID_LED %}", state);
+            });
+            
+            $('#id_shutdown').on('click', function(){
+                console.log('shutting down...');
+                socket.emit("{% socketio_event_name TORSO ID_SHUTDOWN %}");
+            });
+            
+            $('#id_reboot').on('click', function(){
+                console.log('rebooting...');
+                socket.emit("reboot");
+            });
+            
+            $('#reset-head').on('click', function(){
+                socket.emit("head_reset");
+            });
+            
+            $('#reset-torso').on('click', function(){
+                socket.emit("torso_reset");
+            });
+            
+            $('#id_ultrasonic_enable').on('switchChange.bootstrapSwitch', function(event, state) {
+                socket.emit("{% socketio_event_name TORSO ID_SONAR_POWER %}", state);
+            });
+            
+            $('button[id^=motor_').on('mousedown', motor_change);
+            
+            $('button[id^=motor_').on('mouseup', motor_break);
+            
+            $('#motor-drive-enable').click(function(){
+                var el = $(this);
+                update_motor_enabled(!motor_drive_enabled);
+            });
+            
+        });
+        
+        function update_motor_enabled(state){
+            if(state){
+                motor_drive_enabled = true;
+                $('#motor-drive-enable').html('Disable');
+                $('#motor-drive-panel').addClass('motor-drive-enabled');
+                $("#torso_motor_speed").data('slider').enable();
+                $("#torso_motor_acceleration").data('slider').enable();
+            }else{
+                motor_drive_enabled = false;
+                $('#motor-drive-enable').html('Enable');
+                $('#motor-drive-panel').removeClass('motor-drive-enabled');
+                $("#torso_motor_speed").data('slider').disable();
+                $("#torso_motor_acceleration").data('slider').disable();
+            }
+        }
+        
+        function get_motor_speed(){
+            return $("#torso_motor_speed").data('slider').getValue();
+        }
+        
+        function get_motor_accel(){
+            return $("#torso_motor_acceleration").data('slider').getValue();
+        }
+        
+        function motor_change(e){
+            var e = e || {};
+            
+            console.log('motor_change:'+e)
+            
+            var action = null,
+                lspeed = null,
+                rspeed = null,
+                el = $(this);
+                
+            if(!motor_drive_enabled){
+                return;
+            }
+            
+            if(e.which in KEY_TO_MOTOR){
+                console.log('which:'+e.which)
+                action = KEY_TO_MOTOR[e.which];
+            }
+            if(!action && el && el.attr !== undefined && el.attr('id')){
+                action = el.attr('id').replace('motor_', '');
+            }
+            if(!action){
+                action = motors_running_action;
+            }
+            
+            var speed = get_motor_speed();
+            if(action == '{{ MOTOR_FORWARD }}'){
+                lspeed = speed;
+                rspeed = speed;
+            }else if(action == '{{ MOTOR_REVERSE }}'){
+                lspeed = -speed;
+                rspeed = -speed;
+            }else if(action == '{{ MOTOR_TURN_CW }}'){
+                lspeed = -speed;
+                rspeed = speed;
+            }else if(action == '{{ MOTOR_TURN_CCW }}'){
+                lspeed = speed;
+                rspeed = -speed;
+            }else if(action == '{{ MOTOR_PIVOT_LEFT_CW }}'){
+                lspeed = -speed;
+                rspeed = 0;
+            }else if(action == '{{ MOTOR_PIVOT_LEFT_CCW }}'){
+                lspeed = speed;
+                rspeed = 0;
+            }else if(action == '{{ MOTOR_PIVOT_RIGHT_CW }}'){
+                lspeed = 0;
+                rspeed = speed;
+            }else if(action == '{{ MOTOR_PIVOT_RIGHT_CCW }}'){
+                lspeed = 0;
+                rspeed = -speed;
+            }else if(action == '{{ MOTOR_BREAK }}'){
+                lspeed = 0;
+                rspeed = 0;
+            }
+            
+            console.log('motor action:'+action);
+            console.log('motor lspeed:'+lspeed);
+            console.log('motor rspeed:'+rspeed);
+            
+            if(action){
+                motors_running = true;
+                motors_running_action = action;
+                socket.emit("{% socketio_event_name TORSO ID_MOTOR_SPEED %}", lspeed, rspeed);
+            }
+        }
+        
+        function motor_break(){
+            if(!motor_drive_enabled){
+                return;
+            }
+            motors_running = false;
+            motors_running_action = '{{ MOTOR_BREAK }}';
+            console.log('motor stop');
+            socket.emit("{% socketio_event_name TORSO ID_MOTOR_SPEED %}", 0, 0);
+        }
+        
+        function show_disconnected_modal(){
+            show_message_modal('Disconnected! Attempting to reconnect...');
+        }
+        
+        function show_message_modal(msg){
+            $('#message-modal .modal-content .modal-body').text(msg)
+            $('#message-modal').modal('show');
+        }
+        
+        function hide_message_modal(){
+            $('#message-modal').modal('hide');
+        }
+        
+    </script>
+    <script>
+        $(function(){
+        
+            CANVAS_WIDTH = 200,
+            CANVAS_HEIGHT = 200;
+            
+            var camera, scene, renderer;
+            var cube, cylinder, sphere, cone, group;
+            
+            var scene = new THREE.Scene();
+            var camera = new THREE.PerspectiveCamera(45, CANVAS_HEIGHT/CANVAS_HEIGHT, 0.1, 1000);
+            
+            var renderer = new THREE.WebGLRenderer( { alpha: true } );
+            renderer.setClearColor( 0x000000, 0 ); // the default
+            renderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT);
+            container = document.getElementById( 'accelgyro_canvas' );
+            container.appendChild( renderer.domElement );
+            
+            //var group = new THREE.Group();
+            group = new THREE.Object3D();
+            
+            // http://threejs.org/docs/#Reference/Extras.Geometries/CylinderGeometry
+            var geometry = new THREE.CylinderGeometry(1,1,2,32,1, true);
+            var material = new THREE.MeshPhongMaterial({color: 0xffffff, side:THREE.DoubleSide});
+            material.wireframe = true;
+            var cone = new THREE.Mesh(geometry, material);
+            //scene.add(cone);
+            group.add( cone );
+            
+            // http://threejs.org/docs/#Reference/Extras.Geometries/SphereGeometry
+            var geometry = new THREE.SphereGeometry( 1, 32, 32 );
+            //var material = new THREE.MeshBasicMaterial( {color: 0xffff00} );
+            var sphere = new THREE.Mesh(geometry, material);
+            sphere.position.y = 1;
+            //scene.add( sphere );
+            group.add( sphere );
+            
+            scene.add( group );
+            
+            // create a point light
+            var pointLight = new THREE.PointLight( 0xFFFF8F );
+            
+            // set its position
+            pointLight.position.x = 10;
+            pointLight.position.y = 50;
+            pointLight.position.z = 130;
+            
+            // add to the scene
+            scene.add(pointLight);
+                
+            
+            camera.position.z = 5;
+            
+            var render = function () {
+              requestAnimationFrame(render);
+            
+              //cone.rotation.x += 0.01;
+              //cone.rotation.y += 0.001;
+              //cone.rotation.z -= 0.02;
+              
+              //group.rotation.x += 0.01;
+              //group.rotation.y += 0.001;
+              //group.rotation.z -= 0.02;
+            
+              renderer.render(scene, camera);
+            };
+            
+            render();
+            
+        });
+    </script>
+{% endblock %}
+
+{% block body-class %}index{% endblock %}
+
+{% block main %}
+
+    <div class="modal fade" id="confirm-shutdown" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    End all running processes and power down the robot?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">No, cancel</button>
+                    <a id="id_shutdown" class="btn btn-danger btn-ok" data-dismiss="modal">Yes, shutdown now</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal fade" id="confirm-reboot" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    End all running processes and reboot the robot?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">No, cancel</button>
+                    <a id="id_reboot" class="btn btn-warning btn-ok" data-dismiss="modal">Yes, reboot now</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="message-modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-body centered"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="jumbotron">
+    
+        <div class="action-panel row">
+            <button class="btn btn-danger" data-toggle="modal" data-target="#confirm-shutdown">Shutdown</button>
+            <button class="btn btn-warning" data-toggle="modal" data-target="#confirm-reboot">Reboot</button>
+            <span class="system-metric-container">CPU: <span class="system-metric" id="cpu_usage">?%</span></span>
+            <span class="system-metric-container">Memory: <span class="system-metric" id="memory_usage">?GB/?GB (?%)</span></span>
+            <span class="system-metric-container">Disk: <span class="system-metric" id="disk_usage">?GB/?GB (?%)</span></span>
+        </div>
+    
+        <div class="row">
+            <div class="col-md-4">
+                <fieldset>
+                    <legend>System</legend>
+                    <div id="accelgyro_canvas"></div>
+                </fieldset>
+            </div>
+            <div class="col-md-4">
+                <fieldset>
+                    <legend>Video</legend>
+                    <div id="main-screen"><img src="http://{{ host }}:{{ video_port }}/cam.mjpg" /></div>
+                </fieldset>
+            </div>
+            <div class="col-md-4">
+                <fieldset id="motor-drive-panel">
+                    <legend>Drive</legend>
+                    <table class="table controls motor-drive">
+                        <tr>
+                            <td class="width:33%;" colspan="3">
+                                <button id="motor-drive-enable" type="button" class="btn btn-default btn-lg btn-minimal">
+                                    Enable
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="width:33%;">
+                                <button id="motor_pivot_right_cw" type="button" class="btn btn-default btn-lg" title="">
+                                    &nearr;
+                                </button>
+                            </td>
+                            <td class="width:33%;">
+                                <button id="motor_forward" type="button" class="btn btn-default btn-lg" title="w">
+                                    <span class="glyphicon glyphicon glyphicon-arrow-up" aria-hidden="true"></span>
+                                </button>
+                            </td>
+                            <td class="width:33%;">
+                                <button id="motor_pivot_left_ccw" type="button" class="btn btn-default btn-lg" title="">
+                                    &nwarr;
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <button id="motor_turn_ccw" type="button" class="btn btn-default btn-lg" title="a">
+                                    <span class="glyphicon glyphicon glyphicon-arrow-left" aria-hidden="true"></span>
+                                </button>
+                            </td>
+                            <td>
+                                <button id="motor_break" type="button" class="btn btn-default btn-lg" title="s">
+                                    <span class="glyphicon glyphicon glyphicon glyphicon-remove" aria-hidden="true"></span>
+                                </button>
+                            </td>
+                            <td>
+                                <button id="motor_turn_cw" type="button" class="btn btn-default btn-lg" title="d">
+                                    <span class="glyphicon glyphicon glyphicon-arrow-right" aria-hidden="true"></span>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <button id="motor_pivot_right_ccw" type="button" class="btn btn-default btn-lg" title="">
+                                    &searr;
+                                </button>
+                            </td>
+                            <td>
+                                <button id="motor_reverse" type="button" class="btn btn-default btn-lg" title="x">
+                                    <span class="glyphicon glyphicon glyphicon-arrow-down" aria-hidden="true"></span>
+                                </button>
+                            </td>
+                            <td>
+                                <button id="motor_pivot_left_cw" type="button" class="btn btn-default btn-lg" title="">
+                                    &swarr;
+                                </button>
+                            </td>
+                        </tr>
+                    </table>
+                    
+                    <table class="table controls">
+                        <tr>
+                            <th class="col-sm-1">Speed</th>
+                            <td class="col-sm-1">
+                                <input id="torso_motor_speed" type="text" data-slider-min="0" data-slider-max="{{ MOTOR_MAX_SPEED }}" data-slider-step="1" data-slider-value="{{ MOTOR_DEFAULT_SPEED }}"/>
+                            </td>
+                            <td class="col-sm-1">
+                                <button id="torso_motor_speed_center" class="btn btn-default btn-sm" onclick="$('#torso_motor_speed').slider('setValue', {{ MOTOR_DEFAULT_SPEED }}); motor_speed_change(); update_motor_speed(); return false;">Reset</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Accel</th>
+                            <td>
+                                <input id="torso_motor_acceleration" type="text" data-slider-min="{{ MOTOR_MIN_ACCEL }}" data-slider-max="{{ MOTOR_MAX_ACCEL }}" data-slider-step="1" data-slider-value="{{ MOTOR_DEFAULT_ACCEL }}"/>
+                            </td>
+                            <td>
+                                <button id="torso_motor_acceleration_center" class="btn btn-default btn-sm" onclick="$('#torso_motor_acceleration').slider('setValue', {{ MOTOR_DEFAULT_ACCEL }}); update_motor_accel(); return false;">Reset</button>
+                            </td>
+                        </tr>
+                    </table>
+                                
+                </fieldset>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <fieldset>
+                    <legend>Head</legend>
+                    <table class="table controls">
+                        <tr>
+                            <th class="col-sm-2">Heartbeat</th>
+                            <td>
+                                <div style="positive: relative;">
+                                  <div class="circle blinker-lamp blinker-lamp-failed"></div>
+                                  <div id="head_pong" class="circle blinker-lamp blinker-lamp-on" style="display:none;"></div>
+                                </div>
+                                <button id="reset-head" style="margin-left:30px;" type="button" class="btn btn-default btn-sm" title="">
+                                    Reset
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="col-sm-2">Pan Angle</th>
+                            <td>
+                                <input id="head_pan_position" type="text" data-slider-min="0" data-slider-max="360" data-slider-step="1" data-slider-value="0"/>
+                                <button id="head_pan_position_center" class="btn btn-default btn-sm" onclick="$('#head_pan_position').slider('setValue', 0); update_head_pan(); return false;">Center</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="col-sm-2">Tilt Angle</th>
+                            <td>
+                                <input id="head_tilt_position" type="text" data-slider-min="{{ TILT_MIN }}" data-slider-max="{{ TILT_MAX }}" data-slider-step="1" data-slider-value="{{ TILT_CENTER }}"/>
+                                <button id="head_tilt_position_center" class="btn btn-default btn-sm" onclick="$('#head_tilt_position').slider('setValue', {{ TILT_CENTER }}); update_head_tilt(); return false;">Center</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="col-sm-2">LED Auto</th>
+                            <td>
+                                <input type="checkbox" id="head_led_auto" name="led_auto" class="switched" data-size="small" checked />
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="col-sm-2">LED</th>
+                            <td>
+                                <input type="checkbox" id="head_led" name="led" class="switched" data-size="small" checked />
+                            </td>
+                        </tr>
+                    </table>
+                </fieldset>
+            </div>
+            <div class="col-md-6">
+                <fieldset>
+                    <legend>Torso</legend>
+                    <table class="table controls">
+                        <tr>
+                            <th class="col-sm-2">Heartbeat</th>
+                            <td>
+                                <div style="">
+                                  <div class="circle blinker-lamp blinker-lamp-failed"></div>
+                                  <div id="torso_pong" class="circle blinker-lamp blinker-lamp-on" style="display:none;"></div>
+                                </div>
+                                <button id="reset-torso" style="margin-left:30px;" type="button" class="btn btn-default btn-sm" title="">
+                                    Reset
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="col-sm-2">LED Auto</th>
+                            <td>
+                                <input type="checkbox" id="torso_led_auto" name="led_auto" class="switched" data-size="small" checked />
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="col-sm-2">LED</th>
+                            <td>
+                                <input type="checkbox" id="torso_led" name="led" class="switched" data-size="small" checked />
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="col-sm-2">Battery Voltage</th>
+                            <td>
+                                <span id="torso_battery_voltage">?</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="col-sm-2">Battery Charge</th>
+                            <td>
+                                <span id="torso_battery_charge_ratio">?</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="col-sm-2">Battery Temp (C)</th>
+                            <td>
+                                <span id="torso_battery_temperature">?</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="col-sm-2">Arduino Temp (C)</th>
+                            <td>
+                                <span id="torso_arduino_temperature">?</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="col-sm-2">External Power</th>
+                            <td>
+                                <span id="torso_external_power">?</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="col-sm-2">Ultrasonic</th>
+                            <td>
+                                <input type="checkbox" id="id_ultrasonic_enable" name="led" class="switched" data-size="small" checked />
+                                
+                                <span id="torso_ultrasonic_1">?</span>
+                                <span id="torso_ultrasonic_2">?</span>
+                                <span id="torso_ultrasonic_3">?</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="col-sm-2">Edge</th>
+                            <td>
+                                <span id="torso_edge_1">?</span>
+                                <span id="torso_edge_2">?</span>
+                                <span id="torso_edge_3">?</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="col-sm-2">Bumpers</th>
+                            <td>
+                                <span id="torso_bumper_1">?</span>
+                                <span id="torso_bumper_2">?</span>
+                                <span id="torso_bumper_3">?</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="col-sm-2">Accel/Gyro</th>
+                            <td>
+                                <span id="torso_accel_gyro">? ? ? ? ? ?</span>
+                            </td>
+                        </tr>
+                    </table>
+                </fieldset>
+            </div>
+        </div>
+        
+        <fieldset class="row">
+            <legend>General</legend>
+            <table class="table controls">
+                <tr>
+                    <th class="col-sm-2">Count</th>
+                    <td><div id="count">?</div></td>
+                </tr>
+            </table>
+        </fieldset>
+            
+    </div>
+    
+{% endblock %}

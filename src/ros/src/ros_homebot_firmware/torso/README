@@ -1,0 +1,10 @@
+This is code for the Arduino UNO located in the torso section.
+
+It's primarily responsible for directly controlling the motors, monitoring battery voltage, and any sensors in the torso.
+
+Installation
+------------
+
+    ./build
+    ./upload
+    

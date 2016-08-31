@@ -1,0 +1,10 @@
+<launch>
+   <node name="homebot_lrf" pkg="ros_homebot_lrf" type="lrf_node.py" output="screen">
+      <rosparam file="$(find ros_homebot)/config/lrf.yaml" command="load" />
+      <param name="topic" value="/raspicam/image/compressed" />
+      <param name="calibration" value="calibration_320_blank.yaml" />
+      <param name="straightening" type="int" value="1" />
+      <param name="verbose" type="int" value="0" />
+      <param name="start" type="int" value="1" />
+   </node>
+</launch>

@@ -1,0 +1,20 @@
+This is essentially just a glorified voltage divider, providing a 5V signal of the presence of an external 12V charging source.
+
+Since this circuit will be constantly connected during charging, we want to minimize the current wasted so interence with recharging will be at a minimum.
+
+Vin = 12-14V
+Vout = 5V
+
+Vout = lambda Vin, R1, R2: Vin * R2/float(R1 + R2)
+
+R2 = 2000000
+R1 = 1000000
+
+>>> Vout(Vin=12.6,R1=2000000,R2=1000000)
+4.2
+
+>>> Vout(Vin=14,R1=2000000,R2=1000000)
+4.666666666666667
+
+Rtotal = R1 + R2 = 3000000
+I = V/Rtotal = 12.6/3000000. = .0000042A = 4.2uA 

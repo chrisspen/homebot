@@ -1,0 +1,20 @@
+RPP-UIO-16 - Raspberry Pi - Universal I/O Hat 
+
+https://www.tindie.com/products/land_boards/rpp-uio-16-raspberry-pi-universal-io-hat/
+http://land-boards.com/blwiki/index.php?title=RPP-UIO-16
+
+Ultimate I/O Hat for the Raspberry Pi (A+, B+ and Pi-2). Connect your 5V devices to this Raspberry Pi daughtercard.
+
+Features
+
+This card has the following features:
+
+    All GPIO lines are connected to 3.3V GVS connectors
+    16 lines of 5V GVS connections
+    Hat EEPROM with write enable/protect jumper
+    5V Terminal block to power the Raspberry Pi and the I/O Card
+    GPIO jumpers to connect up to 16 of the 3.3V GPIO lines to the 3.3V side of the voltage translators
+
+You asked and we listened. We have kickstarted several Raspberry Pi I/O Cards and they have been successful. But some of you wanted more. You liked our configurable channels but asked for more I/O channels and additional power options.
+
+The photo above shows our newest generation card. This Kickstarter takes our previous design and adds another 8 I/O lines plus a terminal block for 5V power. The terminal block allows you to optionally power the GPIO lines and your Pi from an external 5V adapter.

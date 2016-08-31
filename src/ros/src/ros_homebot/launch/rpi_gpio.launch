@@ -1,0 +1,6 @@
+<!-- Only loads the RPiGPIO node for testing Raspberry Pi GPIO states. -->
+<launch>
+   <node name="rpi_gpio" pkg="rpi_gpio" type="rpi_gpio_node.py" output="screen">
+      <rosparam file="$(find ros_homebot)/config/rpi_gpio.yaml" command="load" />
+   </node>
+</launch>

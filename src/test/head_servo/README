@@ -1,0 +1,3 @@
+Test controlling head servo from Arduino.
+
+Note, servo must have a separate power supply, otherwise it jitters considerably and/or causes the Arduino to reset.

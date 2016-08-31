@@ -1,0 +1,32 @@
+Pololu 2808 mini pushbutton power switch
+
+https://www.pololu.com/product/2808
+
+The Pololu Pushbutton Power Switches are sophisticated power control alternatives to bulky mechanical switches. The main function is pushbutton-based latching power control, where one push turns on power and another push turns it off. Additional control inputs allow advanced applications such as automatic shutdown by the device being powered. This low-voltage (LV) version operates from 2.2 V to 20 V and can deliver continuous currents up to around 6 A.
+
+
+                                        LV              SV
+    Absolute max voltage:               20 V            40 V
+    Recommended operating voltage:      2.2 V to 16 V   4.5 V to 32 V
+    MOSFET combined on resistance (max) 26 mΩ @ 1.8 V   
+                                        16 mΩ @ 4.5 V   90 mΩ @ 4.5 V
+                                        50 mΩ @ 10 V
+    Continuous current at 55°C(1)       3.0 A           2.0 A
+    Continuous current at 150°C(1)      6.0 A           4.3 A
+    Maximum current                     12 A            7.2 A
+    Current consumption in on state(2)  ~210 μA/V       ~120 μA/V
+    Current consumption in off state    ~0.01 μA        < 0.01 μA
+    LED color                           red             green
+    Size                                0.6″ × 0.7″ × 0.12″
+    Weight                              0.6 g
+
+The simplest way to control the Pushbutton Power Switch is via its installed pushbutton: one push turns on power and another turns it off. Alternatively, a separate pushbutton, such as a remote panel-mounted unit, can be connected to the A and B pins and used instead. Multiple pushbuttons can be wired in parallel for multiple control points, and each of the parallel pushbuttons, including the one on the board itself, will be able to turn the switch on or off. The latching circuit performs some button debouncing, but pushbuttons with excessive bouncing (several ms) might not function well with this product.
+
+More advanced control options are available through the button connection pins and three control inputs:
+
+PIN     Description
+A       Connect through momentary switch to pin “B” for standard push-on/push-off operation. Connect through momentary switch to ground for on-only operation.
+B       Connect through momentary switch to pin “A” for standard push-on/push-off operation.
+ON      A high pulse (> 1 V) on this pin turns on the switch.
+OFF     A high pulse (> 1 V) on this pin turns off the switch (e.g. allowing the target device to shut off its own power).
+CTRL    This pin directly determines the state of the switch. A high pulse (> 1 V) on this pin turns on the switch; a low pulse (e.g. driving the pin low with a microcontroller output line or pushing a button connected from this pin to ground) turns the switch off. Leave this pin disconnected or floating when not trying to set the switch state. Note that this pin should not be driven high at the same time the “OFF” pin is driven high.

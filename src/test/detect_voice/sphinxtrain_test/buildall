@@ -1,0 +1,29 @@
+#!/bin/bash
+rm -Rf ./homebot-custom
+sphinx_fe -argfile ./cmusphinx-en-us-ptm-5.2/feat.params -samprate 16000 -c samples/sample.fileids -di . -do . -ei wav -eo mfc -mswav yes
+./bw \
+     -hmmdir cmusphinx-en-us-ptm-5.2 \
+     -moddeffn cmusphinx-en-us-ptm-5.2/mdef \
+     -ts2cbfn .ptm. \
+     -feat 1s_c_d_dd \
+     -svspec 0-12/13-25/26-38 \
+     -cmn current \
+     -agc none \
+     -dictfn cmudict-en-us.dict \
+     -ctlfn samples/sample.fileids \
+     -lsnfn samples/sample.transcription \
+     -accumdir .
+cp -a cmusphinx-en-us-ptm-5.2 homebot-custom
+./map_adapt \
+    -moddeffn cmusphinx-en-us-ptm-5.2/mdef \
+    -ts2cbfn .ptm. \
+    -meanfn cmusphinx-en-us-ptm-5.2/means \
+    -varfn cmusphinx-en-us-ptm-5.2/variances \
+    -mixwfn cmusphinx-en-us-ptm-5.2/mixture_weights \
+    -tmatfn cmusphinx-en-us-ptm-5.2/transition_matrices \
+    -accumdir . \
+    -mapmeanfn homebot-custom/means \
+    -mapvarfn homebot-custom/variances \
+    -mapmixwfn homebot-custom/mixture_weights \
+    -maptmatfn homebot-custom/transition_matrices
+echo "Done!"

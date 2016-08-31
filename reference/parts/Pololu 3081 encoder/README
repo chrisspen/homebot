@@ -1,0 +1,9 @@
+https://www.pololu.com/product/3081
+
+Pinout and installation
+
+The encoder board is designed to be soldered directly to the back of the motor, with the back shaft of the motor protruding through the hole in the middle of the circuit board. One way to achieve good alignment between the board and the motor is to tack down the board to one motor pin and to solder the other pin only when the board is flat and well aligned. Be careful to avoid prolonged heating of the motor pins, which could deform the plastic end cap of the motor or the motor brushes. Once the board is soldered down to the two terminals, the motor leads are connected to the M1 and M2 pads along the edge of the board; the remaining four pads are used to power the sensors and access the two quadrature outputs:
+
+The most common type of incremental encoder uses two output channels (A and B) to sense position. Using two code tracks with sectors positioned 90 degrees out of phase, the two output channels of the quadrature encoder indicate both position and direction of rotation. If A leads B, for example, the disk is rotating in a clockwise direction. If B leads A, then the disk is rotating in a counter-clockwise direction.
+
+By monitoring both the number of pulses and the relative phase of signals A and B, you can track both the position and direction of rotation.

@@ -1,0 +1,15 @@
+Tests efficiently streaming and viewing RPi camera video over the Internet via RTSP or HTTP.
+
+Generating a video stream:
+
+    http://raspberrypi.stackexchange.com/questions/23182/how-to-stream-video-from-raspberry-pi-camera-and-watch-it-live
+
+Consuming a video stream:
+
+    http://stackoverflow.com/questions/1735933/streaming-via-rtsp-or-rtp-in-html5
+
+    http://www.recantha.co.uk/blog/?p=4165
+    
+        Doesn't really work, needs special H.264 web plugin.
+        
+    http://raspberrypi.stackexchange.com/questions/7446/how-can-i-stream-h-264-video-from-the-raspberry-pi-camera-module-via-a-web-serve

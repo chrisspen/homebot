@@ -1,0 +1,39 @@
+This contains all the Python code for running the ROS nodes on the host Raspberry Pi 2
+which will communicate with the Arduino's over serial.
+
+    source ../../.env/bin/activate
+    source devel/setup.bash
+    
+    roscore
+    rosnode info /rosout
+    rosrun ros_homebot_python head_node.py
+    rosrun ros_homebot_python torso_node.py
+    rosnode list
+    rosservice list
+    rosmsg list
+    
+    rostopic list
+    
+        /torso_arduino/pong
+        
+    rostopic echo /torso_arduino/packet_read
+    
+    # Disable LED auto set.
+    rosservice call /torso_arduino/packet_write 109 '!!str 0'
+    
+    # Toggle LED.
+    rosservice call /torso_arduino/packet_write 108 '!!str 0'
+    rosservice call /torso_arduino/packet_write 108 '!!str 1'
+    
+    rosrun rqt_graph rqt_graph
+
+Run with:
+
+    rosrun ros_homebot_python head_node.py
+    rosrun ros_homebot_python torso_node.py
+
+or:
+
+    roslaunch ros_homebot_python head.launch
+    roslaunch ros_homebot_python torso.launch
+    

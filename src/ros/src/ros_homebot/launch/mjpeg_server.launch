@@ -1,0 +1,6 @@
+<launch>
+<!--
+   This will allow you to view an image stream from http://{robot_hostname}.local:8181
+-->
+   <node name="homebot_mjpeg" pkg="ros_homebot_teleop" type="mjpeg_streamer.py" output="screen"></node>
+</launch>

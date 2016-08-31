@@ -1,0 +1,67 @@
+// This example reads 15 bytes from the serial line, starting with a '#'
+// character, followed by 14 data bytes. It visualizes the acceleration
+// values by drawing a rotated plane.
+
+import processing.serial.*;         // load serial library
+Serial p;                           // declare serial port object
+
+int[] buffer = new int[15];         // buffer for incoming bytes
+int b;                              // buffer pointer
+
+void setup() {
+  size(200, 200, P3D);              // create a small canvas
+  colorMode(RGB, 255);              // use RGB color definitions
+  rectMode(CENTER);                 // position rectangles by their center
+  fill(50);                         // draw grey things
+  stroke(255);                      // with white lines
+
+  println(Serial.list());           // print a list of all serial ports
+
+  // open serial connection to Arduino board at 57600 bps.
+  p = new Serial(this, Serial.list()[0], 57600);
+}
+
+void draw() {
+
+  if (p.available() > 0)            // if bytes are available to read
+  {
+    if (b == 0) {                   //   if buffer not in use
+      if (p.read() == '#') {        //     if '#' received
+        print("#");
+        b = 1;                      //       then ready to receive data bytes
+      }
+    } else {                        //   else [ready to receive data bytes]
+      buffer[b] = p.read();         //     store next data byte in buffer
+      b++;
+      if (b > 14) {                 //   if all data bytes were stored
+        visualizeIt();              //       visualize what is in the buffer
+        b = 0;                      //       reset the buffer pointer
+      }
+    }
+  }
+}
+
+void visualizeIt() {
+  background(100);                                // clear the canvas grey
+  translate(width/2, height/2, 0);                // translate its center to (0,0,0)
+  
+  // visualize accelerometer:
+  println("accelerometer(" + buffer[1] + "," + buffer[3] + "," + buffer[5] + ")");
+  rotateX(2.0 * PI * buffer[1] / 256.0);
+  rotateY(2.0 * PI * buffer[3] / 256.0);
+  rotateZ(2.0 * PI * buffer[5] / 256.0);
+  rect(0,0,100,100);                              // draw rectangle on (X,Y) plane
+  line(0,0,-10,0,0,50);                           // draw line along the Z axis
+  
+  // visualize gyroscope:
+//  println("gyro(" + buffer[9] + "," + buffer[11] + "," + buffer[13] + ")");
+//  rotateX(2.0 * PI * buffer[9] / 256.0);
+//  rotateY(2.0 * PI * buffer[11] / 256.0);
+//  rotateZ(2.0 * PI * buffer[13] / 256.0);  
+//  stroke(color(255,0,0));                        // set drawing color to red
+//  line(-10,0,0,50,0,0);                          // draw X axis
+//  stroke(color(0,255,0));                        // set drawing color to green
+//  line(0,-10,0,0,50,0);                          // draw Y axis
+//  stroke(color(0,0,255));                        // set drawing color to blue
+//  line(0,0,-10,0,0,50);                          // draw Z axis
+}

@@ -1,0 +1,27 @@
+Adafruit Mono 2.5W Class D Audio Amplifier
+
+https://www.adafruit.com/product/2130
+
+This super small mono amplifier is surprisingly powerful - able to deliver up to 2.5 Watts into 4-8 ohm impedance speakers. Inside the miniature chip is a class D controller, able to run from 2.0V-5.5VDC. Since the amp is a class D, its very efficient (over 90% efficient when driving an 8Ω speaker at over half a Watt) - making it perfect for portable and battery-powered projects. It has built in thermal and over-current protection but we could barely tell it got hot. There's even a volume trim pot so you can adjust the volume on the board down from the default 24dB gain. This board is a welcome upgrade to basic "LM386" amps!
+
+The A+ and A- inputs of the amplifier go through 1.0uF capacitors, so they are fully 'differential' - if you don't have differential outputs, simply tie the Audio- pin  to ground. The output is "Bridge Tied" - that means the output pins connect directly to the speaker pins, no connection to ground. The output is a high frequency 250KHz square wave PWM that is then 'averaged out' by the speaker coil - the high frequencies are not heard. All the above means that you can't connect the output into another amplifier, it should drive the speakers directly.
+
+Comes with a fully assembled and tested breakout board. We also include header to plug it into a breadboard and a 3.5mm screw-terminal blocks so you can easily attach/detach your speaker. You will be ready to rock in 15 minutes! Speaker is not included, use any 4 ohm or greater impedance speaker.
+
+    Output Power: 2.5W at 4Ω, 10% THD, 1.5W at 8Ω, 10% THD, with 5.5V Supply
+    50dB PSRR at 1KHz
+    Filterless design, with ferrite bead + capacitors on output.
+    Fixed 24dB gain, onboard trim potentiometer for adjusting input volume.
+    Thermal and short-circuit/over-current protection
+    Low current draw: 4mA quiescent and 1uA in shutdown mode
+
+Dimensions (without 0.1" header):
+
+    15mm x 24mm x 2mm / 0.6" x 0.9" x 0.08"
+    Weight: 1.4g
+
+Wiring:
+
+    Attach the "Ground" and "2-5VDC" pins to a regulated 5V supply.
+    Short the "In-" pin to "Ground".
+    Attach the "In+" pin to the audio signal.

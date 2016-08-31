@@ -1,0 +1,11 @@
+# This will be a list of the row at which each column contains the laser light.
+readings: []
+# This will be a map assocating a column to a distance marker.
+distances:
+    blank1: 50
+    blank2: 100
+    blank3: 200
+h: 22.5
+image_width: 320
+image_height: 240
+laser_position: bottom

@@ -1,0 +1,19 @@
+description: |-
+    This circuit connects:
+
+    * Adafruit SPST+LED pushbutton
+    * Pololu 2808 LV mini pushbutton
+    * Arduino
+    
+    so that:
+    
+    * the Adafruit pushbutton will trigger the Pololu pushbutton to turn on the Arduino when the system is turned off
+    * the Arduino can trigger the Pololu pushbutton to power down the system
+    * the Arduino can detect presses of the Adafruit pushbutton for arbitrary uses
+    * the Arduino can arbitrarily turn the Adafruit LED on or off
+    
+    Essentially, this allows the Arduino to mimic the pushbutton power on/power off functionality found in most modern electronics.
+
+status: production
+parts:
+    power_button.fzz: The primary circuit.

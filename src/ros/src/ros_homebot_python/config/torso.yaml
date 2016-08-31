@@ -1,0 +1,6 @@
+timeout: 0.1
+
+rate: 50
+
+# For a robot that uses base_footprint, change base_frame to base_footprint
+base_frame: base_link

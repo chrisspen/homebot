@@ -1,0 +1,4 @@
+
+class DeviceNotFound(Exception):
+    pass
+    

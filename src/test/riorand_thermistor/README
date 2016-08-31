@@ -1,0 +1,8 @@
+Measures temperature using a RioRand 100k ohm thermistor.
+
+http://playground.arduino.cc/ComponentLib/Thermistor
+http://playground.arduino.cc/ComponentLib/Thermistor2
+
+ (Ground) ---- (10k-Resistor) -------|------- (Thermistor) ---- (+5v)
+                                     |
+                                Analog Pin 0

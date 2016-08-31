@@ -1,0 +1,7 @@
+<!-- http://wiki.ros.org/roslaunch/XML/node -->
+<launch>
+   <node name="HomebotTeleop" pkg="ros_homebot_teleop" type="teleop_node.py" output="screen">
+      <!--<rosparam file="$(find ros_homebot_teleop)/config/params.yaml" command="load" />-->
+      <param name="verbose" type="bool" value="1" />
+   </node>
+</launch>

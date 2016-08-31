@@ -1,0 +1,16 @@
+inherits: all 
+
+host_hostname: '?'
+
+hosts: ['?.local']
+
+key_filename: roles/printer/?.pem
+
+project_home: /usr/local/homebot
+
+services:
+-   unattendedupgrades
+
+shell_default_dir_template: "~"
+
+user: ?

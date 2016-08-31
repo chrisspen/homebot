@@ -1,0 +1,40 @@
+Solarbotics SB-GVS Sensor Shield for Arduino Kit
+
+https://solarbotics.com/product/39230/
+
+Description
+
+You know servos? They have 3-wire connections: Ground / Voltage / Signal. This standard layout has been adopted by many manufacturers for peripherals and sensors. Look specifically at Phidget sensor modules, and practically any hobby-servo on the market.
+
+The SB-GVS shield lets you easily interface this sort of device to your Arduino's 12 digital and 6 analog I/O ports! And it also features a I2C port for peripheral networking (at the sacrifice of 2 analog I/O ports, which share the same pins).
+
+    Ideal for servo & sensor accessories (Phidgets, Seeed Bricks)
+    Full break-out for all 12 digital lines & 6 analog lines
+    BlinkM-style I2C port
+    Power filtering & bypass capacitors
+    Pin13 LED indicator
+    Reset line brought up from Arduino
+    Optional lock-tab sockets available for secure wiring (standard on Phidgets devices, but is still compatible with included 0.1" spaced pin headers)
+
+When looking at possible sensors, look for the interface required. If it says "Interfaces with analog port" or "Interfaces with digital I/O" or similar, you'll most likely be able to interface it to your GVS shield's analog or digital ports.
+
+Note: Some sensors are may be 3.3V compatible only. You must assure they are 5V tolerant to work with this shield!
+
+The Solarbotics GVS Shield is released under a Creative Commons Attribution 3.0 unported license.
+
+Parts Included:
+
+ 1 x  Printed Circuit Board (PCB)
+ 1 x LED (Pin 13 indicator)
+ 1 x 470 ohm resistors (Yellow / Purple / Brown)
+ 1 x SWT10 Switch (reset)
+ 3 x 0.1µF Ceramic Capacitors
+ 1 x 330µF Electrolytic Capacitor
+ 2 x 4.7k resistors (Yellow / Purple / Red - for I2C network)
+ 1 x FPin3 3-position Female Header Socket Strip (Serial comm.)
+ 1 x FPin4 4-position Female Header Socket Strip (I2C port)
+ 2 x MPin36 36-pin Male Header Pin Strips (for snapping into 3’s) or the optional 18 locking 3-position connectors (Part: MPin3-Lock)
+ 2 x MPin6 6-pin Male Header Pin Strips for Arduino mounting
+ 2 x MPin8 8-pin Male Header Pin Strips for Arduino mounting
+
+Note: You will need your own Freeduino-SB or Arduino

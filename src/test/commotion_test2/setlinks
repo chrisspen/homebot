@@ -1,0 +1,8 @@
+#!/bin/bash
+echo $PWD
+ln -s $PWD/../../firmware/torso_arduino/src/MotionController.h $PWD/src
+ln -s $PWD/../../firmware/torso_arduino/src/I2CAddresses.h $PWD/src
+ln -s $PWD/../../firmware/torso_arduino/src/ArduinoPinout.h $PWD/src
+ln -s $PWD/../../firmware/torso_arduino/src/SerialPort.h $PWD/src
+ln -s $PWD/../../firmware/torso_arduino/src/ID.h $PWD/src
+ln -s $PWD/../../firmware/torso_arduino/lib/Wire $PWD/lib

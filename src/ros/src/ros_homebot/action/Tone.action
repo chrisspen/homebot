@@ -1,0 +1,7 @@
+# Define the goal
+uint8[] tone
+---
+# Define the result
+---
+# Define a feedback message
+int32 percent

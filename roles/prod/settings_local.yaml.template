@@ -1,0 +1,25 @@
+
+hostname_hostnames:
+    ?: robot_hostname
+
+hostname_hostname: 'robot_hostname'
+
+hosts: ['robot_hostname']
+#hosts: ['robot_hostname.local']
+
+# Change this to match your local wifi SSID and password.
+nm_connections:
+    your_wifi_name: your wifi password
+
+# Change this if you don't want to use Raspbian.
+# Note, even though Ubuntu is preferred for ROS installations,
+# the Ubuntu 16.04 image for the the Raspberry Pi is too unstable as of this writing
+# and routinely crashed during reboots.
+includes:
+#-   settings_ubuntu_1604.yaml
+-   settings_raspbian_jessie.yaml
+
+# Change this to give your primary user a non-default password.
+user_passwords:
+    pi: raspberry # Jessie
+#    ubuntu: some password # Ubuntu

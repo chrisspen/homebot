@@ -1,0 +1,6 @@
+<launch>
+   <node name="head_arduino" pkg="ros_homebot_python" type="head_node.py" output="screen">
+      <!--<rosparam file="$(find ros_homebot_python)/config/head.yaml" command="load" />-->
+      <param name="verbose" type="bool" value="0" />
+   </node>
+</launch>

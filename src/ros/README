@@ -1,0 +1,118 @@
+This was initialized and built with:
+
+    . ./setup.bash
+    catkin_make
+    echo $ROS_PACKAGE_PATH
+
+Note, the `overlay` folder stores all the third-party packages that we can't install via `apt-get`.
+
+To add or build a component in the overlay workspace see `build_overlay_ws`.
+
+View camera footage remotely:
+
+    export ROS_MASTER_URI=http://rae.local:11311; rosrun image_view image_view image:=/camera/image _image_transport:=compressed
+
+List running nodes:
+
+    rosnode list
+
+Note, ROS standard log files are located in:
+
+    /home/pi/.ros/log/latest
+
+Graph running nodes:
+
+    rqt_graph
+
+Add to ~/.bash_aliases (including for root user):
+
+    . /usr/local/homebot/.env/bin/activate
+    . /usr/local/homebot/src/overlay/devel/setup.bash
+    . /usr/local/homebot/src/ros/devel/setup.sh
+
+Logout and then login. You can confirm the correct paths are loaded by running:
+    
+    rosmsg list|grep -i homebot
+    rosmsg list|grep -i rpi
+
+You can test the mjpeg streaming server by viewing it at:
+
+    http://rae:8181/
+
+You can access the web-UI at:
+
+    http://rae:9000/
+
+Note, robot_upstart is irregularly maitained and no longer supports Kinetic, our current release.
+
+To install robot_upstart from source:
+
+    cd overlay/src
+    git clone https://github.com/clearpathrobotics/robot_upstart.git
+    cd ..
+    time catkin_make --pkg robot_upstart
+
+Install auto-start script with:
+
+    sudo su -
+    #rosrun robot_upstart install --setup /usr/local/homebot/src/ros/shell --user root --job homebot ros_homebot/launch/all.launch
+    sudo bash -c "source /usr/local/homebot/src/ros/setup.bash; rosrun robot_upstart install --setup /usr/local/homebot/src/ros/setup.bash --job homebot --user pi ros_homebot/launch/all.launch"
+    
+    exit
+    sudo service homebot status
+    sudo service homebot start
+    sudo tail -f /var/log/upstart/homebot.log
+    sudo service homebot stop
+
+To uninstall upstart:
+
+    sudo bash -c "source /usr/local/homebot/src/ros/setup.bash; rosrun robot_upstart uninstall homebot"
+
+Note, this has to run as root due to a bug/limitation in robot_upstart that prevents the user from running with their group permissions. See http://docs.ros.org/api/robot_upstart/html/install.html
+    
+To kill everything:
+
+    sudo service homebot stop
+    
+or for forcifully:
+    
+    sudo rosnode kill --all
+
+Turn on laser:
+
+    rosservice call /rpi_gpio/set_pin 20 1
+    rosservice call /rpi_gpio/set_pin 20 0
+
+View raw image stream:
+
+    export ROS_MASTER_URI=http://rae.local:11311; rosrun image_view image_view image:=/camera/image
+
+To rebuild messages:
+
+    sudo service homebot stop
+    sudo apt-get update
+    sudo apt-get upgrade
+    rm -Rf build/ros_homebot_msgs
+    rm -Rf devel/lib/python2.7/dist-packages/ros_homebot_msgs 
+    time catkin_make clean
+    time catkin_make --pkg ros_homebot_msgs
+
+Sometimes a segfault may occur. In this case, try rebooting and running the above again.
+
+To kill a node:
+
+    rosnode kill <name>
+
+To create a new package:
+
+    catkin_create_pkg <package_name> std_msgs rospy ros_homebot_msgs ros_homebot_python
+
+To run the diagnostic scripts:
+
+    export ROS_MASTER_URI=http://rae.local:11311; rosrun ros_homebot torso_check.py
+    
+    export ROS_MASTER_URI=http://rae.local:11311; rosrun ros_homebot head_check.py
+    
+To review all installed all ROS packages:
+
+    rospack list | grep -i packagename

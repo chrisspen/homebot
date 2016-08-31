@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# Doesn't work, not viewable in VLC?
+#http://raspberrypi.stackexchange.com/a/26075/29103
+#sudo modprobe bcm2835-v4l2
+#sudo apt-get install vlc-nox vlc
+cvlc v4l2:///dev/video0 --v4l2-width 320 --v4l2-height 240 --v4l2-chroma h264 --sout '#standard{access=http,mux=ts,dst=0.0.0.0:12345}' :demux=264
+#http://rae.local:12345
+
+# Works, about 2-second delay, consuming 12% cpu.
+cvlc v4l2:///dev/video0 --v4l2-width 640 --v4l2-height 360 --v4l2-chroma h264 --sout '#standard{access=http,mux=ts,dst=0.0.0.0:12345}' :demux=264
+#http://rae.local:12345
+
+# Works, but has about a 3-second delay.
+# Vew at rtsp://rae.local:8554/
+raspivid -o - -t 0 -hf -w 640 -h 360 -fps 25 | cvlc -vvv stream:///dev/stdin --sout '#rtp{sdp=rtsp://:8554}' :demux=h264
+
+#http://raspberrypi.stackexchange.com/questions/22288/how-can-i-get-raspivid-to-skip-h264-encoding-getting-rid-of-5-second-latency-s
+#sudo apt-get install gstreamer1.0-tools gstreamer1.0
+raspivid -t 0 -w 640 -h 480 -fps 25 -b 1200000 -p 0,0,640,480 -o - | gst-launch-1.0 -v fdsrc ! h264parse ! rtph264pay config-interval=1 pt=96 ! gdppay ! tcpserversink host=0.0.0.0 port=8554
+#gst-launch-1.0 -v tcpclientsrc host=rae.local port=8554 ! gdpdepay ! rtph264depay ! avdec_h264 ! videoconvert ! autovideosink sync=false
+#gst-launch-1.0 -v tcpclientsrc host=rae.local port=8554 ! gdpdepay ! rtph264depay ! h264parse ! omxh264dec ! autovideosink sync=false
+
+#http://blog.tkjelectronics.dk/2013/06/how-to-stream-video-and-audio-from-a-raspberry-pi-with-no-latency/comment-page-1/
+raspivid -t 999999 -w 1080 -h 720 -fps 25 -hf -b 2000000 -o - | gst-launch-1.0 -v fdsrc ! h264parse ! rtph264pay config-interval=1 pt=96 ! gdppay ! tcpserversink host=0.0.0.0 port=8554
+#gst-launch-1.0 -v tcpclientsrc host=serverIp port=5000 ! gdpdepay ! rtph264depay ! avdec_h264 ! videoconvert ! autovideosink sync=false
+#gst-launch-1.0 -v tcpclientsrc host=serverIp port=5000 ! gdpdepay ! rtph264depay ! omxh264dec ! videoconvert ! autovideosink sync=false
+#WARNING: erroneous pipeline: no element "avdec_h264"
+#use omxh264dec instead
+#gst-inspect-1.0|grep -i avdec
+#gst-launch-1.0 -v tcpclientsrc host=rae.local port=8554 ! gdpdepay ! rtph264depay ! h264parse ! omxh264dec ! autovideosink sync=false
+
+#sudo add-apt-repository ppa:mc3man/gstffmpeg-keep
+#sudo apt-get update
+#sudo apt-get install gstreamer0.10-ffmpeg
+#gst-inspect-1.0|grep -i h264
+
+#http://www.home-automation-community.com/surveillance-with-raspberry-pi-noir-camera-howto/
+#avconv -i video_1Mpx_49fps_wide_low_bitrate_2000000.h264 -vcodec copy video_1Mpx_49fps_wide_low_bitrate_2000000.mp4
+#raspivid -t 999999 -h 720 -w 1280 -fps 25 -b 2000000 -vf -o - | avconv -i pipe:0 -vcodec copy -f mp4 http://0.0.0.0:8554
+#avplay http://rae.local:8554
+#ffmpeg -f video4linux2 -standard ntsc -i /dev/video0 http://<server_ip>:8090/0.ffm
+
+# Works! Almost no latency! Uses about 12% cpu.
+#http://hardtechlife.com/streaming-video-on-the-raspberry-pi/
+raspivid -t 999999 -h 720 -w 1280 -fps 25 -b 2000000 -vf -o - | gst-launch-1.0 -v fdsrc ! h264parse ! rtph264pay config-interval=1 pt=96 ! gdppay ! tcpserversink host=0.0.0.0 port=8554
+#gst-launch-0.10 -v tcpclientsrc host=rae.local port=8554 ! gdpdepay ! rtph264depay ! ffdec_h264 ! autovideosink
+
+# Works! Not quite as good as gstreamer's latency, but still fast and has a web UI and only uses 5% cpu.
+# Has WebRTC that works in HTML5, but it requires a lot of JS.
+# Faster when viewed in the browser, slow 3-second latency when viewed from VLC.
+#http://www.linux-projects.org/modules/sections/index.php?op=viewarticle&artid=17
+#http://www.linux-projects.org/modules/sections/index.php?op=viewarticle&artid=14
+#http://www.instructables.com/id/Raspberry-Pi-Video-Streaming/?ALLSTEPS
+#sudo pkill uv4l
+uv4l -nopreview --auto-video_nr --driver raspicam --encoding mjpeg --width 640 --height 480 --framerate 20 --hflip=yes --vflip=yes --bitrate=2000000 --server-option '--port=9090' --server-option '--max-queued-connections=30' --server-option '--max-streams=25' --server-option '--max-threads=29'
+#http://rae.local:9090/
+#http://rae.local:9090/stream/video.mjpeg
+#vlc http://rae.local:9090/stream/video.h264 --demux h264

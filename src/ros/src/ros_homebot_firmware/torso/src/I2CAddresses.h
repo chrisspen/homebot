@@ -1,0 +1,2 @@
+#define COMMOTION_ADDR  0x1e // 30
+#define ACCELGYRO_ADDR  0x68 // 104

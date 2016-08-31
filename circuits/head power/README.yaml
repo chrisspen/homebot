@@ -1,0 +1,5 @@
+description: A circuit that allows the torso to completely cut-off power to the head component.
+status: reference-only
+parts:
+    head_power_harness_full.fzz: an overview of how the circuit would sit between the torso's Arduino Uno and the head's Raspberry Pi.
+    head_power_harness.fzz: the stand-alone circuit, meant to be constructed as a wiring harness to be connected inline with the power cable going to the Pi

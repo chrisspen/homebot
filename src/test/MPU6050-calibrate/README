@@ -1,0 +1,12 @@
+http://wired.chillibasket.com/2015/01/calibrating-mpu6050/
+
+The sketch outputs the required accelerometer and gyroscope offsets through the serial monitor. All you have to do is plug them into the initialisation code at the start of your program, and you are good to go! Please note that the required offsets vary significantly from sensor to sensor, so you have to repeat the calibration program above for each MPU-6050 sensor you are using.
+
+Sensor readings with offsets:   7   -9  16375   0   -1  0
+Your offsets:   -3984   -525    -849    17  147 54
+
+Data is printed as: acelX acelY acelZ giroX giroY giroZ
+Check that your sensor readings are close to 0 0 16384 0 0 0
+If calibration was succesful write down your offsets so you can set them in your projects using something similar to mpu.setXAccelOffset(youroffset)
+
+Test these values in MPU6050-read.

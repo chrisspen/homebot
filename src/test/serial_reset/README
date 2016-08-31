@@ -1,0 +1,6 @@
+Attempts to connect to an Arduino UNO without triggering auto-reset without any hardware modifications.
+
+    http://stackoverflow.com/questions/15460865/disable-dtr-in-pyserial-from-code
+
+    http://playground.arduino.cc/Main/DisablingAutoResetOnSerialConnection
+    

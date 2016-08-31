@@ -1,0 +1,9 @@
+#!/bin/bash
+set -e
+
+[ ! -f src/ArduinoPinout.h ] && ln -s ../../../firmware/head_arduino/src/ArduinoPinout.h src/ArduinoPinout.h
+[ ! -f src/NeckPositionSensor.h ] && ln -s ../../../firmware/head_arduino/src/NeckPositionSensor.h src/NeckPositionSensor.h
+
+ano build
+ano upload
+#Press Ctrl+A Ctrl+X to exit.

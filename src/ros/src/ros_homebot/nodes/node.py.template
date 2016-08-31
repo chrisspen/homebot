@@ -1,0 +1,19 @@
+#!/usr/bin/env python
+
+import time
+
+import rospy
+import std_srvs.srv
+
+import ros_homebot_msgs.srv
+
+class {NodeName}():
+    """
+    Handles all post-startup init that can't be easily done via roslaunch.
+    """
+    
+    def __init__(self):
+        rospy.init_node('{NodeName}', log_level=rospy.DEBUG)
+
+if __name__ == '__main__':
+    {NodeName}()

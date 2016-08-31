@@ -1,0 +1,9 @@
+#!/bin/bash
+set -e
+
+clear
+
+ano clean
+ano build
+ano upload
+ano serial

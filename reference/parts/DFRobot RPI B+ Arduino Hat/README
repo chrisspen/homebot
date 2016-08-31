@@ -1,0 +1,26 @@
+Raspberry Pi B+ Meet Arduino Shield SKU:DFR0327
+
+http://www.dfrobot.com/wiki/index.php?title=Raspberry_Pi_B%2B_Meet_Arduino_Shield_SKU:DFR0327
+
+Specification
+
+    Onboard Microcontroller: ATmega32u4
+    Arduino Leonardo Chip
+    Arduino Compatible pin mapping
+    Compatible with All arduino standard shield and sensors
+    System Voltage: 5v
+    Arduino Digital I/O: 20
+    Arduino Analog I/O: 6
+    Raspberry Pi B+ GPIO : 16
+    Raspberry Pi B+ I2C: 1
+    Raspberry Pi B+ ID_I2C: 1
+    Raspberry Pi B+ SPI: 1
+    Raspberry Pi B+ TTL UART: 1
+    Dimension: 88mm x 56mm x 26mm
+
+Note, the Pi-ID IIC pins go to the RPi pins 27/28 (ID_SD/ID_SC), which is the I2C interface for the EEPROM.
+
+The Pi-IIC pins go to the normal I2C pins at RPi pins GPIO2 (SDA) and GPIO3 (SCL).
+
+Note of warning. This shield appears as an I2C device at address 0x68. This shouldn't be a problem in most cases, but make sure any I2C devices you want to use with it aren't hardcoded for that same address. Otherwise they won't work. I stumbled into this problem with an I2C device that also happened to use address 0x68.
+ 

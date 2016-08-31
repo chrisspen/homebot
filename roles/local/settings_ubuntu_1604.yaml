@@ -1,0 +1,4 @@
+# Settings for Ubuntu 16.04.
+
+ros_conf_os_type: ubuntu
+ros_conf_os_release: 16.04

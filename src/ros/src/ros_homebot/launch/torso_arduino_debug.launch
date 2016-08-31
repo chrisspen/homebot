@@ -1,0 +1,6 @@
+<launch>
+   <node name="torso_arduino" pkg="ros_homebot_python" type="torso_node.py" output="screen">
+      <!--<rosparam file="$(find ros_homebot_python)/config/torso.yaml" command="load" />-->
+      <param name="verbose" type="bool" value="1" />
+   </node>
+</launch>

@@ -1,0 +1,4 @@
+/.project
+*.o
+*.a
+mstest

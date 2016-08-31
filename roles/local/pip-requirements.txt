@@ -1,0 +1,10 @@
+Fabric==1.10.2
+PyYAML==3.11
+burlap
+
+# Allows us to create GTK3 applications.
+pgi
+
+# head_arduino_tester
+pyserial==2.7
+urwid==1.3.1

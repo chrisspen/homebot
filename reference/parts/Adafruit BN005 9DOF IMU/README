@@ -1,0 +1,25 @@
+Adafruit 9-DOF Absolute Orientation IMU Fusion Breakout
+
+Product Description
+
+If you've ever ordered and wire up a 9-DOF sensor, chances are you've also realized the challenge of turning the sensor data from an accelerometer, gyroscope and magnetometer into actual "3D space orientation"! Orientation is a hard problem to solve. The sensor fusion algorithms (the secret sauce that blends accelerometer, magnetometer and gyroscope data into stable three-axis orientation output) can be mind-numbingly difficult to get right and implement on low cost real time systems. Bosch is the first company to get this right by taking a MEMS accelerometer, magnetometer and gyroscope and putting them on a single die with a high speed ARM Cortex-M0 based processor to digest all the sensor data, abstract the sensor fusion and real time requirements away, and spit out data you can use in quaternions, Euler angles or vectors. Rather than spending weeks or months fiddling with algorithms of varying accuracy and complexity, you can have meaningful sensor data in minutes thanks to the BNO055 - a smart 9-DOF sensor that does the sensor fusion all on its own! Sensor on its own breakout, complete with 3.3V regulator, logic level shifting for the Reset and I2C pins, an external 32.768KHz crystal (recommended for best performance), and breakouts for some other pins you might find handy. Comes assembled and tested, with a small piece of header. Some soldering is required to attach the header to the breakout PCB, but its pretty easy work. Best of all you can get started in 10 minutes with Adafruit's handy tutorial on assembly, wiring, Arduino library and Processing graphical interface, and more! 
+
+https://www.adafruit.com/product/2472
+
+https://www.amazon.com/Adafruit-Absolute-Orientation-Fusion-Breakout/dp/B017PEIGIG/
+
+For connecting via Arduino:
+
+    https://learn.adafruit.com/adafruit-bno055-absolute-orientation-sensor/overview
+    https://github.com/adafruit/Adafruit_Python_BNO055
+
+For connecting via Raspberry Pi:
+    
+    https://github.com/ghirlekar/bno055-python-i2c
+    https://learn.adafruit.com/bno055-absolute-orientation-sensor-with-raspberry-pi-and-beaglebone-black/hardware
+
+    Connect BNO055 Vin to Raspberry Pi 3.3V power.
+    Connect BNO055 GND to Raspbery Pi ground.
+    Connect BNO055 SDA (now UART TX) to Raspberry Pi RXD pin.
+    Connect BNO055 SCL (now UART RX) to Raspberry Pi TXD pin.
+    Connect BNO055 PS1 to BNO055 Vin / Raspberry Pi 3.3V power.

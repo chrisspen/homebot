@@ -1,0 +1,7 @@
+Reads raw uncalibrated acceleration, gyroscope and compass data from an MPU9250.
+
+Based on guide at http://www.lucidarme.me/?p=5057
+
+Requires the third-party library: http://playground.arduino.cc/Code/Timer1
+
+DOES NOT WORK

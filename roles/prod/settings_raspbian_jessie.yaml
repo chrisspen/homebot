@@ -1,0 +1,34 @@
+# For Raspbian Jessie.
+
+rpi_conf_os_type: raspbian
+rpi_conf_os_release: jessie
+
+ros_conf_os_type: raspbian
+ros_conf_os_release: jessie
+
+homebot_user: pi
+homebot_group: pi
+homebot_upstart_user: pi
+
+host_default_hostname: raspberrypi
+host_default_user: pi
+host_default_password: raspberry
+host_login_check: true
+#host_post_initrole_tasks:
+#-   user.enter_password_change
+
+hostname_default_hostnames:
+    rae: raspberrypi
+    
+pip_user: pi
+pip_group: pi
+
+user: pi
+user_default_passwords:
+    pi: raspberry
+user_groups:
+    pi: [admin, root, www-data, gpio, i2c]
+user_passwordless:
+    pi: true
+user_reset_passwords_on_first_login:
+    pi: true

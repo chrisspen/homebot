@@ -1,0 +1,22 @@
+Runs a small webserver allowing for remove motor control and video streaming.
+
+Initialize with:
+
+    ./manage.py migrate --run-syncdb
+    ./manage.py loaddata homebot_dashboard/fixtures/users.json
+
+Run with:
+
+    ./manage.py socketio_runserver
+    
+or:
+
+    rosrun ros_homebot_teleop teleop_node.py _verbose:=1
+
+or:
+
+    roslaunch ros_homebot_teleop teleop.launch
+
+Default login is admin/password.
+
+Based on the example http://www.pixeldonor.com/2014/jan/10/django-gevent-and-socketio/

@@ -1,0 +1,11 @@
+This is code for the Arduino Leonardo located in the head section.
+
+It's primarily responsible for directly controlling the pan and tilt motors.
+
+https://www.arduino.cc/en/Main/ArduinoBoardLeonardo
+
+Installation
+------------
+
+    ./build
+    ./upload

@@ -1,0 +1,44 @@
+description: |-
+    Circuit that accepts an external 12V power supply, and use that to power the onboard Lipo charger simeltaneously with the rest of the robot.
+    Includes sensor hookups for monitoring battery voltage as well as the presence of the external power supply.
+
+    In order for the reed switch to properly close, the two magnets in the male plug need to be aligned oppositely.
+    
+    e.g. If the +V magnet has its north pole facing outwards, then the -V magnet must have its south pole facing outwards.
+    
+    Outherwise, the two magnets cancel each other out and the reed switch stays open.
+    
+    EP (external power) goes to an Arduino digital pin.
+    
+    S1 is a normally-open magnetic reed switch closed by a magnet on the input voltage source plug. I added it because Vin is attached to a battery's positive terminal, so that's there as a safety mechanism to ensure the 8.4V contact doesn't expose live battery leads when the external plug is unplugged.
+    
+    D1 is necessary so EP stays pulled low when the plug is attached but no external power is present.
+    
+    To etch:
+    
+    1. export for production as svg or pdf
+    2. delete all except for files
+    
+        recharge_plug_female_12v_v2_etch_copper_bottom.svg
+        recharge_plug_female_12v_v2_etch_silk_bottom.svg
+        
+        Remember, these are going to be flipped when transferred onto copper.
+        
+        Bottom transistor pin in source.
+        
+    3. print
+    
+        for SVG use Inkscape, not Eye-of-Gnome which screws up the scaling
+        for PDF, ensure page scaling is set to none
+    
+    When wiring:
+    
+        EP = 24 awg
+        CHGR PWR = 22 awg
+        Load = 22 awg
+        Batt = 22 awg
+        Sensors = 24 awg
+
+status: production
+parts:
+    recharge_plug_female_12v_v2.fzz: The primary circuit.

@@ -1,0 +1,30 @@
+# Settings for Ubuntu 16.04.
+
+ros_conf_os_type: ubuntu
+ros_conf_os_release: 16.04
+
+homebot_user: ubuntu
+homebot_group: ubuntu
+homebot_upstart_user: ubuntu
+
+host_default_hostname: ubuntu
+host_default_user: ubuntu
+host_default_password: ubuntu
+host_post_initrole_tasks:
+-   user.enter_password_change
+
+hostname_default_hostnames:
+    rae: ubuntu
+
+pip_user: ubuntu
+pip_group: ubuntu
+
+user: ubuntu
+user_default_passwords:
+    ubuntu: ubuntu
+user_groups:
+    ubuntu: [admin, root, www-data, gpio, i2c]
+user_passwordless:
+    ubuntu: true
+user_reset_passwords_on_first_login:
+    ubuntu: true

@@ -1,0 +1,5 @@
+Arduino
+    I2C
+        15 = ComMotion
+            MCU1 = 30
+            MCU2 = 31 (can be ignored)

@@ -1,0 +1,13 @@
+# Define the pins that are inputs or outputs.
+directions:
+# The laser output.
+    "20": out
+
+# Define default pin states.
+states:
+# Initially, the laser should be off.
+    "20": 0
+
+shutdown_states:
+# If we shutdown, ensure we turn off the laser.
+    "20": 0

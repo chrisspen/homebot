@@ -1,0 +1,6 @@
+#!/bin/bash
+set -e
+ano build
+ano upload
+ano serial
+#Press Ctrl+A Ctrl+X to exit.

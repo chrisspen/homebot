@@ -1,0 +1,4 @@
+<!-- Loads all nodes for the full production system. -->
+<launch>
+   <node name="homebot_init" pkg="ros_homebot" type="init_node.py" output="screen"></node>
+</launch>

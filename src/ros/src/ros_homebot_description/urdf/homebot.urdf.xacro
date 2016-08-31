@@ -1,0 +1,81 @@
+<?xml version="1.0"?>
+<robot name="homebot"
+    xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <xacro:macro name="box_inertia" params="mass x y z">
+    	<inertia
+    		ixx="${mass*(y*y+z*z)/12}" ixy="0" ixz="0"
+			iyy="${mass*(x*x+z*z)/12}" iyz="0" izz="${mass*(x*x+z*z)/12}" /> 
+	</xacro:macro>
+    
+    <xacro:include filename="$(find ros_homebot_description)/urdf/materials.urdf.xacro" />
+    
+    <!-- width in meters -->
+    <property name="torso_x_size" value="0.1" />
+    
+    <!-- length in meters -->
+    <property name="torso_y_size" value="0.205" />
+    
+    <!-- height in meters -->
+    <property name="torso_z_size" value="0.03" />
+    
+    <!-- torso mass (not including legs) in kg -->
+    <property name="torso_mass" value="0.920" />
+
+    <link name="base_footprint">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+	    <inertial>
+			<mass value="0.0001" />
+			<origin xyz="0 0 0" />
+			<inertia
+				ixx="0.0001" ixy="0.0" ixz="0.0"
+			  	iyy="0.0001" iyz="0.0" izz="0.0001" />
+	    </inertial>
+    </link>
+    <gazebo reference="base_footprint">
+        <turnGravityOff>false</turnGravityOff>
+    </gazebo>
+    
+	<joint name="base_footprint_joint" type="fixed">
+		<origin xyz="0 0 ${total_leg_height}" rpy="0 0 0" />
+		<parent link="base_footprint"/>
+		<child link="base_link" />
+	</joint>
+  
+    <link name="base_link">
+        <visual>
+            <geometry>
+                <box size="${torso_x_size} ${torso_y_size} ${torso_z_size}" />
+            </geometry>
+            <material name="red"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="${torso_x_size} ${torso_y_size} ${torso_z_size}" />
+            </geometry>
+        </collision>
+	    <inertial>
+	        <origin xyz="0 0 0" rpy="0 0 0" />
+	        <mass value="${torso_mass}" />
+	        <xacro:box_inertia
+	            mass="${torso_mass}"
+	            x="${torso_x_size}" y="${torso_y_size}" z="${torso_z_size}" />
+	    </inertial>
+    </link>
+    <gazebo reference="base_link">
+        <material>Gazebo/Red</material>
+        <turnGravityOff>false</turnGravityOff>
+    </gazebo>
+    
+    <gazebo>
+        <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+            <robotNamespace>/homebot</robotNamespace>
+        </plugin>
+    </gazebo>
+    
+</robot>

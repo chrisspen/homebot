@@ -1,0 +1,32 @@
+SMAKN® 9DOF MPU-9150 3 Axis Gyroscope+Accelerometer+magnetic field 
+
+https://www.amazon.com/gp/product/B00RMALGGS/
+
+Product Features
+
+    Digital-output 9-axis MotionFusion data in rotation matrix, quaternion, Euler Angle, or raw data format.
+    Tri-Axis angular rate sensor (gyro) with a sensitivity up to 131 LSBs/dps and a full-scale range of ±250, ±500, ±1000, and ±2000dps.
+    Tri-Axis accelerometer with a programmable full scale range of ±2g, ±4g, ±8g and ±16g.
+    Tri-axis compass with a full scale range of ±1200μT.
+    Reduced settling effects and sensor drift by elimination of board-level cross-axis alignment errors between accelerometer, gyroscope, and compass.
+
+Product Description
+
+    Digital-output 9-axis MotionFusion data in rotation matrix, quaternion, Euler Angle, or raw data format.
+    Tri-Axis angular rate sensor (gyro) with a sensitivity up to 131 LSBs/dps and a full-scale range of ±250, ±500, ±1000, and ±2000dps.
+    Tri-Axis accelerometer with a programmable full scale range of ±2g, ±4g, ±8g and ±16g.
+    Tri-axis compass with a full scale range of ±1200μT.
+    Reduced settling effects and sensor drift by elimination of board-level cross-axis alignment errors between accelerometer, gyroscope, and compass.
+    VDD Supply voltage range of 2.4V-3.46V; VLOGIC of 1.8V±5% or VDD.
+    Gyro operating current: 3.6mA (full power, gyro at all rates). Gyro + Accel operating current: 3.8mA (full power, gyro at all rates, accel at 1kHz sample rate).
+    Gyro + Accel + Compass + DMP operating current: 4.25mA (full power, gyro at all rates, accel at 1kHz sample rate, compass at 8Hz rate).
+    Accel low power mode operating current: 10uA at 1Hz, 20uA at 5Hz, 70uA at 20Hz, 140uA at 40Hz.
+    Full Chip Idle Mode Supply Current: 8μA.
+    400kHz Fast Mode I2C serial host interface.
+    On-chip timing generator with ±1% frequency variation over full temperature range.
+    10,000g shock tolerant.
+    I2C Pullup Resistors populated on board.
+    All Pins Broken Out to Standard 0.1" Spaced Headers.
+    Solder Jumper for Switching LSB of I2C Address.
+    Package included:
+    1pc 9DOF MPU-9150 3 Axis Gyroscope+Accelerometer+magnetic field replace MPU 6050

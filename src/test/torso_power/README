@@ -1,0 +1,5 @@
+Test the intelligent power button functionality.
+
+When off, pressing the power button turns on the system.
+
+When on, pressing the same power button turns off the system. 

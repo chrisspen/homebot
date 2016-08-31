@@ -1,0 +1,17 @@
+site_name: Homebot
+
+site_author: Chris Spencer
+
+repo_url: https://github.com/chrisspen/homebot
+
+theme: readthedocs
+
+pages:
+-   Home: index.md
+-   Tools: tools.md
+-   'Parts & Supplies': parts.md
+-   Setup: setup.md
+-   Hardware: hardware.md
+-   Software: software.md
+-   Experiment: experiment.md
+-   Development: development.md

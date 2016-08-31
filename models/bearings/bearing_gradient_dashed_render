@@ -1,0 +1,6 @@
+#!/bin/bash
+#openscad bearing_gradient_dashed.scad -o bearing_gradient_dashed.png --camera=0,0,10,0,0,0 --projection=ortho --imgsize=96,5
+openscad bearing_gradient_dashed.scad -o bearing_gradient_dashed.svg --camera=0,0,-10,0,0,0 --projection=ortho
+sed -i 's/lightgray/black/g' bearing_gradient_dashed.svg
+sed -i 's/stroke-width="0.5"/stroke-width="0"/g' bearing_gradient_dashed.svg
+

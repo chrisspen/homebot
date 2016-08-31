@@ -1,0 +1,10 @@
+# Define the goal
+string text
+string voice
+uint32 speed
+uint32 volume
+---
+# Define the result
+---
+# Define a feedback message
+int32 percent

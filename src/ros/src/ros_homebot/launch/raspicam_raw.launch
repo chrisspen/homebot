@@ -1,0 +1,19 @@
+<launch>
+    <group ns="raspicam">
+        <node name="raspicam_raw_node" pkg="raspicam" type="raspicam_raw_node" output="screen">
+            <param name="framerate" type="int" value="30" />
+            <param name="quality" type="int" value="10" />
+
+            <!-- Raw node does not support custom sizes?!
+            Causes error:
+            Unable to convert 'bgra8' image for display: 'Image is wrongly formed: height * step != size  or  240 * 1360 != 337920'
+            <param name="width" type="int" value="340" />
+            <param name="height" type="int" value="240" />
+            -->
+
+            <param name="hflip" type="int" value="1" />
+            <param name="vflip" type="int" value="1" />
+            <param name="start" type="int" value="1" />
+        </node>
+    </group>
+</launch>

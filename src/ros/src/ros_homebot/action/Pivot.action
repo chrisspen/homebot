@@ -1,0 +1,7 @@
+# Define the goal
+int32 degrees
+---
+# Define the result
+---
+# Define a feedback message
+int32 percent

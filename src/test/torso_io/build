@@ -1,0 +1,21 @@
+#!/bin/bash
+set -e
+
+clear
+
+#ino build
+#ino upload
+#ino serial
+#Press Ctrl+A Ctrl+X to exit.
+
+[ ! -f src/ArduinoPinout.h ] && ln -s ../../../firmware/torso_arduino/ArduinoPinout.h src/ArduinoPinout.h
+[ ! -f src/I2CAddresses.h ] && ln -s ../../../firmware/torso_arduino/I2CAddresses.h src/I2CAddresses.h
+[ ! -d lib/Wire ] && ln -s /usr/share/arduino/hardware/arduino/avr/libraries/Wire lib/
+
+ano build
+ano upload
+ano serial
+
+#TODO:fix? upload does nothing?
+#arduino --verify --board arduino:avr:uno --port /dev/ttyACM0 test_torso_io.ino
+#arduino --upload --board arduino:avr:uno --port /dev/ttyACM0 test_torso_io.ino

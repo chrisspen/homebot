@@ -1,0 +1,73 @@
+inherits: all
+
+app_name: homebot
+
+avahi_enabled: true
+
+nm_check_enabled: true
+
+project_home: /usr/local/homebot
+
+remote_app_dir: /usr/local/homebot
+
+ros_version_name: kinetic
+ros_source_packages:
+-   ["roslint", "git clone https://github.com/ros/roslint.git"]
+-   ["xacro", "git clone https://github.com/ros/xacro.git"]
+-   ["actionlib", "git clone https://github.com/ros/actionlib.git"]
+-   ["robot_state_publisher", "git clone https://github.com/ros/robot_state_publisher.git"]
+#-   ["nav-msgs", "git clone https://github.com/ros/common_msgs.git"]
+-   ["geometry_msgs", "git clone https://github.com/ros/common_msgs.git"]
+-   ["actionlib_msgs", "git clone https://github.com/ros/common_msgs.git"]
+-   ["common_msgs", "git clone https://github.com/ros/common_msgs.git"]
+-   ["diagnostic_msgs", "git clone https://github.com/ros/common_msgs.git"]
+-   ["sensor_msgs", "git clone https://github.com/ros/common_msgs.git"]
+-   ["urdf", "git clone https://github.com/ros/robot_model.git"]
+-   ["tf", "git clone https://github.com/ros/geometry.git"]
+-   ["compressed_image_transport", "git clone https://github.com/ros-perception/image_transport_plugins.git"]
+-   ["image_common", "git clone https://github.com/ros-perception/image_common.git"]
+-   ["rosunit", "git clone https://github.com/ros/ros.git"]
+-   ["nodelet", "git clone https://github.com/ros/nodelet_core.git"]
+-   ["image_geometry", "git clone https://github.com/ros-perception/vision_opencv.git"]
+-   ["image_pipeline", "git clone https://github.com/ros-perception/image_pipeline.git"]
+
+ros_overlay_dir: /usr/local/homebot/src/overlay
+ros_overlay_packages:
+#-   ["robot_upstart", "git clone https://github.com/clearpathrobotics/robot_upstart.git"]
+-   ["rpi_gpio", "git clone https://github.com/chrisspen/rpi_gpio.git"]
+-   ["raspicam", "git clone https://github.com/fpasteau/raspicam_node.git raspicam"]
+
+ros_source_path: /usr/local/homebot/src/ros/setup.bash
+
+rpi_camera_enabled: true
+rpi_gpio_enabled: true
+rpi_i2c_enabled: true
+rpi_hardware_version: rpi3
+
+services:
+-   arduino
+-   avahi
+-   homebot
+-   host
+-   hostname
+-   mail
+-   nm
+-   ntpclient
+-   packager
+#-   pip
+-   ros
+-   rpi
+-   sshnice
+-   timezone
+-   unattendedupgrades
+-   user
+
+shell_default_dir_template: "%(project_home)s/src"
+shell_interactive_djshell_str: 
+shell_interactive_shell: "export SITE=None; export ROLE=prod; cd /usr/local/homebot/src; . ./shell; /bin/bash -i"
+
+sshnice_enabled: true
+
+timezone_timezone: America/New_York
+
+unattendedupgrades_reboot: false

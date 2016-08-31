@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block body-class %}login{% endblock %}
+
+{% block body %}
+
+<div class="container-fluid">
+    <div class="row-fluid">
+        <div class="centering text-center">
+        <form class="form-signin" method="post" action="{% url 'django.contrib.auth.views.login' %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}" />
+            
+            {% if form.errors %}
+                <p style="color: red;">Your username and password didn't match. Please try again.</p>
+            {% endif %}
+            
+            <h2 class="form-signin-heading">Please login</h2>
+            <input id="{{ form.username.id_for_label }}" type="text" class="form-control" name="username" placeholder="{{ form.username.label }}" required="" autofocus="" />
+            <input id="{{ form.password.id_for_label }}" type="password" class="form-control" name="password" placeholder="{{ form.password.label }}" required="" />      
+            <button class="btn btn-lg btn-primary btn-block" type="submit">Login</button>   
+        </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

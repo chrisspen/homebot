@@ -1,0 +1,29 @@
+Reads the voltage of a 12V battery from an ADC pin connected to a voltage divider.
+
+Vout = Vin * R2/(R1 + R2)
+
+Vin----[ R1 ]-----[ R2 ]---GND
+                 |
+                 |
+                 |
+               Vout
+
+>>> Vout = lambda Vin, R1, R2: Vin * R2/float(R1 + R2)
+>>> Vout(Vin=12, R1=70000, R2=50000)
+5.0
+
+References:
+
+    http://www.microbuilder.eu/Tutorials/Fundamentals/MeasuringBatteryVoltage.aspx
+    https://github.com/rlogiacco/BatterySense
+    http://arduino.stackexchange.com/questions/16722/safely-enabling-voltage-divider-on-a-12v-battery
+    https://en.wikipedia.org/wiki/MOSFET
+
+Parts List:
+
+    1 x p-channel mosfet (EBC SOT-23 [SMD])
+    1 x n-channel mosfet (EBC SOT-23 [SMD])
+    3 x 10k ohm (2512 [SMD])
+    1 x 20k ohm (2512 [SMD])
+    2 x 100 ohm (2512 [SMD])
+    
