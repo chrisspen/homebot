@@ -173,14 +173,14 @@
 </code></pre>
 <p>This command creates a Python virtual environment and installs a few required packages.</p>
 <p>Note, any command presented in this guide beginning with "fab" should be run in a terminal from the project's root directory. Also, that terminal must first have your virtual environment activated by running:</p>
-<pre><code>. ./shell
+<pre><code>. ./setup.bash
 </code></pre>
 <p>Set your custom settings by running:</p>
 <pre><code>cp roles/local/settings_local.yaml.template roles/local/settings_local.yaml
 </code></pre>
 <p>By default, it's assumed your deployment machine is running Ubuntu 16.04. Edit this file to select a different OS.</p>
 <p>Next, install ROS by running:</p>
-<pre><code>. ./shell
+<pre><code>. ./setup.bash
 fab local ros.configure
 </code></pre>
 <h2 id="new-install-checklist">New Install Checklist</h2>
