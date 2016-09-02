@@ -54,8 +54,10 @@ lrf_calibration_base.stl,,,,,,0
 lrf_calibration_base_75d.stl,,,,,,0
 lrf_calibration_centerpoint.stl,,,,,,0
 lrf_calibration_nub.stl,,,,,,0
+lrf_calibration_nub_all.stl,,,,,,0
 lrf_calibration_top.stl,,,,,,0
 mic_mount.stl,0.8,,,,,0
+mock_tread.stl,,,,,,0
 motor_mount_pan_bottom_20151224.stl,0.8,,,,,0
 motor_mount_pan_top_20151224.stl,0.8,,,,,0
 motor_pan_driver_mount.stl,0.8,,,,,0

@@ -21,7 +21,7 @@ This command creates a Python virtual environment and installs a few required pa
 
 Note, any command presented in this guide beginning with "fab" should be run in a terminal from the project's root directory. Also, that terminal must first have your virtual environment activated by running:
 
-    . ./shell
+    . ./setup.bash
 
 Set your custom settings by running:
 
@@ -31,7 +31,7 @@ By default, it's assumed your deployment machine is running Ubuntu 16.04. Edit t
     
 Next, install ROS by running:
 
-    . ./shell
+    . ./setup.bash
     fab local ros.configure
 
 New Install Checklist

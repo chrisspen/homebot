@@ -6,7 +6,15 @@ from __future__ import print_function
 import os, sys, tempfile, argparse, time, csv
 
 PRINTING_GUIDE_FN = 'printing_recommendations.csv'
-PRINTING_GUIDE_HEADERS = ['filename', 'wall_thickness', 'color', 'infill_percent', 'platform_adhesion', 'support_type', 'obsolete']
+PRINTING_GUIDE_HEADERS = [
+    'filename',
+    'wall_thickness',
+    'color',
+    'infill_percent',
+    'platform_adhesion',
+    'support_type',
+    'obsolete',
+]
 
 def generate_thumbnails(force=False, **kwargs):
     
@@ -37,7 +45,7 @@ def generate_thumbnails(force=False, **kwargs):
         tmp_fout.write('import("%s");' % os.path.abspath(fn))
         tmp_fout.close()
         
-        cmd = 'openscad --autocenter --projection=ortho --render --viewall -o %s %s' % (os.path.abspath(thumbnail_fn), tmp_fn)
+        cmd = 'openscad --autocenter --projection=ortho --render --viewall --colorscheme=Nature -o %s %s' % (os.path.abspath(thumbnail_fn), tmp_fn)
         print(cmd)
         os.system(cmd)
         

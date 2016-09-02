@@ -56,7 +56,7 @@ use <plates/ballast_tray.scad>;
 use <plates/top_rear_panel.scad>;
 use <plates/side_panel.scad>;
 
-color("red")
+//color("red")
 rotate([0,0,180]){
 
     if(show_platform){
@@ -98,10 +98,13 @@ rotate([0,0,180]){
         translate([0,0,bottom_clearance-u*3.5]){
             translate([0,0,torso_height+head_offset_z+u*2]){
 
+                color("red")
                 translate([0,0,-head_offset_z+u*1])
                 head_layout();
 
-                color("brown"){
+                //color("brown")
+                color("red")
+                {
                     
                     for(i=[0:1])
                     mirror([i,0,0])
@@ -135,6 +138,7 @@ rotate([0,0,180]){
                 }
 
                 if(show_head_shell){
+                    color("red")
                     difference(){
                         color([0,0,1,shell_alpha])
                         make_head_shell();
@@ -203,6 +207,7 @@ rotate([0,0,180]){
         color("orange")
         make_vertical_back_slotted();
 
+        color("red")
         translate([
             0,
             0,
@@ -211,6 +216,7 @@ rotate([0,0,180]){
         rotate([0,0,180])
         import("printable/battery_tray2_cartridge_bottom_20160522.stl");
         
+        color("red")
         translate([
             0,
             0,
@@ -221,16 +227,15 @@ rotate([0,0,180]){
         import("printable/battery_tray2_cartridge_top_20160522.stl");
     }
 
-
-        translate([0,-50-2,battery_height/2+bottom_clearance+battery_offset_z-24])
-        rotate([90,0,0])
-        color("red")
-        make_5a_step_down_converter();
-        color("green")
-        translate([0,-u*8.25,bottom_clearance+u*3.5])
-        rotate([90,0,0])
-        //make_dc_converter_tray();
-        import("printable/dc_converter_tray_20150917.stl");
+    translate([0,-50-2,battery_height/2+bottom_clearance+battery_offset_z-24])
+    rotate([90,0,0])
+    color("red")
+    make_5a_step_down_converter();
+    color("green")
+    translate([0,-u*8.25,bottom_clearance+u*3.5])
+    rotate([90,0,0])
+    //make_dc_converter_tray();
+    import("printable/dc_converter_tray_20150917.stl");
 
     if(show_rpi){
 
@@ -329,6 +334,7 @@ rotate([0,0,180]){
 
     }
 
+    color("red")
     if(show_track_wheels){
 
         echo("wheel(lr).y:", -(motor_plate_width/2+wheel_hub_offset/2)-motor_arm_offset_y);
@@ -392,12 +398,13 @@ rotate([0,0,180]){
     if(show_sonar_mount){
         translate([0,0,bottom_clearance+u*4 + u*8.5]){
             
-            color("brown")
+            //color("brown")
+            color("red")
             translate([0,0,0])
             //make_sonar_mount();
             import("printable/sonar_mount_2015119.stl");
             
-            color("red")
+            color("silver")
             for(i=[-1:1:1])
             rotate([0,0,30*i])
             translate([0,u*12+2,0])
@@ -412,7 +419,7 @@ rotate([0,0,180]){
             color("red")
             //make_recharge_mount();
             //import("printable/recharge_mount_20151114.stl");
-            color("green")
+            //color("green")
             //translate([0, 69, 0]) import("printable/recharge_plug_female_20151116.stl");
             translate([0, 69.5, 0]) rotate([0,0,-45]) import("printable/recharge_plug_female_v2_20160519.stl");
         }
@@ -432,12 +439,14 @@ rotate([0,0,180]){
 
         translate([0,0,bottom_clearance]){
 
-        color("blue")
+        color("red")
+        //color("blue")
         translate([0,0,-u*0])
         //make_edge_sensor_mount();
         import("printable/edge_sensor_mount_20151110.stl");
-            
-        color("orange")
+        
+        color("red")  
+        //color("orange")
         translate([0,0,u*1.5])
         rotate([0,180,0])
         import("printable/edge_sensor_mount_cover_20151111b.stl");
@@ -452,6 +461,7 @@ rotate([0,0,180]){
     if(show_motor_plates){
         
         if(show_motor_inner_plates){
+            color("red")
             translate([
                 horizontal_plate_width/2+unit_thickness*1.5,
                 0,
@@ -462,6 +472,7 @@ rotate([0,0,180]){
             //make_motor_unimount_2_a();
             import("printable/motor_unimount_2_a0_20160406.stl");
 
+            color("red")
             translate([
                 -(horizontal_plate_width/2+unit_thickness*1.5),
                 0,
@@ -474,6 +485,7 @@ rotate([0,0,180]){
         }
         
         if(show_motor_outer_plates){
+            color("red")
             translate([
                 horizontal_plate_width/2+unit_thickness*1.5 + u + track_wheel_gap,
                 0,
@@ -483,6 +495,7 @@ rotate([0,0,180]){
             //make_motor_unimount_2_b();
             import("printable/motor_unimount_2_b0_20160406.stl");
 
+            color("red")
             translate([
                 -(horizontal_plate_width/2+unit_thickness*1.5 + u + track_wheel_gap),
                 0,
@@ -496,25 +509,30 @@ rotate([0,0,180]){
 
     if(show_torso_shell){
         
-        color("orange")
+        color("red")
+        //color("orange")
         translate([0, -u*0, bottom_clearance + u*3.5])
         rotate([0, 0, 180])
         import("printable/lower_rear_panel_20151122.stl");
 
-        color("lightgreen")
+        color("red")
+        //color("lightgreen")
         translate([0, -u*0, bottom_clearance + u*16])
         rotate([0,0,180])
         //make_top_rear_panel(show_door=0);
         import("printable/top_rear_panel_20151122.stl");
 
+        //TODO
         for(i=[0:1])
-        color("pink")
+        //color("pink")
+        color("red")
         rotate([0,0,180*i])
         translate([-u*0, -u*0, bottom_clearance + u*12])
         rotate([0,0,90])
         //make_side_panel();
         import("printable/side_panel_20151204b.stl");
         
+        color("red")
         for(i=[0:1])
         mirror([1*i,0,0])
         translate([0,0,75])
@@ -529,10 +547,12 @@ rotate([0,0,180]){
     //import("printable/ballast_tray_20160329.stl");
     import("printable/arduino_tray_2_20160508.stl");
 
+    color("red")
     translate([-u*0, -u*0, u*2 - u*0])
     //import("printable/ballast_tray_20160329.stl");
     import("printable/ballast_tray_20160414.stl");
 
+    color("red")
     translate([-u*0, -u*0, u*2 - u*0])
     rotate([0,0,180])
     import("printable/ballast_tray_20160414.stl");
@@ -574,6 +594,7 @@ rotate([0,0,180]){
     //make_side_frame_extension();
     import("printable/side_frame_extension_20151129.stl");
 
+    color("red")
     translate([0, u*0, bottom_clearance + u*21]){
         //make_top_front_panel();
         import("printable/top_front_panel_20151122.stl");
@@ -597,6 +618,7 @@ rotate([0,0,180]){
     //make_104_pr();
     rotate([90,0,0]) make_1410();
 
+    color("red")
     translate([0,0,120-5/2])
     rotate([0,0,180])
     import("printable/top_rear_panel2_20160526.stl");
@@ -605,6 +627,15 @@ rotate([0,0,180]){
     translate([0,0,145+1.5])
     rotate([180,0,0])
     import("printable/torso_wire_restrainer.stl");
+
+    for(i=[0:1])
+    mirror([1*i, 0, 0])
+    color("black")
+    translate([.1,0,-1])
+    rotate([0,0,180])
+    rotate([0,90,0])
+    scale([1.1,1.01,1.01])
+    import("printable/mock_tread.stl");
 
 }
 
