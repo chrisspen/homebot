@@ -49,10 +49,12 @@ This will display a window showing an image of the line laser. Follow the on-scr
 
 Finally, confirm calibration has been set correctly but running a continuous laser ranger finder with:
 
+    export ROS_MASTER_URI=http://robot.local:11311
     roslaunch ros_homebot lrf_compressed_320_debug.launch
 
 and visualizing it with:
 
+    export ROS_MASTER_URI=http://robot.local:11311
     rosrun ros_homebot_lrf lrf_plot.py
 
 Slowly move your hand in front of the laser and confirm the visualization changes accordingly.

@@ -64,7 +64,7 @@ services:
 
 shell_default_dir_template: "%(project_home)s/src"
 shell_interactive_djshell_str: 
-shell_interactive_shell: "export SITE=None; export ROLE=prod; cd /usr/local/homebot/src; . ./shell; /bin/bash -i"
+shell_interactive_shell: "export SITE=None; export ROLE=prod; cd /usr/local/homebot/src; . ./setup.bash; /bin/bash -i"
 
 sshnice_enabled: true
 

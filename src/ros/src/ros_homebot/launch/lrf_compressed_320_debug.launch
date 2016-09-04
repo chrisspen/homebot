@@ -7,5 +7,6 @@
       <param name="straightening" value="0" />
       <param name="show_line_image" value="1" />
       <param name="start" type="int" value="1" />
+      <param name="verbose" type="int" value="1" />
    </node>
 </launch>

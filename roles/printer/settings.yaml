@@ -13,4 +13,4 @@ services:
 
 shell_default_dir_template: "~"
 
-user: ?
+user: '?'

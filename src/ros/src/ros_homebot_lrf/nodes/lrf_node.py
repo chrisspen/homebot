@@ -10,6 +10,7 @@ import io
 from PIL import Image as PilImage
 import numpy
 import cv2
+from scipy.signal import medfilt2d
 import rospy
 from sensor_msgs.msg import CompressedImage, Image, LaserScan
 from std_srvs.srv import Empty as EmptySrv, EmptyResponse
@@ -139,6 +140,43 @@ class CalibrationManager(object):
         if write_to_file:
             print('\nCalibration file written to %s.' % calibration_fn)
 
+class NoiseFilter(object):
+    
+    def __init__(self, name='medfilt', func_kwargs=None, history_size=3):
+        from scipy import signal
+        self.func = getattr(signal, name)
+        self.func_kwargs = dict(kernel_size=3)
+        
+        self.history_size = history_size
+        self.history_buckets = None
+        
+    def add(self, distances):
+        
+        # Initialize buckets.
+        if self.history_buckets is None:
+            self.history_buckets = [[] for _ in distances]
+            
+        for i, v in enumerate(distances):
+            
+            # Ignore missing values.
+            if v < 0 and self.history_buckets[i]:
+                continue
+                
+            # Add value to history.
+            self.history_buckets[i].append(v)
+            
+            # Forget old values.
+            if len(self.history_buckets[i]) > self.history_size:
+                self.history_buckets[i].pop(0)
+        
+    def get(self):
+        lst = [
+            numpy.median(bucket)
+            for bucket in self.history_buckets
+        ]
+        lst = self.func(lst, **self.func_kwargs)
+        return lst
+
 class LRF():
     
     def __init__(self):
@@ -157,6 +195,8 @@ class LRF():
         self._state_change_ts = None
         self._image_without_laser = None
         self._image_with_laser = None
+        
+        self.noise_filter = NoiseFilter()
         
         # The time when we started measuring distances.
         self._t0 = None
@@ -368,6 +408,10 @@ class LRF():
             assert len(distances) == len(pfc)
             self.log('dist calc:', time.time() - t0)
             
+            # Filter distances to remove noise.
+            self.noise_filter.add(distances)
+            distances = self.noise_filter.get()
+            
             if self.show_straightening:
                 level_variance = numpy.var([_ for _ in distances if _ >= 0])
                 print('raw pixels:', ' '.join(map(lambda v: str(int(v)), compress_list(distances))), 'level variance (should be close to 0):', level_variance)
@@ -398,7 +442,7 @@ class LRF():
                 cv_image = numpy.array(pil_image)
                 #cv2.cvtColor(cv_image, cv2.COLOR_BGRA2RGB)
 #                 cv_image = cv_image[:, :, ::-1].copy()
-                image_message = self.bridge.cv2_to_imgmsg(cv_image, encoding='bgr8')
+                image_message = self.bridge.cv2_to_imgmsg(cv_image, encoding='bgr8')#outputs pipe?
                 self.line_image_pub.publish(image_message)
                 self.log('line pub:', time.time() - t0)
                 
@@ -427,7 +471,7 @@ class LRF():
             self.distances_pub.publish(msg)
 
             tdd = time.time() - t00
-            self.log('tdd:', tdd)
+            self.log('full tdd:', tdd)
 
         self.log('Processing thread stopped.')
  
