@@ -1,19 +1,76 @@
 
 ex = 10;
 
+rotate([0,0,180]){
+
 // Head
+rotate([0,0,180])
 translate([0,0, ex*12]){
     
     translate([0,0,0]){
         
+        rotate([0,0,90])
         import("printable/bearings_slew_bearing_inner_bottom_20160214.stl");
         
         translate([0,0,ex*5]){
             import("printable/bearings_slew_bearing_outer_20160214.stl");
             
-            translate([0,0,ex*3])
-            rotate([0,180,0])
-            import("printable/bearings_slew_bearing_inner_top_20160214.stl");
+            translate([0,0,ex*3]){
+                rotate([0,0,90])
+                rotate([0,180,0])
+                import("printable/bearings_slew_bearing_inner_top_20160214.stl");
+                
+                // Neck
+                translate([0,0,20+ex*2]){
+                    rotate([0,0,180]){
+                        translate([0,40+ex*2,42.6])
+                        rotate([90,0,0])
+                        import("printable/neck_strut_open.stl");
+                        
+                        translate([0,-(40+ex*2),0])
+                        rotate([0,0,180])
+                        rotate([90,0,0])
+                        import("printable/neck_strut_servo.stl");
+                    }
+                    
+                    translate([0,0,65]){
+                        
+                        translate([-(47.5 + ex*2),0,0])
+                        rotate([0,-90,0])
+                        import("printable/head_front.stl");
+                        
+                        translate([0,0,-(35+ex*2)])
+                        rotate([0,0,-90])
+                        //color("red")
+                        import("printable/head_bottom.stl");
+                        
+                        translate([0,35+ex*1,0])
+                        rotate([0,90,90])
+                        import("printable/head_strut_servo_side.stl");
+                        
+                        translate([0,-(35+ex*1),0])
+                        rotate([0,-90,90])
+                        import("printable/head_strut_open_side.stl");
+                        
+                        translate([0,0,(35+ex*2)])
+                        rotate([0,0,90])
+                        import("printable/head_top.stl");
+                        
+                        translate([ex*15,0,0]){
+                            //color("green")
+                            translate([0,0,-37])
+                            rotate([0,0,-90])
+                            import("printable/rpi_tray2.stl");
+                            
+                            //color("purple")
+                            translate([47,32,-33+ex*2])
+                            rotate([0,0,180])
+                            import("electronics/RPi2_01.stl");
+                        }
+                    }
+                }
+            }
+            
         }
     }
 }
@@ -254,5 +311,7 @@ translate([0,0,-ex]){
         import("printable/lower_rear_panel_20151122.stl");
             
     }
+
+}
 
 }
