@@ -1,5 +1,7 @@
+use <exploded_motor.scad>;
 
-ex = 10;
+ex = 0; // non-exploded
+ex = 10; // exploded
 
 rotate([0,0,180]){
 
@@ -103,6 +105,7 @@ translate([0,0,ex]){
         
         translate([0,0,15])
         rotate([0,0,90])
+        //color("red")
         import("printable/top_rear_panel2_20160526.stl");
         
         translate([-ex*15,0,0]){
@@ -152,10 +155,12 @@ translate([0,0,ex]){
             mirror([i,0,0])
             translate([(40-2.5), -(50+1), 0])
             rotate([90,0,90])
+            //color("red")
             import("printable/side_frame_extension_20151129.stl");
             
             translate([0,0,50+ex])
             rotate([0,0,90])
+            //color("red")
             import("printable/bearings_slew_bearing_outer_mount_20160215.stl");
             
         }
@@ -163,9 +168,10 @@ translate([0,0,ex]){
     
     for(r=[0:1])
     mirror([0,r,0])
-    translate([0,ex*6,0]){
+    translate([0,ex*15,0]){
         translate([0,0,-20])
         rotate([0,0,0])
+        //color("red")
         import("printable/side_panel_20151204b.stl");
 
         //color("blue")
@@ -182,17 +188,11 @@ translate([0,0,ex]){
         
     }
     
-    translate([0,-ex*6,0])
-    translate([0,0,-20])
-    rotate([0,0,180])
-    import("printable/side_panel_20151204b.stl");
-    
-    
-    
 }
 
 translate([0,0,-45])
 rotate([0,0,-90])
+//color("red")
 import("printable/horizontal_motor_top_slotted_20150915.stl");
 
 translate([ex*2,0,0]){
@@ -209,6 +209,7 @@ translate([ex*2,0,0]){
         
         translate([0,0,25])
         rotate([0,0,-90])
+        //color("red")
         import("printable/top_front_panel_20151122.stl");
         
         translate([70,0,-50-2.5])
@@ -230,13 +231,20 @@ translate([ex*2,0,0]){
 
 translate([0,0,-ex]){
 
-    translate([0,35+2.5+ex,-65+2.5])
-    rotate([90,0,0])
-    import("printable/vertical_slotted_20150915.stl");
-
-    translate([0,-(35+2.5)-ex,-65+2.5])
-    rotate([90,0,180])
-    import("printable/vertical_slotted_20150915.stl");
+    // Motor assembly
+    for(i=[0:1])rotate([0,0,180*i]){
+            
+        translate([0,35+2.5+ex,-65+2.5])
+        rotate([90,0,0])
+        //color("red")
+        import("printable/vertical_slotted_20150915.stl");
+            
+        //color("blue")
+        translate([0,30+16.5,-103])
+        rotate([-90,0,0])
+        rotate([0,0,90])
+        exploded_motor(ex=ex);
+    }
 
     translate([0,0,-ex*5]){
         
