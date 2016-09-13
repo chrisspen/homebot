@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+"""
+Controls and publishes readings from the laser range finder.
+"""
 from __future__ import print_function
 
 import os, time, sys
@@ -12,6 +15,7 @@ import numpy
 import cv2
 from scipy.signal import medfilt2d
 import rospy
+import actionlib
 from sensor_msgs.msg import CompressedImage, Image, LaserScan
 from std_srvs.srv import Empty as EmptySrv, EmptyResponse
 from cv_bridge import CvBridge, CvBridgeError
@@ -274,6 +278,7 @@ class LRF():
         
         rospy.Service('~start', EmptySrv, self.start)
         rospy.Service('~stop', EmptySrv, self.stop)
+        rospy.Service('~capture', EmptySrv, self.capture)
         
         self.show_marker = int(rospy.get_param("~marker", 0))
         markers = [] # [column]
@@ -311,6 +316,9 @@ class LRF():
 #         print('GPIO pin change:', msg
  
     def start(self, msg=None):
+        """
+        Launches a thread that infinitely publishes distance measurements.
+        """
         if self._started:
             return
         self._started = True
@@ -320,12 +328,22 @@ class LRF():
         return EmptyResponse()
         
     def stop(self, msg=None):
+        """
+        Stops the thread publishing distance measurements.
+        """
         if not self._started:
             return
         self._started = False
         self._image_without_laser = None
         self._image_with_laser = None
         return EmptyResponse()
+  
+    def capture(self, msg=None):
+        """
+        Essentially a blocking version of start(), except only runs one iteration, then exits.
+        """
+        self._started = True
+        self.process(iterations=1)
   
     def normalize_image_cv2(self, msg):
         if isinstance(msg, CompressedImage):
@@ -360,13 +378,25 @@ class LRF():
     def get_image_cv2(self):
         return self.normalize_image_cv2(self.get_image())
  
-    def process(self):
+    def process(self, iterations=0):
+        """
+        Continually captures distance measurements and publishes the data
+        via standard ROS messages.
+        
+        Parameters
+        ----------
+        iterations : int
+            If positive, description the number of measurement loops to perform before exiting.
+            Otherwise, an infinite loop will be performed. 
+        """
         
         max_straight_readings = 10
         straight_readings = []
         
         self.log('Processing thread started.')
+        count = 0
         while self._started:
+            count += 1
             t00 = time.time()
             
             # Ensure laser starts off.
@@ -472,7 +502,11 @@ class LRF():
 
             tdd = time.time() - t00
             self.log('full tdd:', tdd)
+            
+            if iterations > 0 and count >= iterations:
+                break
 
+        self._started = False
         self.log('Processing thread stopped.')
  
     def shutdown(self):

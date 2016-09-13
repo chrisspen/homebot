@@ -375,3 +375,5 @@ Now run:
     t.update(BOTH_FORMATS_IN)
     write_ros_services(t, NAME_TORSO)
     
+    os.system('cd ../../../ros_homebot_msgs; python update_makelist.py')
+    

@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+"""
+Displays a real-time plot of the laser range finder measurements.
+"""
 from __future__ import print_function
 
 import os, time, sys

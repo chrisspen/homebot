@@ -200,15 +200,28 @@ class ROSSatchel(Satchel):
 #             r.sudo('cd /tmp/wiringPi; sudo ./build')
     
     @task
-    def install_source_packages(self):
+    def install_source_packages(self, names=None):
         #DEPRECATED?
+        
+        names = names or [package_name for package_name, _ in r.env.source_packages]
+        if isinstance(names, basestring):
+            names = [names]
+        
         r = self.local_renderer
         r.pc('Installing source packages.')
-        for package_name, checkout_command in r.env.source_packages:
+        for package_name in names:
             r.env.package_name = package_name
-            r.env.checkout_command = checkout_command
             r.run('cd {base_catkin_ws}; rosinstall_generator {package_name} --rosdistro {version_name} --deps | wstool merge -t src -')
             r.run('cd {base_catkin_ws}; wstool update -t src -j2 --delete-changed-uris')
+    
+    @task
+    def build_source_packages(self):
+        """
+        Compiles packages from source. Should be run after install_source_packages().
+        """
+        r = self.local_renderer
+        r.run('cd {base_catkin_ws}; rosdep install --from-paths src --ignore-src --rosdistro {version_name} -y -r --os=debian:jessie')
+        r.sudo('cd {base_catkin_ws}; ./src/catkin/bin/catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Release --install-space /opt/ros/{version_name} -j1')
     
     @task
     def install_source_packages_apt(self, version_name=''):

@@ -30,6 +30,7 @@ ros_source_packages:
 -   ["nodelet", "git clone https://github.com/ros/nodelet_core.git"]
 -   ["image_geometry", "git clone https://github.com/ros-perception/vision_opencv.git"]
 -   ["image_pipeline", "git clone https://github.com/ros-perception/image_pipeline.git"]
+-   ["diagnostics", "git clone https://github.com/ros/diagnostics.git"]
 
 ros_overlay_dir: /usr/local/homebot/src/overlay
 ros_overlay_packages:
