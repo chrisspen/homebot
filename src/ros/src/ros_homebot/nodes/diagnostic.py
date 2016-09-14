@@ -518,6 +518,35 @@ class Diagnostic:
             ))
             
         #tilt motor
+        if not self.part or self.part == 'tilt_motor':
+            self.checks.append(Check(
+                self,
+                pre_message='Is the head tilt centered?',
+                answer_options=YN,
+                success_answer=Y,
+                pre_callback=partial(self.tilt_head, c.TILT_CENTER),
+            ))
+            self.checks.append(Check(
+                self,
+                pre_message='Is the head tilt downwards?',
+                answer_options=YN,
+                success_answer=Y,
+                pre_callback=partial(self.tilt_head, c.TILT_CENTER - 45),
+            ))
+            self.checks.append(Check(
+                self,
+                pre_message='Is the head tilt upwards?',
+                answer_options=YN,
+                success_answer=Y,
+                pre_callback=partial(self.tilt_head, c.TILT_CENTER + 45),
+            ))
+            self.checks.append(Check(
+                self,
+                pre_message='Is the head tilt centered?',
+                answer_options=YN,
+                success_answer=Y,
+                pre_callback=partial(self.tilt_head, c.TILT_CENTER),
+            ))
         
         #microphones
     
@@ -850,6 +879,10 @@ class Diagnostic:
         angle = angle % 360
         assert 0 <= angle <= 360
         get_service_proxy(c.HEAD, c.ID_PAN_ANGLE)(angle)
+        
+    def tilt_head(self, angle):
+        assert c.TILT_MIN <= angle <= c.TILT_MAX
+        get_service_proxy(c.HEAD, c.ID_TILT_ANGLE)(angle)
     
     def rotate_head_360(self):
         self.set_head_pan_angle(120)
