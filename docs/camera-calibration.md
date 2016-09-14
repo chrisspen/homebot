@@ -11,11 +11,11 @@ To calibrate the Raspberry Pi camera module, start by running the camera node on
 Then, on your deployment machine, initialize your shell with:
 
     . src/ros/setup.bash
-    export ROS_MASTER_URI=http://rae.local:11311
+    export ROS_MASTER_URI=http://robot.local:11311
     
 Ensure you deployment machine can access the camera stream by running:
 
-    rosrun image_view image_view image:=/camera/image
+    rosrun image_view image_view image:=/raspicam/image _image_transport:=compressed
 
 You should see a small window showing the camera stream with very high (3-6 second) latency.
 

@@ -12,6 +12,9 @@ import traceback
 import operator
 from threading import RLock
 from functools import partial
+import subprocess
+import shlex
+import multiprocessing
 
 import roslib
 #roslib.load_manifest('ros_homebot')
@@ -41,6 +44,15 @@ YN = 'yn'
 Y = 'y'
 N = 'n'
 ENTER = '<enter>'
+
+def process_is_alive(pid):        
+    """ Check For the existence of a unix pid. """
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    else:
+        return True
 
 class MessageHandler(object):
     """
@@ -199,6 +211,8 @@ class Diagnostic:
         rostopic list | grep -i torso
         
     """
+    
+    raspicam_process = None
     
     def __init__(self, name):
         
@@ -400,6 +414,17 @@ class Diagnostic:
                 answer_options=YN,
                 success_answer=Y,
                 pre_callback=partial(say, say_text),
+            ))
+            
+        # Camera
+        if not self.part or self.part == 'raspicam':
+            self.checks.append(Check(
+                self,
+                pre_message='Do you see a camera window with an active video feed?',
+                answer_options=YN,
+                success_answer=Y,
+                pre_callback=self.show_camera_window,
+                post_callback=self.hide_camera_window,
             ))
         
         # Laser range finder (laser + camera)
@@ -894,6 +919,26 @@ class Diagnostic:
     def record_topic(self, msg):
         self.handlers[type(msg)](msg)
 
+    def show_camera_window(self):
+        
+        def show():
+            sys.stdout = open(os.devnull)
+            os.system('rosrun image_view image_view image:=/raspicam/image _image_transport:=compressed >/dev/null 2>&1')
+        
+        self.raspicam_process = multiprocessing.Process(target=show)
+        self.raspicam_process.daemon = True
+        self.raspicam_process.start()
+
+    def hide_camera_window(self):
+        if self.raspicam_process:
+#             while self.raspicam_process.is_alive:
+#                 print('Waiting for camera window process %i to end...' % self.raspicam_process.pid)
+            #TODO:fix? leaves a child zombie?
+            self.raspicam_process.terminate()
+            os.system('pkill -f image_view')
+            time.sleep(1)
+            self.raspicam_process = None
+        
     def wait_until_continue(self, message):
         raw_input(message + ' <enter>')
 
