@@ -9,7 +9,7 @@ cd overlay/src
 
 # Added dependencies here.
 [ ! -d rpi_gpio ] && git clone https://github.com/chrisspen/rpi_gpio.git rpi_gpio
-[ ! -d raspicam ] && git clone https://github.com/chrisspen/raspicam_node.git raspicam
+[ ! -d raspicam_node ] && git clone https://github.com/chrisspen/raspicam_node.git raspicam_node
 
 source /opt/ros/kinetic/setup.bash
 cd ..

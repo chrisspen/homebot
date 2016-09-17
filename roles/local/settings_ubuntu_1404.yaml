@@ -2,3 +2,5 @@
 
 ros_conf_os_type: ubuntu
 ros_conf_os_release: 14.04
+
+ros_version_name: indigo

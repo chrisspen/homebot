@@ -80,6 +80,12 @@ class HomebotSatchel(ServiceSatchel):
             
             'humanize==0.5.1',
             
+            # Needed for ROS message generation.
+            'empy==3.3.2',
+            
+            'defusedxml',
+            'rospkg',
+            
             # Teleop
             'Django==1.9.2',
             '-e git://github.com/chrisspen/gevent-socketio.git#egg=gevent-socketio',
@@ -129,6 +135,9 @@ class HomebotSatchel(ServiceSatchel):
             ##ros-kinetic-robot-upstart #TODO:fix
             #ros-kinetic-xacro
             #ros-kinetic-robot-state-publisher
+            
+#             'ros-%s-image-view' % self.genv.ros_version_name,
+#             'ros-%s-rqt-robot-monitor' % self.genv.ros_version_name,
 
         ]
         return {

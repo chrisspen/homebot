@@ -36,6 +36,8 @@ class ROSSatchel(Satchel):
         
         self.env.source_path = '/opt/ros/{version_name}/setup.bash'
         
+        self.env.update_bash = True
+        
         self.env.pip_packages = [
             'rosdep',
             'rosinstall_generator',
@@ -53,7 +55,7 @@ class ROSSatchel(Satchel):
         r.sudo('rosclean purge')
     
     @task
-    def configure_ubuntu(self):
+    def configure_ubuntu(self, reboot=1):
         """
         Installs ROS on Ubuntu.
         
@@ -73,6 +75,7 @@ class ROSSatchel(Satchel):
                 http://wiki.ros.org/jade/Installation/UbuntuARM
             
         """
+        from burlap.packager import packager
         
         r = self.local_renderer
         
@@ -84,10 +87,12 @@ class ROSSatchel(Satchel):
         # Boost and some of the ROS tools require that the system locale be set. You can set it with:
         r.sudo('update-locale LANG=C LANGUAGE=C LC_ALL=C LC_MESSAGES=POSIX')
         
+        #self.install_repositories(service=self.name)
+        packager.configure(service=self.name, initial_upgrade=0)
+        
         # HANDLED BY PACKAGER
         # Setup your sources.list
         #r.sudo("sh -c 'echo \"deb http://packages.ros.org/ros/ubuntu {ubuntu_release} main\" > /etc/apt/sources.list.d/ros-latest.list'".format(**self.lenv))
-        
         # HANDLED BY PACKAGER
         # Set up your keys
         #r.sudo("apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 0xB01FA116")
@@ -111,12 +116,14 @@ class ROSSatchel(Satchel):
         
         # Environment setup
         # It's convenient if the ROS environment variables are automatically added to your bash session every time a new shell is launched:
-        r.run('echo "source /opt/ros/%s/setup.bash" >> ~/.bash_aliases' % self.env.version_name)
+        if self.env.update_bash:
+            r.run('echo "source /opt/ros/{version_name}/setup.bash" >> ~/.bash_aliases')
         #TODO:how to do this system-wide?
         #source ~/.bashrc
         
-        with settings(warn_only=True):
-            self.reboot()
+        if int(reboot):
+            with settings(warn_only=True):
+                self.reboot()
     
     @property
     def packager_repositories(self):
@@ -149,8 +156,10 @@ class ROSSatchel(Satchel):
             UBUNTU: [
                 'ros-%s-ros-base' % self.env.version_name,
                 'python-rosdep',
+                'ros-%s-xacro' % self.env.version_name,
             ],
-            RASPBIAN: [],
+            RASPBIAN: [
+            ],
         }
         if self.env.conf_os_release == JESSIE:
             d[RASPBIAN].extend([

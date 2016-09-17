@@ -25,14 +25,35 @@ translate([0,0, ex*12]){
                 // Neck
                 translate([0,0,20+ex*2]){
                     rotate([0,0,180]){
-                        translate([0,40+ex*2,42.6])
-                        rotate([90,0,0])
-                        import("printable/neck_strut_open.stl");
+                        translate([0,40+ex*2,42.6]){
+                            rotate([90,0,0])
+                            import("printable/neck_strut_open.stl");
+                            
+                            translate([0,ex*2,22.5]){
+                                rotate([0,0,45])
+                                import("printable/head_shell_side_top.stl");
+                            
+                                translate([0,0,-ex*1])
+                                rotate([0,0,45])
+                                import("printable/head_shell_side_bottom.stl");
+                            }
+                        }
                         
-                        translate([0,-(40+ex*2),0])
-                        rotate([0,0,180])
-                        rotate([90,0,0])
-                        import("printable/neck_strut_servo.stl");
+                        translate([0,-(40+ex*2),0]){
+                            rotate([0,0,180])
+                            rotate([90,0,0])
+                            import("printable/neck_strut_servo.stl");
+                            
+                            translate([0,-ex*2,42.6+22.5])
+                            rotate([0,0,-45-90]){
+                                
+                                import("printable/head_shell_side_top.stl");
+                                
+                                translate([0,0,-ex*1])
+                                import("printable/head_shell_side_bottom.stl");
+                            
+                            }
+                        }
                     }
                     
                     translate([0,0,65]){
@@ -40,6 +61,22 @@ translate([0,0, ex*12]){
                         translate([-(47.5 + ex*2),0,0])
                         rotate([0,-90,0])
                         import("printable/head_front.stl");
+                        
+                        translate([-ex*5,0,-20])
+                        rotate([0,0,90])
+                        import("printable/head_shell_front_lower.stl");
+                        
+                        translate([60+ex*5,0,-95])
+                        rotate([0,0,-90])
+                        import("printable/head_shell_back_lower.stl");
+                        
+                        translate([-30-ex*2,0,0])
+                        rotate([0,0,-90])
+                        import("printable/head_shell_front.stl");
+                        
+                        translate([50+ex*15,0,0])
+                        rotate([0,0,90])
+                        import("printable/head_shell_back.stl");
                         
                         translate([0,0,-(35+ex*2)])
                         rotate([0,0,-90])
@@ -54,9 +91,14 @@ translate([0,0, ex*12]){
                         rotate([0,-90,90])
                         import("printable/head_strut_open_side.stl");
                         
-                        translate([0,0,(35+ex*2)])
-                        rotate([0,0,90])
-                        import("printable/head_top.stl");
+                        translate([0,0,(35+ex*2)]){
+                            rotate([0,0,90])
+                            import("printable/head_top.stl");
+                            
+                            translate([0,0,ex*2])
+                            rotate([0,0,90])
+                            import("printable/head_shell_top.stl");
+                        }
                         
                         translate([ex*15,0,0]){
                             //color("green")

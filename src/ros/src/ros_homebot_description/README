@@ -1,0 +1,3 @@
+To view run:
+
+    roslaunch ros_homebot_description display.launch
