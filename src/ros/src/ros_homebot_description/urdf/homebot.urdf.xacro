@@ -2,8 +2,10 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="homebot">
     <xacro:include filename="$(find ros_homebot_description)/urdf/materials.urdf.xacro" />
     <!-- dimensions in meters -->
-    <property name="torso_radius" value="0.075" />
-    <property name="torso_height" value="0.15" />
+    <property name="torso_radius" value="0.075" /><!-- 150 mm diameter = 75 mm radius -->
+    <property name="torso_height" value="0.16" /><!-- 160 mm height -->
+    <property name="camera_radius" value="0.008" />
+    <property name="camera_thickness" value="0.005" />
     <link name="base_footprint">
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0" />
@@ -22,7 +24,17 @@
             <geometry>
                 <sphere radius="${torso_radius}" />
             </geometry>
-            <material name="white" />
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <material name="blue" />
+        </visual>
+    </link>
+    <link name="camera">
+        <visual>
+            <geometry>
+                <cylinder length="${camera_thickness}" radius="${camera_radius}" />
+            </geometry>
+            <origin xyz="0 0 0" rpy="0 90 0" />
+            <material name="black" />
         </visual>
     </link>
     <link name="base_link">
@@ -30,21 +42,29 @@
             <geometry>
                 <cylinder length="${torso_height}" radius="${torso_radius}" />
             </geometry>
-            <material name="blue">
-                <color rgba="0 0 .8 1" />
-            </material>
+            <origin xyz="0 0 ${torso_height/2}" rpy="0 0 0" />
+            <material name="red" />
         </visual>
     </link>
+    
     <joint name="base_footprint_joint" type="fixed">
-        <origin xyz="0 0 0" rpy="0 0 0" />
         <parent link="base_footprint" />
         <child link="base_link" />
-    </joint>
-    <joint name="torso_head_joint" type="fixed">
         <origin xyz="0 0 0" rpy="0 0 0" />
+    </joint>
+    
+    <joint name="torso_head_joint" type="fixed">
         <parent link="base_link" />
         <child link="head" />
+        <origin xyz="0 0 ${torso_height+torso_radius}" rpy="0 0 0" />
     </joint>
+    
+    <joint name="head_camera_joint" type="fixed">
+        <parent link="head" />
+        <child link="camera" />
+        <origin xyz="0 ${torso_radius} 0" rpy="0 0 0" />
+    </joint>
+
     <!--
     <gazebo reference="base_footprint">
         <turnGravityOff>false</turnGravityOff>
