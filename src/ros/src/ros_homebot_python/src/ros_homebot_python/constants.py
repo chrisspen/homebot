@@ -317,6 +317,7 @@ SOUND_TONE = 'tone'
 FOOTPRINT_TO_TORSO_JOINT = 'footprint_to_base_link_joint'
 TORSO_TO_NECK_JOINT = 'base_link_to_neck_joint'
 NECK_TO_HEAD_JOINT = 'neck_to_head_joint'
+HEAD_TO_CAMERA_JOINT = 'head_to_camera_joint'
 
 def write_ros_messages(d, prefix):
     msg_dir = '../../../ros_homebot_msgs/msg'

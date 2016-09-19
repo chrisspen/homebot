@@ -328,6 +328,14 @@ class BaseArduinoNode():
         else:
             print('No publisher for %s.' % pub_attr_name)
 
+    def force_sensors(self):
+        """
+        Triggers all sensors to report their current value, even if it hasn't changed
+        since last report.
+        """
+        packet = Packet(id=c.ID_FORCE_SENSORS)
+        self.outgoing_queue.put(packet)
+
     def _ros_to_arduino_handler(self, req, packet_id):
         """
         Handles ROS service requests and forwards them to the Arduino.
