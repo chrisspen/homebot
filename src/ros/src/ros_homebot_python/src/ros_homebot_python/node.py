@@ -27,6 +27,9 @@ import constants as c
 import utils
 
 def get_name(packet_id):
+    return get_packet_name(packet_id)
+
+def get_packet_name(packet_id):
     return re.sub(r'[^a-z]+', '_', c.ALL_IDS[packet_id])
 
 def get_packet_id(packet_name):
@@ -206,6 +209,8 @@ class BaseArduinoNode():
                 self,
                 pub_attr_name,
                 rospy.Publisher(pub_topic_name, msg_type, queue_size=1))
+                
+        self.create_publishers()
         
         # Dynamically create a service for each service type.
         formats_in = self.service_formats
@@ -230,12 +235,35 @@ class BaseArduinoNode():
             
             r.sleep()
     
+    def create_publishers(self):
+        pass
+    
+    def get_packet_dict(self, packet):
+        
+        packet_id = packet.id
+        parameters = packet.parameters
+        if packet.id == c.ID_GET_VALUE:
+            # If packet is the special get_value container type, convert it to the normal type.
+            packet_id = packet.data[0]
+            parameters = packet.data[1:].strip().split(' ')
+            
+        output_format = self.publisher_formats[packet_id]
+        
+        if len(parameters) != len(output_format):
+            print('malformed packet:', packet)
+            return
+        
+        d = dict(
+            (arg_name, to_type(param, arg_type))
+            for (arg_name, arg_type), param in zip(output_format, parameters))
+            
+        return d
+    
     def _arduino_to_ros_handler(self, packet):
         """
         Receives all packets from the Arduino and forwards them to ROS.
         """
         self.log('Receiving packet: %s' % packet)
-        handler_name = '_on_packet_%s' % packet.id_name
         
         if self.verbose:
             print('-'*80)
@@ -247,61 +275,59 @@ class BaseArduinoNode():
             print('Invalid packet ID: %s' % e, file=sys.stderr)
             traceback.print_exc(file=sys.stderr)
             return
-            
-        if hasattr(self, handler_name): 
+        
+        # Try running raw packet handler.
+        handler_name = '_on_packet_%s' % packet.id_name
+        if hasattr(self, handler_name):
             getattr(self, handler_name)(packet)
+        
+        # Lookup packet-specific message details.
+        packet_id = packet.id
+        parameters = packet.parameters
+        if packet.id == c.ID_GET_VALUE:
+            # If packet is the special get_value container type, convert it to the normal type.
+            packet_id = packet.data[0]
+            parameters = packet.data[1:].strip().split(' ')
+        
+        # Try running resolved packet handler.
+        handler_name = '_on_packet_%s' % get_packet_name(packet_id)
+        if hasattr(self, handler_name):
+            getattr(self, handler_name)(packet)
+            
+        pub_attr_name = get_pub_attr_name(packet_id)
+        publisher = getattr(self, pub_attr_name, None)
+        if publisher:
+            msg_type = packet_to_message_type(packet_id)
+        
+            # Create packet-specific message.
+            msg = msg_type()
+            msg.device = self.name_index
+            output_format = self.publisher_formats[packet_id]
+                
+            # Ignore acknowledgement packet.
+            if len(parameters) == 1 and parameters[0] == c.OK:
+                return
+            
+            # Ignore malformed packets.
+            if len(parameters) != len(output_format):
+                print('Expected %i parameters but received %i.\n' % (len(parameters), len(output_format)), file=sys.stderr)
+                print('parameters:', parameters, file=sys.stderr)
+                print('output_format:', output_format, file=sys.stderr)
+                return
+                
+            for (arg_name, arg_type), param in zip(output_format, parameters):
+                setattr(msg, arg_name, to_type(param, arg_type))
+            
+            # Publish packet on packet-specific publisher.    
+            try:
+                publisher.publish(msg)
+            #except ROSSerializationException as e:
+            except Exception as e:
+                traceback.print_exc(file=sys.stderr)
+                #self.log(e)
         else:
-            
-            # Lookup packet-specific message details.
-            packet_id = packet.id
-            parameters = packet.parameters
-            if packet.id == c.ID_GET_VALUE:
-                # If packet is the special get_value container type, convert it to the normal type.
-                packet_id = packet.data[0]
-                parameters = packet.data[1:].strip().split(' ')
-#             if packet_id == c.ID_PAN_ANGLE:#TODO:remove
-#                 print('packet:', packet_id, parameters)
-            pub_attr_name = get_pub_attr_name(packet_id)
-            publisher = getattr(self, pub_attr_name, None)
-#             if packet_id == c.ID_PAN_ANGLE:#TODO:remove
-#                 print('pub_attr_name:', pub_attr_name)
-#                 print('publisher:', publisher, publisher.name)
-            if publisher:
-                #msg_type = getattr(msgs, get_msg_type_name(packet_id))
-                msg_type = packet_to_message_type(packet_id)
-            
-#                 if packet_id == c.ID_PAN_ANGLE:#TODO:remove
-#                     print('msg_type:', msg_type)
-                        
-                # Create packet-specific message.
-                msg = msg_type()
-                msg.device = self.name_index
-                output_format = self.publisher_formats[packet_id]
-                    
-                # Ignore acknowledgement packet.
-                if len(parameters) == 1 and parameters[0] == c.OK:
-                    return
-                
-                # Ignore malformed packets.
-                if len(parameters) != len(output_format):
-                    print('Expected %i parameters but received %i.\n' % (len(parameters), len(output_format)), file=sys.stderr)
-                    print('parameters:', parameters, file=sys.stderr)
-                    print('output_format:', output_format, file=sys.stderr)
-                    return
-                    
-                for (arg_name, arg_type), param in zip(output_format, parameters):
-                    setattr(msg, arg_name, to_type(param, arg_type))
-                
-                # Publish packet on packet-specific publisher.    
-                try:
-                    publisher.publish(msg)
-                #except ROSSerializationException as e:
-                except Exception as e:
-                    traceback.print_exc(file=sys.stderr)
-                    #self.log(e)
-            else:
-                print('No publisher for %s.' % pub_attr_name)
- 
+            print('No publisher for %s.' % pub_attr_name)
+
     def _ros_to_arduino_handler(self, req, packet_id):
         """
         Handles ROS service requests and forwards them to the Arduino.
