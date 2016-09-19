@@ -1,9 +1,13 @@
+<!--
+2016.9.18 CKS
+
+Takes the URDF description of the robot and JointState messages published by the head_arduino node
+and calculates the current pose of the robot. 
+
+http://wiki.ros.org/robot_state_publisher
+-->
 <launch>
-
     <arg name="model" default="$(find ros_homebot_description)/urdf/homebot.urdf.xacro"/>
-
     <param name="robot_description" command="$(find xacro)/xacro.py $(arg model)" />
-
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
-    
 </launch>

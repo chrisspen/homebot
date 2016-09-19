@@ -12,5 +12,6 @@
     <!--<include file="$(find ros_homebot)/launch/power.launch" />-->
     <include file="$(find ros_homebot)/launch/system.launch" />
     <include file="$(find ros_homebot)/launch/sound.launch" />
+    <include file="$(find ros_homebot)/launch/robot_state_publisher.launch" />
     <include file="$(find ros_homebot)/launch/init.launch" />
 </launch>
