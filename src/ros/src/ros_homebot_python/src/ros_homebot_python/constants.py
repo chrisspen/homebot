@@ -312,12 +312,36 @@ MOTIONS = [
 SOUND_TTS = 'tts'
 SOUND_TONE = 'tone'
 
+# CPU temperature limits (in Celcius)
+
+CPU_TEMP_ERROR = 60 # over this shown error
+CPU_TEMP_WARN = 50 # over this shown warning, below shown ok
+CPU_USAGE_PERCENT_ERROR = 99
+CPU_USAGE_PERCENT_WARN = 90
+
+# Disk limits.
+
+DISK_USAGE_PERCENT_ERROR = 95
+DISK_USAGE_PERCENT_WARN = 90
+
+# Memory limits.
+
+MEMORY_USAGE_PERCENT_ERROR = 95
+MEMORY_USAGE_PERCENT_WARN = 90
+
 # Joints
 
 FOOTPRINT_TO_TORSO_JOINT = 'footprint_to_base_link_joint'
 TORSO_TO_NECK_JOINT = 'base_link_to_neck_joint'
 NECK_TO_HEAD_JOINT = 'neck_to_head_joint'
 HEAD_TO_CAMERA_JOINT = 'head_to_camera_joint'
+
+# Battery limits.
+
+BATTERY_CHARGE_RATIO_ERROR = 0.8
+BATTERY_CHARGE_RATIO_WARN = 0.85
+
+# Diagnostic part names.
 
 def write_ros_messages(d, prefix):
     msg_dir = '../../../ros_homebot_msgs/msg'

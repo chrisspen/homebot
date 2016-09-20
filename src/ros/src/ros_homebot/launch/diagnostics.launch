@@ -1,0 +1,13 @@
+<!--
+Note, when this is running, you can view status in a GUI by running:
+
+    sudo apt-get install ros-kinetic-rqt-robot-monitor
+    rosrun rqt_robot_monitor rqt_robot_monitor
+
+http://wiki.ros.org/diagnostics/Tutorials/Configuring%20Diagnostic%20Aggregators
+-->
+<launch>
+    <node pkg="diagnostic_aggregator" type="aggregator_node" name="diag_agg" >
+        <rosparam command="load" file="$(find ros_homebot)/config/analyzers.yaml" />
+    </node>
+</launch>
