@@ -28,3 +28,13 @@ yellow/blue/green
 The Hall sensor requires an input voltage, Vcc, between 3.5 and 20 V and draws a maximum of 10 mA. The A and B outputs are square waves from 0 V to Vcc approximately 90° out of phase. The frequency of the transitions tells you the speed of the motor, and the order of the transitions tells you the direction. The following oscilloscope capture shows the A and B (yellow and white) encoder outputs using a motor voltage of 6 V and a Hall sensor Vcc of 5 V:
 
 By counting both the rising and falling edges of both the A and B outputs, it is possible to get 48 counts per revolution of the motor shaft. Using just a single edge of one channel results in 12 counts per revolution of the motor shaft, so the frequency of the A output in the above oscilloscope capture is 12 times the motor rotation frequency.
+
+Encoder Wiring
+------
+
+The encoder counts seem to register one count per revolution of the output axis.
+
+Encoder jumper E1 goes to variable "bcount" on IC1?
+Encoder jumper E2 goes to variable "acount" on IC1.
+Encoder jumper E3 goes to variable "bcount" on IC2?
+Encoder jumper E4 goes to variable "acount" on IC2. 
