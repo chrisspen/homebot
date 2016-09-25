@@ -1,4 +1,7 @@
-#http://wiki.ros.org/diagnostics/Tutorials/Configuring%20Diagnostic%20Aggregators
+# http://wiki.ros.org/diagnostics/Tutorials/Configuring%20Diagnostic%20Aggregators
+# Run with: 
+#   roslaunch ros_homebot diagnostics.launch
+#   rosrun rqt_robot_monitor rqt_robot_monitor
 pub_rate: 1.0 # Optional
 base_path: '' # Optional, prepended to all diagnostic output
 analyzers:
@@ -29,13 +32,29 @@ analyzers:
         find_and_remove_prefix: imu_node
         num_items: 3
   computers:
-    type: GenericAnalyzer
+    type: AnalyzerGroup
     path: Computers
-    contains:
-    -   'CPU Usage'
-    -   'CPU Temperature'
-    -   'Disk Usage'
-    -   'Memory Usage'
+    analyzers:
+        rpi:
+            type: GenericAnalyzer
+            path: Raspberry Pi 3
+            contains:
+            -   'CPU Usage'
+            -   'CPU Temperature'
+            -   'Disk Usage'
+            -   'Memory Usage'
+        head_arduino:
+            type: GenericAnalyzer
+            path: Head Arduino
+            timeout: 5.0
+            contains:
+            -   'Head Arduino'
+        torso_arduino:
+            type: GenericAnalyzer
+            path: Torso Arduino
+            timeout: 5.0
+            contains:
+            -   'Torso Arduino'
 #  joints:
 #    type: GenericAnalyzer
 #    path: Joints

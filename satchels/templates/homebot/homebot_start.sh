@@ -1,12 +1,12 @@
 #!/bin/bash
-LOG_FILE={{log_dir}}/{{roslaunch_script}}.log
+LOG_FILE={{log_dir}}/{{start_script}}.log
 
 echo "" >> ${LOG_FILE}
 echo "" >> ${LOG_FILE}
 echo "" >> ${LOG_FILE}
 echo "" >> ${LOG_FILE}
 echo "#############################################" >> ${LOG_FILE}
-echo "Running {{roslaunch_script}}" >> ${LOG_FILE}
+echo "Running {{start_script}}" >> ${LOG_FILE}
 echo $(date) >> ${LOG_FILE}
 echo "#############################################" >> ${LOG_FILE}
 echo "" >> ${LOG_FILE}

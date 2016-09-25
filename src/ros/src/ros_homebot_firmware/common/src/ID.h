@@ -14,6 +14,8 @@
 #define ID_MOTOR_ACCEL           'M'
 #define ID_IMU_CALIBRATION       'N'
 #define ID_MOTOR_CALIBRATION     'O'
+#define ID_MOTOR_ENCODER         'P'
+#define ID_MOTOR_ERROR           'R'
 #define ID_GO_TO_SLEEP           'S'
 #define ID_SHUTDOWN              'T'
 #define ID_CRASH                 'X'

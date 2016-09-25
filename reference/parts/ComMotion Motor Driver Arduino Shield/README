@@ -11,3 +11,9 @@ which is a reseller for Dagu:
 This reseller also includes a lot of demo code:
 
     http://www.carrod.mx/products/commotion-motor-driver-shield
+
+Wiring
+------
+
+E1 = acount on IC1
+E2 = bcount on IC1

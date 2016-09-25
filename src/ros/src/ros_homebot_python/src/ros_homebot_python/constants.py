@@ -96,9 +96,9 @@ ID_LOG = 'L'
 ID_MOTOR_ACCEL = 'M'
 ID_IMU_CALIBRATION = 'N'
 ID_MOTOR_CALIBRATION = 'O'
-# 'P'
+ID_MOTOR_ENCODER = 'P'
 # 'Q'
-# 'R'
+ID_MOTOR_ERROR = 'R'
 ID_GO_TO_SLEEP = 'S'
 ID_SHUTDOWN = 'T'
 # 'U'
@@ -153,6 +153,8 @@ ALL_IDS = {
     ID_IMU_MAGNETOMETER: 'imu magnetometer',
     ID_IMU_CALIBRATION: 'imu calibration',
     ID_MOTOR_CALIBRATION: 'motor calibration',
+    ID_MOTOR_ENCODER: 'motor encoder',
+    ID_MOTOR_ERROR: 'motor error',
 }
 NAME_TO_IDS = dict((re.sub(r'[^a-z]+', '_', v.lower()), k) for k, v in ALL_IDS.iteritems())
 
@@ -203,6 +205,8 @@ TORSO_FORMATS_OUT = {
 #     ID_SHUTDOWN: [],
 #     ID_MOTOR_ACCEL: [('acceleration', float)],
     ID_STATUS_BUTTON: [('state', int)],
+    ID_MOTOR_ENCODER: [('channel', int), ('count', int)],
+    ID_MOTOR_ERROR: [('error', int)],# single byte
 }
 
 BOTH_FORMATS_IN = {
@@ -408,3 +412,5 @@ Now run:
     
     os.system('cd ../../../ros_homebot_msgs; python update_makelist.py')
     
+    print 'Remember to run:\n'
+    print '    fab prod homebot.rebuild_messages'

@@ -3,6 +3,15 @@
 # we don't want to commit locally.
 set -e
 
+_CURRENT_DIR=$(builtin cd "`dirname "${BASH_SOURCE[0]}"`" > /dev/null && pwd)
+_ROS_VERSION=kinetic
+
+if [ -f "$_CURRENT_DIR/setup_local.bash" ]; then
+    . $_CURRENT_DIR/setup_local.bash
+fi
+
+source /opt/ros/$_ROS_VERSION/setup.bash
+
 cd ..
 mkdir -p overlay/src
 cd overlay/src
@@ -11,7 +20,7 @@ cd overlay/src
 [ ! -d rpi_gpio ] && git clone https://github.com/chrisspen/rpi_gpio.git rpi_gpio
 [ ! -d raspicam_node ] && git clone https://github.com/chrisspen/raspicam_node.git raspicam_node
 
-source /opt/ros/kinetic/setup.bash
+#source /opt/ros/kinetic/setup.bash
 cd ..
 catkin_make
 #catkin_make --pkg rpi_gpio

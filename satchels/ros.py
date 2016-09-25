@@ -157,12 +157,9 @@ class ROSSatchel(Satchel):
                 'ros-%s-ros-base' % self.env.version_name,
                 'python-rosdep',
                 'ros-%s-xacro' % self.env.version_name,
+                'ninja-build',
             ],
             RASPBIAN: [
-            ],
-        }
-        if self.env.conf_os_release == JESSIE:
-            d[RASPBIAN].extend([
                 'python-pip',
                 'python-setuptools',
                 'python-yaml',
@@ -172,7 +169,10 @@ class ROSSatchel(Satchel):
                 'python-six',
                 'python-serial',
                 'libyaml-dev',
-            ])
+                # Needed by diagnostics and opencv3 when installing from source.
+                'ninja-build',
+            ],
+        }
         return d
         
     @property
@@ -209,8 +209,18 @@ class ROSSatchel(Satchel):
 #             r.sudo('cd /tmp/wiringPi; sudo ./build')
     
     @task
+    def install_new_source_package(self, name):
+        """
+        Installs a new source package to an existing ROS system.
+        """
+        self.install_source_packages(names=name)
+        self.build_source_packages()
+    
+    @task
     def install_source_packages(self, names=None):
-        #DEPRECATED?
+        """
+        Installs all source packages. Should only be run on a source installation.
+        """
         
         names = names or [package_name for package_name, _ in r.env.source_packages]
         if isinstance(names, basestring):

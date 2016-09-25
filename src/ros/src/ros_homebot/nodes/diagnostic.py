@@ -19,6 +19,7 @@ import multiprocessing
 import roslib
 #roslib.load_manifest('ros_homebot')
 import rospy
+import rosnode
 import actionlib
 import std_srvs.srv
 
@@ -185,7 +186,11 @@ class Check(object):
                 ao = ''
                 if self.answer_options:
                     ao = ' [%s] ' % self.answer_options
+                
                 ret = raw_input(self.pre_message + ao).strip()
+                if not ret and self.answer_options and self.answer_options != ENTER:
+                    ret = self.answer_options[0]
+                    
                 if self.answer_options == ENTER and not ret:
                     self.success = True
                     break
@@ -220,6 +225,7 @@ class Diagnostic:
         
 #         rospy.on_shutdown(self.shutdown)
 
+        self.section = None
         try:
             self.section = (rospy.get_param('~section') or '').upper() # head|torso
             assert self.section in (c.HEAD, c.TORSO, '')
@@ -230,7 +236,7 @@ class Diagnostic:
         
         self.part = None
         try:
-            self.part = (rospy.get_param('~part') or '').strip()
+            self.part = (rospy.get_param('~part') or '').lower().strip()
             if self.part == 'none':
                 self.part = ''
         except KeyError:
@@ -259,6 +265,16 @@ class Diagnostic:
                     except DeviceNotFound:
                         self.wait_until_continue('Attach the torso via USB.')
         
+        if not self.section or self.section == c.HEAD:
+            assert rosnode.rosnode_ping('head_arduino'), 'Head arduino node not detected.'
+            
+        if not self.section or self.section == c.TORSO:
+            assert rosnode.rosnode_ping('torso_arduino'), 'Torso arduino node not detected.'
+        
+        if (not self.section or self.section == c.HEAD) and (not self.part or self.part == 'lrf'):
+            assert rosnode.rosnode_ping('homebot_lrf'), 'LRF node not detected.'
+            assert rosnode.rosnode_ping('raspicam_node'), 'Raspicam node not detected.'
+            
         self.check_results = {} # {name: success}
         
         self.checks = []
@@ -428,43 +444,44 @@ class Diagnostic:
             ))
         
         # Laser range finder (laser + camera)
-        if not self.part or self.part == 'lrf':
-            
-            self.checks.append(Check(
-                self,
-                pre_message='Clear the area directly infront of the camera to over 10cm.',
-                msg_type=ros_homebot_msgs.msg.LaserLineColumns,
-                msg_condition=self.is_line_laser_clear,
-                msg_update=True,
-                msg_quiet=True,
-            ))
-            
-            self.checks.append(Check(
-                self,
-                pre_message='Obstruct the area directly infront of the camera to about 10cm.',
-                msg_type=ros_homebot_msgs.msg.LaserLineColumns,
-                msg_condition=self.is_line_laser_obstructed,
-                msg_update=True,
-                msg_quiet=True,
-            ))
+        #TODO
+#         if not self.part or self.part == 'lrf':
+#             
+#             self.checks.append(Check(
+#                 self,
+#                 pre_message='Clear the area directly infront of the camera to over 10cm.',
+#                 msg_type=ros_homebot_msgs.msg.LaserLineColumns,
+#                 msg_condition=self.is_line_laser_clear,
+#                 msg_update=True,
+#                 msg_quiet=True,
+#             ))
+#             
+#             self.checks.append(Check(
+#                 self,
+#                 pre_message='Obstruct the area directly infront of the camera to about 10cm.',
+#                 msg_type=ros_homebot_msgs.msg.LaserLineColumns,
+#                 msg_condition=self.is_line_laser_obstructed,
+#                 msg_update=True,
+#                 msg_quiet=True,
+#             ))
         
         # Pan centering.
         if not self.part or self.part == 'pan_centermark':
             self.checks.append(Check(
                 self,
-                pre_message='Center the head.',
+                pre_message='Manually center the head.',
                 msg_type=ros_homebot_msgs.msg.PanCentermarkChange,
                 msg_condition={'state': 1},
             ))
             self.checks.append(Check(
                 self,
-                pre_message='Un-center the head.',
+                pre_message='Manually  un-center the head.',
                 msg_type=ros_homebot_msgs.msg.PanCentermarkChange,
                 msg_condition={'state': 0},
             ))
             self.checks.append(Check(
                 self,
-                pre_message='Re-center the head.',
+                pre_message='Manually  re-center the head.',
                 msg_type=ros_homebot_msgs.msg.PanCentermarkChange,
                 msg_condition={'state': 1},
             ))
@@ -553,21 +570,21 @@ class Diagnostic:
             ))
             self.checks.append(Check(
                 self,
-                pre_message='Is the head tilt downwards?',
+                pre_message='Is the head tilted downwards?',
                 answer_options=YN,
                 success_answer=Y,
                 pre_callback=partial(self.tilt_head, c.TILT_CENTER - 45),
             ))
             self.checks.append(Check(
                 self,
-                pre_message='Is the head tilt upwards?',
+                pre_message='Is the head tilted upwards?',
                 answer_options=YN,
                 success_answer=Y,
                 pre_callback=partial(self.tilt_head, c.TILT_CENTER + 45),
             ))
             self.checks.append(Check(
                 self,
-                pre_message='Is the head tilt centered?',
+                pre_message='Is the head tilted centered?',
                 answer_options=YN,
                 success_answer=Y,
                 pre_callback=partial(self.tilt_head, c.TILT_CENTER),
@@ -593,20 +610,20 @@ class Diagnostic:
         
     def add_torso_checks(self):
         
-        if not self.part or self.part == 'bumper':
-            for i, pos in [(1, 'left'), (2, 'center'), (3, 'right')]:
-                self.checks.append(Check(
-                    self,
-                    pre_message='Press the %s bumper.' % (pos),
-                    msg_type=ros_homebot_msgs.msg.BumperChange,
-                    msg_condition={'index':i, 'state':1},
-                ))
-                self.checks.append(Check(
-                    self,
-                    pre_message='Release the %s bumper.' % (pos),
-                    msg_type=ros_homebot_msgs.msg.BumperChange,
-                    msg_condition={'index':i, 'state':0},
-                ))
+#         if not self.part or self.part == 'bumper':
+#             for i, pos in [(1, 'left'), (2, 'center'), (3, 'right')]:
+#                 self.checks.append(Check(
+#                     self,
+#                     pre_message='Press the %s bumper.' % (pos),
+#                     msg_type=ros_homebot_msgs.msg.BumperChange,
+#                     msg_condition={'index':i, 'state':1},
+#                 ))
+#                 self.checks.append(Check(
+#                     self,
+#                     pre_message='Release the %s bumper.' % (pos),
+#                     msg_type=ros_homebot_msgs.msg.BumperChange,
+#                     msg_condition={'index':i, 'state':0},
+#                 ))
                 
         if not self.part or self.part == 'edge':
             for i, pos in [(1, 'left'), (2, 'center'), (3, 'right')]:

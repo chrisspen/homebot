@@ -4,6 +4,7 @@
 
 #include "I2CAddresses.h"
 #include "Sensor.h"
+#include "Commands.h"
 
 #define FULL_SPEED      255
 #define HALF_SPEED      128
@@ -15,86 +16,51 @@
 #define COMMOTION_REQUEST_ANALOG2 B00010000
 #define COMMOTION_REQUEST_ERRORLOG B00100000
 #define COMMOTION_STATUS_UPDATE_FREQ 50 // milliseconds
+#define COMMOTION_ENCODER_FREQ 100 // milliseconds
+
+// Our motors and encoders are only connected to M3/M4, which are controlled by IC2
+// so save time by talking directly to IC2.
+#define DEFAULT_COMMOTION_ADDR COMMOTION_ADDR2
 
 // ComMotion variables
 
-byte MCU = 0;                     // determines which MCU to request data from
-//byte datapack[32];              // data received from the ComMotion shield - I2C buffer is 32 bytes
-//byte request;// = B00001101;         // status request = encoder counts + motor currents + battery voltage
-//unsigned long stime;            // timer used so status updates do not flood I2C bus
-//int encoders[4];                // encoder counts for motors 1-4 (negative values = reverse direction)
-//int mcurrent[4];                // current draw   for motors 1-4 (205 = 1A)
-//int analogin[6];                // analog inputs from ComMotion shield MCU1 A3, MCU1 A6, Battery Voltage, MCU2 A3, MCU2 A6, MCU2 A7
-//byte errorlog;                  // errorlog from ComMotion shield
-
-//unsigned long received_status_count = 0;
-//unsigned long requested_status_count = 0;
-
-// I2C Slave Receive Status 
-
+byte read_byte(){
+	while(Wire.available() < 1){}
+	return Wire.read();
+}
 /*
-void handle_commotion_status_request()
-{
-    received_status_count += 1;
+uint16_t receive_wire_uint16(){
+
+	uint16_t rxnum = 0;
+
+    // Read low byte into rxnum
+	rxnum += read_byte();
+
+    // Read high byte into rxnum
+    rxnum += read_byte() << 8;
+
+    return rxnum;
 }
 */
-/*
-void handle_commotion_status_response(int bytes) // empty I2C buffer into datapack
-{
+int16_t receive_wire_int16(){
 
-    received_status_count += 1;
+	int16_t rxnum = 0;
 
-    for(int i=0;i<bytes;i++)
-    {
-        datapack[i]=Wire.read();
-    }
+    // Read low byte into rxnum
+	rxnum += read_byte();
 
-    byte index=0;    // start at the beginning - counts number of bytes processed
+    // Read high byte into rxnum
+    rxnum += read_byte() << 8;
 
-    if(request&B00000001)       // request encoder counts - used to measure distance travelled 
-    {
-        encoders[MCU*2]=datapack[index]*256+datapack[index+1];
-        encoders[MCU*2+1]=datapack[index+2]*256+datapack[index+3];    
-        index+=4;
-    }
-
-    if(request&B00000100)       // request motor currents - can be used to determine if the robot has stalled
-    {
-        mcurrent[MCU*2]=datapack[index]*256+datapack[index+1];
-        mcurrent[MCU*2+1]=datapack[index+2]*256+datapack[index+3];
-        index+=4;
-    }
-
-    if(request&B00001000)       // read ComMotion shield analog inputs for MCU 1 including the battery voltage monitor
-    {
-        analogin[0]=datapack[index]*256+datapack[index+1];
-        analogin[1]=datapack[index+2]*256+datapack[index+3];
-        analogin[2]=datapack[index+4]*256+datapack[index+5];
-        index+=6;
-    }
-
-    if(request&B00010000)       // read ComMotion shield analog inputs for MCU 2 
-    {
-        analogin[3]=datapack[index]*256+datapack[index+1];
-        analogin[4]=datapack[index+2]*256+datapack[index+3];
-        analogin[5]=datapack[index+4]*256+datapack[index+5];
-        index+=6;
-    }
-
-    if(request&B00100000)       // request the error log
-    {
-        errorlog=datapack[index];
-    }
-  
+    return rxnum;
 }
-*/
 
 void set_basic_config(byte mode, byte chassis, byte lowbat, byte maxcur1, byte maxcur2, byte maxcur3, byte maxcur4, byte i2coffset, byte i2cmaster)
 {
-//Serial.println(String("A: connecting to ")+String(COMMOTION_ADDR));Serial.flush();
-    Wire.beginTransmission(COMMOTION_ADDR);// Initialize I2C communications with ComMotion shield
+//Serial.println(String("A: connecting to ")+String(DEFAULT_COMMOTION_ADDR));Serial.flush();
+    Wire.beginTransmission(DEFAULT_COMMOTION_ADDR);// Initialize I2C communications with ComMotion shield
 //Serial.println(String("B"));Serial.flush();
-    Wire.write(1);// Specify that data packet is basic configuration data
+    Wire.write(CMD_SET_BASIC_CONFIG);// Specify that data packet is basic configuration data
 //Serial.println(String("C"));Serial.flush();
     Wire.write(mode);                 // 0=normal, 1=demo
 //Serial.println(String("D"));Serial.flush();
@@ -116,8 +82,8 @@ void set_basic_config(byte mode, byte chassis, byte lowbat, byte maxcur1, byte m
 // Encoder Configuration, only need to send once
 void set_encoder_config(int maxrpm, int encres, byte reserve, byte maxstall)
 {
-    Wire.beginTransmission(COMMOTION_ADDR); // Initialize I2C communications with ComMotion shield
-    Wire.write(2);   // Specify that data packet is encoder configuration data
+    Wire.beginTransmission(DEFAULT_COMMOTION_ADDR); // Initialize I2C communications with ComMotion shield
+    Wire.write(CMD_SET_ENCODER_CONFIG);   // Specify that data packet is encoder configuration data
     Wire.write(highByte(maxrpm));       // high byte of motor RPM - 13500rpm for Scamper
     Wire.write( lowByte(maxrpm));       //  low byte of motor RPM - 8500rpm for Rover 5
     Wire.write(highByte(encres));       // high byte of encoder resolution x100 - 800 for Scamper
@@ -129,8 +95,8 @@ void set_encoder_config(int maxrpm, int encres, byte reserve, byte maxstall)
 
 void set_serial_config(int baud1, int baud2, byte smode)
 {
-    Wire.beginTransmission(COMMOTION_ADDR);                    // Initialize I2C communications with ComMotion shield
-    Wire.write(4);                             // Specify that data packet is serial configuration data
+    Wire.beginTransmission(DEFAULT_COMMOTION_ADDR);                    // Initialize I2C communications with ComMotion shield
+    Wire.write(CMD_SET_SERIAL_CONFIG);                             // Specify that data packet is serial configuration data
     Wire.write(highByte(baud1));               // Baud rate for ComMotion serial port 1
     Wire.write( lowByte(baud1));               // Common baud rates are: 1200,2400,4800,9600,14400,28800,38400,57600,115200
     Wire.write(highByte(baud2));               // Baud rate for ComMotion serial port 2 (Xbee / WiFly)
@@ -143,7 +109,7 @@ void request_commotion_status(byte mcu, byte req) // value for mcu must be 0 or 
 {
     request = req;
     requested_status_count += 1;
-    Wire.beginTransmission(COMMOTION_ADDR + mcu);            // Initialize I2C communications with ComMotion shield MCU 1 or 2
+    Wire.beginTransmission(DEFAULT_COMMOTION_ADDR + mcu);            // Initialize I2C communications with ComMotion shield MCU 1 or 2
     Wire.write(6);                             // Specify that data packet is a status request
     Wire.write(req);                       // Each bit of the request byte returns a different status report
     Wire.endTransmission();                    // transmit data from I2C buffer to ComMotion shield
@@ -153,8 +119,10 @@ void request_commotion_status(byte mcu, byte req) // value for mcu must be 0 or 
 
 void set_motor_speeds(int m1, int m2, int m3, int m4)
 {
-    Wire.beginTransmission(COMMOTION_ADDR);                    // Initialize I2C communications with ComMotion shield
-    Wire.write(3);                                                            // Specify that data packet is motor control data
+	// Note, the address shouldn't really matter, since the ComMotion forwards commands from one MCU to the other,
+	// but the motors are connected to M3 and M4, which are controlled by IC2.
+    Wire.beginTransmission(COMMOTION_ADDR2);                    // Initialize I2C communications with ComMotion shield
+    Wire.write(CMD_SET_MOTOR_CONFIG);                                                            // Specify that data packet is motor control data
     Wire.write(highByte(m1));                                                 // -255 to +255  speed for motor 1
     Wire.write( lowByte(m1));                                                 // negative values reverse direction of travel
     Wire.write(highByte(m2));                                                 // -255 to +255  speed for motor 2
@@ -269,20 +237,49 @@ class MotionController: public Sensor
     private:
             
         SpeedController _motor_left;
+
         SpeedController _motor_right;
         
-        bool _connected = false;
+        unsigned long _last_encoder_check;
 
     public:
+
+        //int acount = 0;
+        ChangeTracker<int> a_encoder = ChangeTracker<int>(0);
+
+        //int bcount = 0;
+        ChangeTracker<int> b_encoder = ChangeTracker<int>(0);
+
+        ChangeTracker<byte> eflag = ChangeTracker<byte>(0);
+
+        ChangeTracker<bool> connected = ChangeTracker<bool>(false);
+
+        int aspeed = 0;
+
+		int bspeed = 0;
+
+		unsigned long checks = 0;
     
         MotionController(){
         }
         
         bool is_connected(){
-            return _connected;
+            return connected.get_latest();
         }
         
+        void connect(){
+            Wire.beginTransmission(DEFAULT_COMMOTION_ADDR);
+            int error = Wire.endTransmission();
+            if(!error){
+                connected.set(true);
+            }else{
+            	connected.set(false);
+            }
+        }
+
         void init(){
+
+        	_last_encoder_check = millis();
                   
             _motor_left = SpeedController();
             _motor_right = SpeedController();
@@ -290,26 +287,20 @@ class MotionController: public Sensor
             // Do this in main.ino setup()
             //Wire.onReceive(handle_commotion_status_response);
             
-            Wire.beginTransmission(COMMOTION_ADDR);
-            int error = Wire.endTransmission();
-            if(!error){
-                _connected = true;
-            }else{
-                return;
-            }
+            connect();
             
             // Normal mode, Rover 5 with mecanum wheels, lowbat = 6V, motor currents =2.5A, no offset, Master address=1;
             //Serial.println(String(F("set_basic_config()"));Serial.flush();
             set_basic_config(
                 0, //mode, 0=normal
-                3, //chassis, 3=individual
+				CHASSIS_CONFIG_INDIVIDUAL, //chassis, 3=individual
                 60, //lowbat, 0-255    55=5.5V (given 6V battery, 80%=4.8V=dead, 92%=5.5V=low)
                 250, //maxcur1, 0-255   255=2.55A (left)
                 250, //maxcur2, 0-255   255=2.55A (right)
                 250, //maxcur3, 0-255   255=2.55A (unused)
                 250, //maxcur4, 0-255   255=2.55A (unused)
                 0, //i2coffset
-                1 //i2cmaster
+				TORSO_ARDUINO_ADDR //1 //i2cmaster
             );
             
             // Max motor rpm = 8500rpm, encoder resolution = 2.00 state changes per motor revolution, 10% reserve power, stall at 25uS
@@ -322,13 +313,6 @@ class MotionController: public Sensor
                 10, //reserve=0-50%     reserve power - use when constant speed under variable load is critical
                 25 //maxstall=1-255mS   number of ������S between encoder pulses before stall is assumed  10 for Scamper, 25 for Rover 5
             );
-            
-            //TODO:fix
-            // Set shield port 1 to 9600 baud, Set shield port 2 to 9600 baud, Pass all data back to I2C master for processing
-            //Serial.println(String(F("set_serial_config()"));Serial.flush();
-            //set_serial_config(9600, 9600, 0);//TODO:fix? corrupts Arduino's serial?
-            
-            //Serial.println(String(F("motor.init() done"));Serial.flush();
             
         }
         
@@ -352,7 +336,15 @@ class MotionController: public Sensor
         }
 
         virtual void update(){
+
+        	// Occassionally, we're unable to connect on startup, so retry.
+        	if(!is_connected()){
+        		connect();
+        	}
+
+        	// If we still can't connect, then abort.
             if(!is_connected()){
+            	eflag.set(COMMOTION_ERROR_DISCONNECT);
                 return;
             }
             
@@ -374,6 +366,28 @@ class MotionController: public Sensor
                 request_commotion_status(MCU, B00000001);
             }
             */
+
+            // Poll encoder state.
+            if(!checks || (millis() - _last_encoder_check > COMMOTION_ENCODER_FREQ)){
+				delay(10); // necessary, otherwise set_motor_speed() interferes causing non-deterministic hang
+				//Wire.requestFrom(COMMOTION_ADDR1, 4);
+				Wire.requestFrom(COMMOTION_ADDR2, REQUESTFOR_SIZE);
+
+				a_encoder.set(receive_wire_int16());
+				b_encoder.set(receive_wire_int16());
+
+//				acount = receive_wire_int16();
+//				bcount = receive_wire_int16();
+
+				eflag.set(read_byte());
+
+				aspeed = receive_wire_int16();
+				bspeed = receive_wire_int16();
+
+				_last_encoder_check = millis();
+
+				checks += 1;
+            }
         }
         
         void stop(){
@@ -389,11 +403,54 @@ class MotionController: public Sensor
         }
 
         virtual bool get_and_clear_changed(){
-        	return false;//TODO?
+        	bool a = a_encoder.get_and_clear_changed();
+        	bool b = b_encoder.get_and_clear_changed();
+        	bool c = eflag.get_and_clear_changed();
+        	return a || b || c;
+        	//return true;
         }
 
+        String get_a_encoder_packet(){
+        	return
+        		String(ID_GET_VALUE)+String(' ')+
+				String(ID_MOTOR_ENCODER)+String(' ')+
+				String(0)+String(' ')+
+				String(a_encoder.get())
+				//String(acount)
+			;
+        }
+
+        String get_b_encoder_packet(){
+        	return
+        		String(ID_GET_VALUE)+String(' ')+
+				String(ID_MOTOR_ENCODER)+String(' ')+
+				String(1)+String(' ')+
+				String(b_encoder.get())
+				//String(bcount)
+			;
+        }
+
+        String get_eflag_packet(){
+        	return
+        		String(ID_GET_VALUE)+String(' ')+
+				String(ID_MOTOR_ERROR)+String(' ')+
+				String(eflag.get())
+			;
+        }
+
+        //DEPRECATED
         virtual String get_reading_packet(){
-        	return String();//TODO?
+        	return
+				get_a_encoder_packet()
+
+				+String('\n')+
+
+				get_b_encoder_packet()
+
+				+String('\n')+
+
+				get_eflag_packet()
+			;
         }
 
         String get_acceleration_packet(){

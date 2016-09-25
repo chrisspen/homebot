@@ -22,6 +22,8 @@ add_message_files(FILES
     MemoryUsage.msg
     MicrophoneChange.msg
     MotorCalibrationChange.msg
+    MotorEncoderChange.msg
+    MotorErrorChange.msg
     PacketRead.msg
     PanAngleChange.msg
     PanCentermarkChange.msg

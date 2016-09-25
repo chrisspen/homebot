@@ -159,6 +159,8 @@ class SerialPort{
         }
 
         void write(String data){
+        	// Note, the maximum bytes able to be written is define by SERIAL_BUFFER_SIZE,
+        	// which by default is 64.
             if(_enabled && data.length()){
                 Serial.println(data);
                 Serial.flush();

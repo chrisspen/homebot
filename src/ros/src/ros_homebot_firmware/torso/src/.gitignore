@@ -5,4 +5,5 @@ EEPROMAddresses.h
 EEPROMAnything.h
 ArduinoTemperatureSensor.h
 StringUtils.h
-/AccelGyroSensorOffsets.h
+AccelGyroSensorOffsets.h
+Commands.h

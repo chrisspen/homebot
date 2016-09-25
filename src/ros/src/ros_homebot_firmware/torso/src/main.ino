@@ -47,7 +47,7 @@ AccelGyroSensor ag_sensor = AccelGyroSensor();
 
 MotionController motion_controller;
 
-SerialPort ser = SerialPort(38400); // must match ano.ini TODO
+SerialPort ser = SerialPort(38400); // must match ano.ini
 
 PowerController power_controller = PowerController(POWER_OFF_PIN, ser);
 
@@ -72,6 +72,7 @@ void setup(){
 
     // Join I2C bus as Master with address #1
     Wire.begin(1);
+    Wire.setTimeout(1000L); // sets a timeout of 1 sec
 
     // We initialize here so we can be sure it's done after the I2C initialization.
     motion_controller = MotionController();
@@ -100,27 +101,12 @@ void halt_all_activity(){
 	motion_controller.stop();
 }
 
+unsigned long last_output = millis();
+
 void loop(){
 	
 	// If true, response with an OK to the incoming packet.
 	bool ack = false;
-	
-    /*
-    //TODO:remove
-    Serial.println(String(millis()));
-    Serial.flush();
-    delay(1000);
-    */
-
-	/*
-	//TODO:remove
-	// Test bad input on D13, status button not working.
-	power_controller.status_button.update();
-    Serial.println(String("is_pressed.raw:")+String(digitalRead(SIGNAL_BUTTON_PIN)));
-    Serial.println(String("is_pressed.sensor:")+String(power_controller.status_button.is_pressed()));
-    Serial.flush();
-    delay(1000);
-    */
 	
     Packet packet = ser.read();
     if(packet.is_valid() && (packet.get_id() == ID_HASH || packet.get_hash_sum() == expected_hash_sum)){
@@ -262,8 +248,6 @@ void loop(){
 //						
 //				}
 //				break;
-			
-			//TODO: Get/set motor speed
 	
 		}//switch end
 		if(ack){
@@ -290,6 +274,27 @@ void loop(){
     	ser.write(ag_sensor.get_reading_packet_euler(force_sensors));
     	ser.write(ag_sensor.get_reading_packet_magnetometer(force_sensors));
     	ser.write(ag_sensor.get_reading_packet_calibration(force_sensors));
+	
+//		if(millis() - last_output > 1000){
+			if(motion_controller.get_and_clear_changed()){
+				ser.write(motion_controller.get_a_encoder_packet());
+				ser.write(motion_controller.get_b_encoder_packet());
+				ser.write(motion_controller.get_eflag_packet());
+			}
+//			Serial.println(String("is_connected:")+String(motion_controller.is_connected()));
+//			Serial.println(String("checks:")+String(motion_controller.checks));
+//			Serial.flush();
+//			Serial.println(String("aspeed:")+String(motion_controller.aspeed));
+//			Serial.println(String("bspeed:")+String(motion_controller.bspeed));
+//			Serial.flush();
+//			Serial.println(String("acount:")+String(motion_controller.acount));
+//			Serial.println(String("bcount:")+String(motion_controller.bcount));
+//			Serial.flush();
+			
+//    		last_output = millis();
+//		}
+		//ser.write(motion_controller.get_a_encoder_packet());
+		//ser.write(motion_controller.get_b_encoder_packet());
     }
     force_sensors = false;
     

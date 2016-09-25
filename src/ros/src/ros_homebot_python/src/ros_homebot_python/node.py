@@ -16,6 +16,14 @@ import termios
 import rospy
 from geometry_msgs.msg import Twist
 from std_srvs.srv import Empty, EmptyResponse
+from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
+
+OK = DiagnosticStatus.OK
+WARN = DiagnosticStatus.WARN
+ERROR = DiagnosticStatus.ERROR
+STALE = DiagnosticStatus.STALE
+
+from rpi_gpio.srv import DigitalWrite
 
 from ros_homebot_python.controller import Arduino
 from ros_homebot_python.packet import Packet, BooleanPacket, LEDPacket
@@ -114,14 +122,12 @@ def get_service_proxy(device, packet_id):
     return rospy.ServiceProxy(service_name, service_type)
 
 def set_line_laser(state):
-    from rpi_gpio.srv import DigitalWrite
     state = int(bool(state))
     rospy.ServiceProxy('/rpi_gpio/set_pin', DigitalWrite)(c.LINE_LASER_PIN, state)
 
 def say(text):
     assert isinstance(text, basestring)
-    import ros_homebot_msgs.srv
-    say = rospy.ServiceProxy('/sound/say', ros_homebot_msgs.srv.TTS)
+    say = rospy.ServiceProxy('/sound/say', srvs.TTS)
     say(text, '', 0, 0)
 
 def camel_to_underscore(name):
@@ -209,7 +215,8 @@ class BaseArduinoNode():
                 self,
                 pub_attr_name,
                 rospy.Publisher(pub_topic_name, msg_type, queue_size=1))
-                
+        
+        self.diagnostics_pub = rospy.Publisher('/diagnostics', DiagnosticArray, queue_size=10)
         self.create_publishers()
         
         # Dynamically create a service for each service type.
@@ -234,6 +241,33 @@ class BaseArduinoNode():
             now = rospy.Time.now()
             
             r.sleep()
+    
+    def _on_packet_pong(self, packet):
+        """
+        Re-publishes the pong responses as a diagnostic message.
+        """
+        
+        try:
+            packet_dict = self.get_packet_dict(packet)
+            if not packet_dict:
+                return
+        except (ValueError, TypeError) as e:
+            return
+        
+        total = packet_dict['total']
+        #print('pong total:', total)
+        
+        array = DiagnosticArray()
+        pong_status = DiagnosticStatus(
+            name='%s Arduino' % self.name.title(),
+            level=OK)
+        pong_status.values = [
+            KeyValue(key='total', value=str(total)),
+        ]
+        array.status = [
+            pong_status,
+        ]
+        self.diagnostics_pub.publish(array)
     
     def create_publishers(self):
         pass

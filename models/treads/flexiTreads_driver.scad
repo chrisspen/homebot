@@ -2,7 +2,7 @@ include <../settings.scad>;
 use <flexiTreads.scad>;
 use <../nuts.scad>;
 
-module make_track_driver(){
+module make_track_driver(set_screw=1){
 
 	notch_depth = 0.5;
 
@@ -24,31 +24,31 @@ module make_track_driver(){
 
         }
 
-	// set screw cutout
-	translate([0,track_driver_hole_radius+2.5,track_wheel_width/2]){
-		rotate([90,0,0]){
-			color("red")
-			hull(){
-				make_nut_2(w=6, d=0);
-				translate([0,10,0])
-				make_nut_2(w=6, d=0);
-			}
-		}
-		color("green")
-		translate([0,track_wheel_radius/2-4,0])
-		rotate([90,0,0])
-		cylinder(d=track_driver_set_screw_shaft_d, h=track_wheel_radius, center=true);
-		
-		color("blue")
-		translate([0,track_wheel_radius/2-1,0])
-		rotate([90,0,0])
-		cylinder(d=track_driver_set_screw_head_d, h=track_wheel_radius/2, center=true);
-	}
+        // set screw cutout
+        if(set_screw)
+        translate([0,track_driver_hole_radius+2.5,track_wheel_width/2]){
+            rotate([90,0,0]){
+                color("red")
+                hull(){
+                    make_nut_2(w=6, d=0);
+                    translate([0,10,0])
+                    make_nut_2(w=6, d=0);
+                }
+            }
+            color("green")
+            translate([0,track_wheel_radius/2-4,0])
+            rotate([90,0,0])
+            cylinder(d=track_driver_set_screw_shaft_d, h=track_wheel_radius, center=true);
+            
+            color("blue")
+            translate([0,track_wheel_radius/2-1,0])
+            rotate([90,0,0])
+            cylinder(d=track_driver_set_screw_head_d, h=track_wheel_radius/2, center=true);
+        }
 
 	}// end diff
 
 
 }
 
-make_track_driver();
-
+make_track_driver(set_screw=0);

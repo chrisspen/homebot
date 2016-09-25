@@ -17,6 +17,6 @@ set -v
 
 {
 
-screen -d -m bash {{script_dir}}/{{roslaunch_script}}.sh
+screen -d -m bash {{script_dir}}/{{start_script}}.sh
 
 } &>> ${LOG_FILE}

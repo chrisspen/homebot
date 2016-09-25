@@ -24,24 +24,38 @@ class HomebotSatchel(ServiceSatchel):
         
         self.env.daemon_name = 'homebot'
         
+        self.env.autostart_script = 'homebot_autostart_screens'
+        self.env.start_script = 'homebot_start'
+        self.env.restart_script = 'homebot_restart'
+        self.env.stop_script = 'homebot_stop'
+        self.env.status_script = 'homebot_status'
+        self.env.cron_script = 'homebot_crontab'
+        self.env.cron_dir = '/etc/cron.d'
+        
         self.env.service_commands = {
             START:{
                 UBUNTU: 'service %s start' % self.env.daemon_name,
+                RASPBIAN: 'homebot_start.sh',
             },
             STOP:{
                 UBUNTU: 'service %s stop' % self.env.daemon_name,
+                RASPBIAN: 'homebot_stop.sh',
             },
             DISABLE:{
                 UBUNTU: 'chkconfig %s off' % self.env.daemon_name,
+                RASPBIAN: self.uninstall_autostart_cron,
             },
             ENABLE:{
                 UBUNTU: 'chkconfig %s on' % self.env.daemon_name,
+                RASPBIAN: self.install_autostart_cron,
             },
             RESTART:{
                 UBUNTU: 'service %s restart' % self.env.daemon_name,
+                RASPBIAN: 'homebot_restart.sh',
             },
             STATUS:{
                 UBUNTU: 'service %s status' % self.env.daemon_name,
+                RASPBIAN: 'homebot_status.sh',
             },
         }
 
@@ -147,9 +161,13 @@ class HomebotSatchel(ServiceSatchel):
         }
     
     @task
+    def reboot(self, *args, **kwargs):
+        return super(HomebotSatchel, self).reboot(*args, **kwargs)
+    
+    @task
     def rebuild_messages(self):
         r = self.local_renderer
-        r.run('cd /usr/local/homebot/src/ros; . ./shell; time catkin_make --pkg ros_homebot_msgs')
+        r.run('cd /usr/local/homebot/src/ros; . ./setup.bash; time catkin_make --pkg ros_homebot_msgs')
     
     #2016.8.14 CKS Removed due to package unsupported on Kinetic.
 #     @task
@@ -195,49 +213,54 @@ class HomebotSatchel(ServiceSatchel):
         #r.env.log_dir = '/home/{user}/homebot_autostart/logs'.format(**r.genv)
         r.env.log_dir = '/var/log'
         r.env.source_path = '/usr/local/homebot/src/ros/setup.bash'
-        r.env.script_dir = '/usr/local/bin'
-        r.env.autostart_script = 'homebot_autostart_screens'
-        r.env.roslaunch_script = 'homebot_start'
-        r.env.stop_script = 'homebot_stop'
-        r.env.status_script = 'homebot_status'
+        r.env.script_dir = self.env.script_dir = '/usr/local/bin'
         r.run('mkdir -p {log_dir}')
         
         r.sudo('touch {log_dir}/{autostart_script}.log')
         r.sudo('chown {user}:{user} {log_dir}/{autostart_script}.log')
-        r.sudo('touch {log_dir}/{roslaunch_script}.log')
-        r.sudo('chown {user}:{user} {log_dir}/{roslaunch_script}.log')
+        r.sudo('touch {log_dir}/{start_script}.log')
+        r.sudo('chown {user}:{user} {log_dir}/{start_script}.log')
         
         r.pc('Installing scripts.')
         r.install_script(
-            local_path='homebot/'+r.env.autostart_script+'.sh',
-            remote_path=('%s/'+r.env.autostart_script+'.sh') % r.env.script_dir,
-            extra=r.env)
-#         r.install_script(
-#             local_path='homebot/start_homebot_roscore.sh',
-#             remote_path='%s/start_homebot_roscore.sh' % r.env.script_dir,
-#             extra=r.env)
-        r.install_script(
-            local_path='homebot/'+r.env.roslaunch_script+'.sh',
-            remote_path=('%s/'+r.env.roslaunch_script+'.sh') % r.env.script_dir,
+            local_path='homebot/{autostart_script}.sh',
+            remote_path='{script_dir}/{autostart_script}.sh',
             extra=r.env)
         r.install_script(
-            local_path='homebot/'+r.env.stop_script+'.sh',
-            remote_path=('%s/'+r.env.stop_script+'.sh') % r.env.script_dir,
+            local_path='homebot/{start_script}.sh',
+            remote_path='{script_dir}/{start_script}.sh',
             extra=r.env)
         r.install_script(
-            local_path='homebot/'+r.env.status_script+'.sh',
-            remote_path=('%s/'+r.env.status_script+'.sh') % r.env.script_dir,
+            local_path='homebot/{stop_script}.sh',
+            remote_path='{script_dir}/{stop_script}.sh',
+            extra=r.env)
+        r.install_script(
+            local_path='homebot/{status_script}.sh',
+            remote_path='{script_dir}/{status_script}.sh',
+            extra=r.env)
+        r.install_script(
+            local_path='homebot/{restart_script}.sh',
+            remote_path='{script_dir}/{restart_script}.sh',
             extra=r.env)
         
+        self.install_autostart_cron()
+    
+    @task
+    def install_autostart_cron(self):
+        r = self.local_renderer
         r.pc('Installing crontab.')
         r.install_script(
-            local_path='homebot/homebot_crontab',
-            remote_path='/etc/cron.d/homebot_crontab',
+            local_path='homebot/{cron_script}',
+            remote_path='{cron_dir}/{cron_script}',
             extra=r.env)
         r.sudo('chown root:root /etc/cron.d/homebot_crontab')
         r.sudo('chmod 600 /etc/cron.d/homebot_crontab')
-        
         r.sudo('service cron restart')
+        
+    @task
+    def uninstall_autostart_cron(self):
+        r = self.local_renderer
+        r.sudo('rm -f {cron_dir}/{cron_script}')
     
     @task
     def delete_logs(self):
