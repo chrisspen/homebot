@@ -7,14 +7,14 @@ homebot_user: ubuntu
 homebot_group: ubuntu
 homebot_upstart_user: ubuntu
 
-host_default_hostname: ubuntu
+host_default_hostname: ubuntu-minimal
 host_default_user: ubuntu
 host_default_password: ubuntu
 host_post_initrole_tasks:
 -   user.enter_password_change
 
 hostname_default_hostnames:
-    rae: ubuntu
+    rae: ubuntu-minimal
 
 pip_user: ubuntu
 pip_group: ubuntu
@@ -28,3 +28,5 @@ user_passwordless:
     ubuntu: true
 user_reset_passwords_on_first_login:
     ubuntu: true
+
+user_passwordless_method: upload-key

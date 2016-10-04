@@ -223,8 +223,9 @@ class Diagnostic:
         
         self.running = True
         
-#         rospy.on_shutdown(self.shutdown)
+        rospy.on_shutdown(self.shutdown)
 
+        print('Looking for section...')
         self.section = None
         try:
             self.section = (rospy.get_param('~section') or '').upper() # head|torso
@@ -233,7 +234,12 @@ class Diagnostic:
                 self.section = ''
         except KeyError:
             pass
+        if self.section:
+            print('Checking section %s.' % self.section)
+        else:
+            print('No section specified. Checking all sections.')
         
+        print('Looking for part...')
         self.part = None
         try:
             self.part = (rospy.get_param('~part') or '').lower().strip()
@@ -241,39 +247,47 @@ class Diagnostic:
                 self.part = ''
         except KeyError:
             pass
+        if self.part:
+            print('Checking part %s.' % self.part)
+        else:
+            print('No part specified. Checking all part.')
         
         skip_device = int(rospy.get_param('~skip_device_check', 0))
         
-        print('Section:', self.section)
-        print('Part:', self.part)
         print('skip_device:', skip_device)
         
         if not skip_device:
             if not self.section or self.section == c.HEAD:
-                while not rospy.is_shutdown():
+                while not rospy.is_shutdown() and self.running:
                     try:
+                        print('Looking for head...')
                         device = utils.find_serial_device(c.HEAD)
                         break
                     except DeviceNotFound:
                         self.wait_until_continue('Attach the head via USB.')
                         
             if not self.section or self.section == c.TORSO:
-                while not rospy.is_shutdown():
+                while not rospy.is_shutdown() and self.running:
                     try:
+                        print('Looking for torso...')
                         device = utils.find_serial_device(c.TORSO)
                         break
                     except DeviceNotFound:
                         self.wait_until_continue('Attach the torso via USB.')
         
         if not self.section or self.section == c.HEAD:
-            assert rosnode.rosnode_ping('head_arduino'), 'Head arduino node not detected.'
+            print('Pinging head node...')
+            assert rosnode.rosnode_ping('/head_arduino', max_count=1, verbose=True), 'Head arduino node not detected.'
             
         if not self.section or self.section == c.TORSO:
-            assert rosnode.rosnode_ping('torso_arduino'), 'Torso arduino node not detected.'
+            print('Pinging torso node...')
+            assert rosnode.rosnode_ping('/torso_arduino', max_count=1, verbose=True), 'Torso arduino node not detected.'
         
         if (not self.section or self.section == c.HEAD) and (not self.part or self.part == 'lrf'):
-            assert rosnode.rosnode_ping('homebot_lrf'), 'LRF node not detected.'
-            assert rosnode.rosnode_ping('raspicam_node'), 'Raspicam node not detected.'
+            print('Pinging LRF node...')
+            assert rosnode.rosnode_ping('homebot_lrf', max_count=1, verbose=True), 'LRF node not detected.'
+            print('Pinging Raspicam node...')
+            assert rosnode.rosnode_ping('raspicam_node', max_count=1, verbose=True), 'Raspicam node not detected.'
             
         self.check_results = {} # {name: success}
         
@@ -963,11 +977,11 @@ class Diagnostic:
         if raw_input(message + ' <y/n>')[:-1].lower() != 'y':
             sys.exit()
     
-#     def shutdown(self):
-#         print 'Shutting down...'
-#         self.running = False
+    def shutdown(self):
+        print('Shutting down...')
+        self.running = False
         #self.cancel_all() # hangs indefinitely?
-#         print 'Done.'
+        print('Done.')
 
 if __name__ == '__main__':
     #http://wiki.ros.org/Parameter%20Server#Private_Parameters

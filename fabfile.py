@@ -20,7 +20,7 @@ from burlap.common import (
 )
 from burlap.decorators import task_or_dryrun
 
-from satchels import ros, rpi, homebot, arduino
+from satchels import ros, homebot, arduino
 
 @task_or_dryrun
 def deploy_cura():

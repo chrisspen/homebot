@@ -143,15 +143,11 @@ class HomebotSatchel(ServiceSatchel):
             'mpg321',
             'lame',
             
-            #ros-kinetic-image-view
-            ##ros-kinetic-mjpeg-server
-            ##ros-kinetic-web-video-server
-            ##ros-kinetic-robot-upstart #TODO:fix
-            #ros-kinetic-xacro
-            #ros-kinetic-robot-state-publisher
-            
-#             'ros-%s-image-view' % self.genv.ros_version_name,
-#             'ros-%s-rqt-robot-monitor' % self.genv.ros_version_name,
+            #TODO:re-enable once package supports kinetic?
+#             'ros-%s-robot-upstart' % self.genv.ros_version_name,
+            'ros-%s-image-view' % self.genv.ros_version_name,
+            'ros-%s-xacro' % self.genv.ros_version_name,
+            'ros-%s-robot-state-publisher' % self.genv.ros_version_name,
 
         ]
         return {
@@ -169,28 +165,27 @@ class HomebotSatchel(ServiceSatchel):
         r = self.local_renderer
         r.run('cd /usr/local/homebot/src/ros; . ./setup.bash; time catkin_make --pkg ros_homebot_msgs')
     
-    #2016.8.14 CKS Removed due to package unsupported on Kinetic.
-#     @task
-#     def install_upstart(self, force=0):
-#         """
-#         Installs the upstart script for automatically starting your application.
-#         
-#         http://docs.ros.org/api/robot_upstart/html/
-#         """
-#         force = int(force)
-#         print('force:',force)
-#         r = self.local_renderer
-#         #r.sudo('apt-get install ros-indigo-robot-upstart')
-#         if force or not r.file_exists('/etc/init/homebot.conf'):
-#             r.sudo('source /usr/local/homebot/src/ros/setup.bash; rosrun robot_upstart install --setup {upstart_setup} --job {upstart_name} --user {upstart_user} {upstart_launch}')
-#             
-#             r.reboot(wait=300, timeout=60)
-    
-#     @task
-#     def uninstall_upstart(self):
-#         r = self.local_renderer
-#         if r.file_exists('/etc/init/homebot.conf'):
-#             r.sudo('rosrun robot_upstart uninstall {upstart_name}')
+    @task
+    def install_upstart(self, force=0):
+        """
+        Installs the upstart script for automatically starting your application.
+         
+        http://docs.ros.org/api/robot_upstart/html/
+        """
+        force = int(force)
+        print('force:',force)
+        r = self.local_renderer
+        #r.sudo('apt-get install ros-indigo-robot-upstart')
+        if force or not r.file_exists('/etc/init/homebot.conf'):
+            r.sudo('source /usr/local/homebot/src/ros/setup.bash; rosrun robot_upstart install --setup {upstart_setup} --job {upstart_name} --user {upstart_user} {upstart_launch}')
+             
+            r.reboot(wait=300, timeout=60)
+     
+    @task
+    def uninstall_upstart(self):
+        r = self.local_renderer
+        if r.file_exists('/etc/init/homebot.conf'):
+            r.sudo('rosrun robot_upstart uninstall {upstart_name}')
 
     @task
     def catkin_make(self, pkg=None):
@@ -312,6 +307,9 @@ class HomebotSatchel(ServiceSatchel):
         if not r.genv.key_filename:
             r.genv.key_filename = self.genv.host_original_key_filename
         
+        r.sudo('mkdir -p {project_dir}')
+        r.sudo('chown {user}:{user} {project_dir}')
+        
         #archive=-rlptgoD (we don't want g=groups or o=owner or D=devices because remote system has different permissions and hardware)
         r.local('rsync --recursive --verbose --perms --times --links --compress --copy-links '
             '--exclude=.build --exclude=build --exclude=devel '
@@ -324,14 +322,14 @@ class HomebotSatchel(ServiceSatchel):
             '--delete --rsh "ssh -t -o StrictHostKeyChecking=no -i {key_filename}" src {user}@{host_string}:{project_dir}')
         
         #TODO:remove once lib stable
-        r.local('rsync --recursive --verbose --perms --times --links --compress --copy-links '
-            '--exclude=.build --exclude=build --exclude=devel '
-            '--exclude=overlay '
-            '--exclude=.build_ano '
-            '--exclude=db.sqlite3 '
-            '--exclude=.env '
-            '--exclude=setup_local.bash '
-            '--delete --rsh "ssh -t -o StrictHostKeyChecking=no -i {key_filename}" /home/chris/git/i2cdevlib {user}@{host_string}:/usr/share/arduino/libraries/')
+#         r.local('rsync --recursive --verbose --perms --times --links --compress --copy-links '
+#             '--exclude=.build --exclude=build --exclude=devel '
+#             '--exclude=overlay '
+#             '--exclude=.build_ano '
+#             '--exclude=db.sqlite3 '
+#             '--exclude=.env '
+#             '--exclude=setup_local.bash '
+#             '--delete --rsh "ssh -t -o StrictHostKeyChecking=no -i {key_filename}" /home/chris/git/i2cdevlib {user}@{host_string}:/usr/share/arduino/libraries/')
     
     @task
     def view_head_log(self):
