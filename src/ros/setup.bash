@@ -11,5 +11,7 @@ fi
 
 source /opt/ros/$_ROS_VERSION/setup.bash
 source $_CURRENT_DIR/../../.env/bin/activate
-source $_CURRENT_DIR/../overlay/devel/setup.bash --extend
+if [ -f "$_CURRENT_DIR/../overlay/devel/setup.bash" ]; then
+    source $_CURRENT_DIR/../overlay/devel/setup.bash --extend
+fi
 source $_CURRENT_DIR/devel/setup.sh --extend

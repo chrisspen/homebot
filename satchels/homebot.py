@@ -148,6 +148,12 @@ class HomebotSatchel(ServiceSatchel):
             'ros-%s-image-view' % self.genv.ros_version_name,
             'ros-%s-xacro' % self.genv.ros_version_name,
             'ros-%s-robot-state-publisher' % self.genv.ros_version_name,
+            'ros-%s-rospy' % self.genv.ros_version_name,
+            # Needed by raspicam_node.
+            'ros-%s-compressed-image-transport' % self.genv.ros_version_name,
+#             'libcamera-info-manager0d',
+#             'libcamera-info-manager-dev',
+            'ros-%s-camera-info-manager' % self.genv.ros_version_name,
 
         ]
         return {
@@ -262,28 +268,30 @@ class HomebotSatchel(ServiceSatchel):
         r = self.local_renderer
         r.sudo('rm -Rf /home/pi/.ros/log/*')
     
-    @task
-    def install_bcm2835(self):
-        r = self.local_renderer
-        r.run('cd /tmp; wget http://www.airspayce.com/mikem/bcm2835/bcm2835-1.50.tar.gz; tar zxvf bcm2835-1.50.tar.gz')
-        r.run('cd bcm2835-1.50; ./configure')
-        r.run('cd bcm2835-1.50; time make')
-        r.sudo('cd bcm2835-1.50; make check')
-        r.sudo('cd bcm2835-1.50; make install')
-    
-    @task
-    def install_i2cdevlib(self):
-        r = self.local_renderer
-        #TODO:switch back to https://github.com/jrowberg/i2cdevlib/ when pull request 258 accepted
-        #https://github.com/jrowberg/i2cdevlib/pull/258
-        r.sudo('cd /usr/share/arduino/libraries; sudo git clone https://github.com/chrisspen/i2cdevlib.git')
+#     @task
+#     def install_bcm2835(self):
+#         # Needed for the Raspberry Pi to access IMU over I2C
+#         r = self.local_renderer
+#         r.run('cd /tmp; wget http://www.airspayce.com/mikem/bcm2835/bcm2835-1.50.tar.gz; tar zxvf bcm2835-1.50.tar.gz')
+#         r.run('cd bcm2835-1.50; ./configure')
+#         r.run('cd bcm2835-1.50; time make')
+#         r.sudo('cd bcm2835-1.50; make check')
+#         r.sudo('cd bcm2835-1.50; make install')
+#     
+#     @task
+#     def install_i2cdevlib(self):
+#         # Needed for the Raspberry Pi to access IMU over I2C
+#         r = self.local_renderer
+#         #TODO:switch back to https://github.com/jrowberg/i2cdevlib/ when pull request 258 accepted
+#         #https://github.com/jrowberg/i2cdevlib/pull/258
+#         r.sudo('cd /usr/share/arduino/libraries; sudo git clone https://github.com/chrisspen/i2cdevlib.git')
     
     @task
     def init_teleop(self):
         r = self.local_renderer
         if not r.file_exists('/usr/local/homebot/src/ros/src/ros_homebot_teleop/data/db.sqlite3'):
-            r.run('/usr/local/homebot/src/ros/src/ros_homebot_teleop/src; ./manage.py migrate --run-syncdb')
-            r.run('/usr/local/homebot/src/ros/src/ros_homebot_teleop/src; ./manage.py loaddata homebot_dashboard/fixtures/users.json')
+            r.run('. {project_dir}/src/ros/setup.bash; cd /usr/local/homebot/src/ros/src/ros_homebot_teleop/src; ./manage.py migrate --run-syncdb')
+            r.run('. {project_dir}/src/ros/setup.bash; cd /usr/local/homebot/src/ros/src/ros_homebot_teleop/src; ./manage.py loaddata homebot_dashboard/fixtures/users.json')
     
     @task
     def build_raspicam(self):
@@ -355,10 +363,34 @@ class HomebotSatchel(ServiceSatchel):
     @task
     def pip_install(self):
         r = self.local_renderer
-        for package in r.env.pip_requirements:
-            r.env.package = package
-            r.run('{project_dir}/.env/bin/pip install {package}')
+        r.env.package_list = ' '.join(package for package in r.env.pip_requirements)
+        r.run('{project_dir}/.env/bin/pip install {package_list}')
     
+    @task
+    def init_path(self):
+        r = self.local_renderer
+        
+        # Add our custom bin folder to our path.
+        text = 'PATH={project_dir}/src/bin:$PATH'.format(**r.env)
+        if not r.file_contains(filename='~/.bash_aliases', text=text):
+            r.append(text=text, filename='~/.bash_aliases')
+    
+    @task
+    def init_log(self):
+        r = self.local_renderer
+        
+        # Initialize our log file.
+        for log_path in self.lenv.log_paths:
+            r.env.log_path = log_path
+            if not r.file_exists(log_path):
+                r.sudo('touch {log_path}; chown {user}:{group} {log_path}')
+    
+    @task
+    def init_project(self):
+        r = self.local_renderer
+        # Initialize project home.
+        r.sudo('mkdir -p {project_dir}; chown {user}:{group} {project_dir}')
+
     @task
     def configure(self):
         
@@ -367,23 +399,15 @@ class HomebotSatchel(ServiceSatchel):
         lm = self.last_manifest
         lm_pip_requirements = lm.get('pip_requirements', [])
         
-        self.install_bcm2835()
+        #Disabled since we moved the IMU to the torso
+#         self.install_bcm2835()
+#         self.install_i2cdevlib()
         
-        self.install_i2cdevlib()
+        self.init_path()
         
-        # Add our custom bin folder to our path.
-        text = 'PATH={project_dir}/src/bin:$PATH'.format(**r.env)
-        if not r.file_contains(filename='~/.bash_aliases', text=text):
-            r.append(text=text, filename='~/.bash_aliases')
+        self.init_log()
         
-        # Initialize our log file.
-        for log_path in self.lenv.log_paths:
-            r.env.log_path = log_path
-            if not r.file_exists(log_path):
-                r.sudo('touch {log_path}; chown {user}:{group} {log_path}')
-        
-        # Initialize project home.
-        r.sudo('mkdir -p {project_dir}; chown {user}:{group} {project_dir}')
+        self.init_project()
         
         # Initialize Python virtualenv.
         self.init_virtualenv()

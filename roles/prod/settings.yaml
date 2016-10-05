@@ -36,7 +36,7 @@ ros_overlay_dir: /usr/local/homebot/src/overlay
 ros_overlay_packages:
 #-   ["robot_upstart", "git clone https://github.com/clearpathrobotics/robot_upstart.git"]
 -   ["rpi_gpio", "git clone https://github.com/chrisspen/rpi_gpio.git"]
--   ["raspicam", "git clone https://github.com/fpasteau/raspicam_node.git raspicam"]
+-   ["raspicam_node", "git clone https://github.com/chrisspen/raspicam_node.git"]
 
 ros_source_path: /usr/local/homebot/src/ros/setup.bash
 
@@ -65,7 +65,7 @@ services:
 
 shell_default_dir_template: "%(project_home)s/src"
 shell_interactive_djshell_str: 
-shell_interactive_shell: "export SITE=None; export ROLE=prod; cd /usr/local/homebot/src; . ./setup.bash; /bin/bash -i"
+shell_interactive_shell: "export ROLE=prod; cd /usr/local/homebot/src/ros; . ./setup.bash; /bin/bash -i"
 
 sshnice_enabled: true
 

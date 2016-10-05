@@ -252,11 +252,18 @@ class ROSSatchel(Satchel):
         r.sudo('apt-get install -y {packages}')
         
     @task
-    def install_overlay_workspace(self):
+    def install_overlay_workspace(self, clean=0):
+        """
+        Initializes the ROS overlay of packages we need to compile from source that don't have apt packages
+        but aren't directly included in Homebot.
+        """
+        clean = int(clean)
         r = self.local_renderer
         if not r.env.overlay_dir or not r.env.overlay_packages:
             return
         
+        if clean:
+            r.sudo('rm -Rf {overlay_dir}')
         r.sudo('[ ! -d "{overlay_dir}/src" ] && mkdir -p {overlay_dir}/src || true')
         r.sudo('chown -R {user}:{user} {overlay_dir}/..')
         
