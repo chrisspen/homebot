@@ -143,8 +143,15 @@ class HomebotSatchel(ServiceSatchel):
             'mpg321',
             'lame',
             
+            # Needed by some packages that are built from source.
+            'python-wstool',
+            'python-rosdep',
+            'ninja-build',
+            
             #TODO:re-enable once package supports kinetic?
 #             'ros-%s-robot-upstart' % self.genv.ros_version_name,
+
+            # Needed by teleop and raspicam.
             'ros-%s-image-view' % self.genv.ros_version_name,
             'ros-%s-xacro' % self.genv.ros_version_name,
             'ros-%s-robot-state-publisher' % self.genv.ros_version_name,

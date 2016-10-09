@@ -1,10 +1,11 @@
 
 #include <Servo.h>
 
+#include "ServoEaser.h"
 //#include "EEPROMAnything.h"
 //#include "EEPROMAddresses.h"
 #include "ChangeTracker.h"
-#include "Smooth.h"
+//#include "Smooth.h"
 
 // We've been told to go to a position but we're not there yet.
 #define TC_STATE_SEEKING 3
@@ -37,6 +38,8 @@ class TiltController{
     private:
     
         Servo _servo;
+
+        ServoEaser _servoEaser;
     
         // The pin attached to the servo's signal wire.
         int _set_pin;
@@ -74,8 +77,12 @@ class TiltController{
         // Timestamp of the last time the update() method was activated.
         unsigned long _last_update = 0;
 
+        bool _first_easing = true;
+
     public:
         
+        int servoFrameMillis = 20;  // minimum time between servo updates
+
         ChangeTracker<int> actual_degrees = ChangeTracker<int>(0, 0, 1000);
 
         ChangeTracker<long> raw_position = ChangeTracker<long>(0, 0, 1000);
@@ -110,22 +117,32 @@ class TiltController{
         }
         
         void set_target_degrees(int degrees, bool force=false){
-            if(get_lower_endstop_degrees() <= degrees && degrees <= get_upper_endstop_degrees()){
-                if(_last_target_degrees && !force){
-                    // Calculate a delay proportional to the degree of change.
-                    _moving_to_target_ms = (abs(degrees - _target_degrees)*TC_FULL_SWEEP_MILLIS)/((float)get_full_sweep_degrees());
-                }else{
-                    // If we're uncalibrated, or forcing movement, assume all movements take a long time.
-					_moving_to_target_ms = TC_FULL_SWEEP_MILLIS;
-                }
-                _moving_to_target_ms = max(_moving_to_target_ms, 50);
-                _last_start_degrees = get_current_degrees();//start
-                _last_target_degrees = _target_degrees;
-                _target_degrees = degrees;//end
-                _target_degrees_last_set_ms = millis();
-                _moving_to_target = true;
-            }
+        	int change_degrees;
+        	degrees = constrain(degrees, get_lower_endstop_degrees(), get_upper_endstop_degrees());
+			if(_last_target_degrees && !force){
+				// Calculate a delay proportional to the degree of change.
+				_moving_to_target_ms = (abs(degrees - _target_degrees)*TC_FULL_SWEEP_MILLIS)/((float)get_full_sweep_degrees());
+			}else{
+				// If we're uncalibrated, or forcing movement, assume all movements take a long time.
+				_moving_to_target_ms = TC_FULL_SWEEP_MILLIS;
+			}
+			_moving_to_target_ms = max(_moving_to_target_ms, 50);
+			_last_start_degrees = get_current_degrees();//start
+			_last_target_degrees = _target_degrees;
+			_target_degrees = degrees;//end
+			_target_degrees_last_set_ms = millis();
+			_moving_to_target = true;
             start();
+            change_degrees = abs(_last_start_degrees - degrees);
+            if(change_degrees < 5){
+            	_servoEaser.easeTo(degrees, 500);
+            }else if(change_degrees < 10){
+            	_servoEaser.easeTo(degrees, 1000);
+
+            }else{
+            	_servoEaser.easeTo(degrees, 2000);
+
+            }
         }
         
         bool is_moving_to_target(){
@@ -208,9 +225,14 @@ class TiltController{
         }
         
         void enable(){
-            _servo.attach(_set_pin);
             if(!_attached){
-                _servo.write(_target_degrees);
+                _servo.attach(_set_pin);
+                if(_first_easing){
+                	_first_easing = false;
+                	_servoEaser.begin(_servo, servoFrameMillis);
+                	_servoEaser.useMicroseconds(true);  // fine-control mode
+                }
+                //_servo.write(_target_degrees);
             }
             _attached = true;
         }
@@ -255,12 +277,12 @@ class TiltController{
         
         void update(){
         
-        	if(millis() - _last_update < TC_UPDATE_FREQ_MS)
-        		return;
+//        	if(millis() - _last_update < TC_UPDATE_FREQ_MS)
+//        		return;
 
         	_last_update = millis();
 
-        	raw_position.set(_get_current_position());
+        	//raw_position.set(_get_current_position());
 
             if(TC_STATE_LIMP == _state){
             
@@ -282,23 +304,32 @@ class TiltController{
 
             	// Move the servo smoothly.
             	//TODO:fix? too jerky
-            	unsigned long t = millis() - _target_degrees_last_set_ms;
-        	    int v = get_servo_signal(
-					get_start_degrees(),//start
-					get_target_degrees(),//end
-        			50,//speed
-        			t/1000.//t
-        		);
-				v = max(v, get_lower_endstop_degrees());
-				v = min(v, get_upper_endstop_degrees());
-    	    	_servo.write(v);
-        	    if(v == get_target_degrees()){
-					actual_degrees.set(_target_degrees);
+//            	unsigned long t = millis() - _target_degrees_last_set_ms;
+//        	    int v = get_servo_signal(
+//					get_start_degrees(),//start
+//					get_target_degrees(),//end
+//        			50,//speed
+//        			t/1000.//t
+//        		);
+//				v = max(v, get_lower_endstop_degrees());
+//				v = min(v, get_upper_endstop_degrees());
+//    	    	_servo.write(v);
+//        	    if(v == get_target_degrees()){
+//					actual_degrees.set(_target_degrees);
+//					if(!_power){
+//						disable();
+//					}
+//        	    }
+
+            	_servoEaser.update();
+
+            	// If we've reached the end position, and we're not enforcing position,
+            	// then turn power off.
+            	if(_servoEaser.hasArrived()){
 					if(!_power){
 						disable();
 					}
-        	    }
-
+            	}
 
             }else{
 
