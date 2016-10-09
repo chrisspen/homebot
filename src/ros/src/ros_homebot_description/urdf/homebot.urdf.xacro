@@ -2,12 +2,12 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="homebot">
     <xacro:include filename="$(find ros_homebot_description)/urdf/materials.urdf.xacro" />
     <!-- dimensions in meters -->
-    <property name="torso_radius" value="0.075" /><!-- 150 mm diameter = 75 mm radius -->
-    <property name="torso_height" value="0.16" /><!-- 160 mm height -->
-    <property name="neck_height" value="0.015" />
-    <property name="camera_radius" value="0.008" />
-    <property name="camera_thickness" value="0.005" />
-    <property name="M_PI" value="3.141592653589793" />
+    <xacro:property name="torso_radius" value="0.075" /><!-- 150 mm diameter = 75 mm radius -->
+    <xacro:property name="torso_height" value="0.16" /><!-- 160 mm height -->
+    <xacro:property name="neck_height" value="0.015" />
+    <xacro:property name="camera_radius" value="0.008" />
+    <xacro:property name="camera_thickness" value="0.005" />
+    <xacro:property name="M_PI" value="3.141592653589793" />
     
     <link name="base_footprint">
         <visual>
