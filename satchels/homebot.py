@@ -156,11 +156,15 @@ class HomebotSatchel(ServiceSatchel):
             'ros-%s-xacro' % self.genv.ros_version_name,
             'ros-%s-robot-state-publisher' % self.genv.ros_version_name,
             'ros-%s-rospy' % self.genv.ros_version_name,
-            # Needed by raspicam_node.
             'ros-%s-compressed-image-transport' % self.genv.ros_version_name,
 #             'libcamera-info-manager0d',
 #             'libcamera-info-manager-dev',
             'ros-%s-camera-info-manager' % self.genv.ros_version_name,
+            
+            # Needed by homebot_description.
+            'ros-%s-diagnostics' % self.genv.ros_version_name,
+            'ros-%s-diagnostics-msgs' % self.genv.ros_version_name,
+            'ros-%s-robot-model' % self.genv.ros_version_name,
 
         ]
         return {
