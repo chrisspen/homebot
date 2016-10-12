@@ -77,7 +77,7 @@ class HomebotSatchel(ServiceSatchel):
             
             'Pillow==2.3.0',
             'picamera==1.10',
-            'numpy==1.8.2',
+            'numpy==1.11.2',
             
             'pint==0.7.2',
             
@@ -142,6 +142,10 @@ class HomebotSatchel(ServiceSatchel):
             'alsa-utils',
             'mpg321',
             'lame',
+            
+            # Needed by cv2.
+            'libgles2-mesa',
+            'libgles2-mesa-dev',
             
             # Needed by some packages that are built from source.
             'python-wstool',
