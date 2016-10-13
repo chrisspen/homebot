@@ -253,7 +253,7 @@ class LRF():
         
         self.verbose = int(rospy.get_param("~verbose", 0))
         
-        self.laser_pin = int(rospy.get_param("~laser_pin", 20))
+        self.laser_pin = int(rospy.get_param("~laser_pin", c.LASER_PIN))
         
         self.distances_pub = rospy.Publisher('~scan', LaserScan, queue_size=1)
         

@@ -11,6 +11,7 @@ use <electronics/laser_03015L.scad>;
 use <electronics/motor.scad>;
 use <electronics/pololu_drv8838.scad>;
 use <electronics/BMS706MG_Servo.scad>;
+use <electronics/fan.scad>;
 use <gears/pan_gears.scad>;
 use <plates/head.scad>;
 use <plates/head_bottom.scad>;
@@ -471,6 +472,20 @@ make_head_shell();
 
 head_layout();
 
+// position1: center back
+color("blue")
+translate([0,0,75])
+rotate([-90,0,0])
+translate([0,0,71])// head radius
+make_fan_F17HA_05MC();
+
+// position1: top back
+color("blue")
+translate([0,0,75])
+rotate([-45,0,0])
+translate([0,0,71])// head radius
+make_fan_F17HA_05MC();
+
 translate([0,0,-15]){
 
     color("green"){
@@ -514,6 +529,8 @@ translate([0,0,-15]){
         rotate([0,180,0])
         import("printable/speaker_mount_b.stl");
     }
+    
+    
         
 }
 

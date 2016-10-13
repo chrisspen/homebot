@@ -317,9 +317,9 @@ SOUND_TTS = 'tts'
 SOUND_TONE = 'tone'
 
 # CPU temperature limits (in Celcius)
-
-CPU_TEMP_ERROR = 60 # over this shown error
-CPU_TEMP_WARN = 50 # over this shown warning, below shown ok
+# The Pi starts to underclock itself at 85C and the components get damaged at 90C
+CPU_TEMP_ERROR = 85 # over this shown error
+CPU_TEMP_WARN = 82.5 # over this shown warning, below shown ok
 CPU_USAGE_PERCENT_ERROR = 99
 CPU_USAGE_PERCENT_WARN = 90
 

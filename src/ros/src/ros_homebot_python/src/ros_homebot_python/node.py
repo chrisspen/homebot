@@ -38,7 +38,10 @@ def get_name(packet_id):
     return get_packet_name(packet_id)
 
 def get_packet_name(packet_id):
-    return re.sub(r'[^a-z]+', '_', c.ALL_IDS[packet_id])
+    try:
+        return re.sub(r'[^a-z]+', '_', c.ALL_IDS[packet_id])
+    except KeyError:
+        return
 
 def get_packet_id(packet_name):
     return c.NAME_TO_IDS[packet_name]
@@ -47,13 +50,19 @@ def get_pub_attr_name(packet_id):
     """
     Generates the attribute name used to store the publisher.
     """
-    return get_name(packet_id) + '_pub'
+    try:
+        return get_name(packet_id) + '_pub'
+    except TypeError:
+        return
     
 def get_srv_attr_name(packet_id):
     """
     Generates the attribute name used to store the service.
     """
-    return get_name(packet_id) + '_srv'
+    try:
+        return get_name(packet_id) + '_srv'
+    except TypeError:
+        return
 
 def get_srv_type_name(packet_id):
     """
@@ -614,8 +623,10 @@ class BaseArduinoNode():
         """
         self.running = False
         try:
-            self._read_thread.join(5)
-            self._write_thread.join(5)
+            if self._read_thread is not None:
+                self._read_thread.join(5)
+            if self._write_thread is not None:
+                self._write_thread.join(5)
         except RuntimeError:
             pass
 
