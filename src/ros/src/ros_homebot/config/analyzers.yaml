@@ -43,17 +43,12 @@ analyzers:
             -   'CPU Temperature'
             -   'Disk Usage'
             -   'Memory Usage'
-        head_arduino:
+        controllers:
             type: GenericAnalyzer
-            path: Head Arduino
+            path: Controllers
             timeout: 5.0
             contains:
             -   'Head Arduino'
-        torso_arduino:
-            type: GenericAnalyzer
-            path: Torso Arduino
-            timeout: 5.0
-            contains:
             -   'Torso Arduino'
 #  joints:
 #    type: GenericAnalyzer
