@@ -1,0 +1,4 @@
+description: Wiring of the cooling fan in the head.
+status: production
+parts:
+    head_fan.fzz: Simple wiring connecting the fan to a GVS header on the Pi.

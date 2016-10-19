@@ -34,21 +34,25 @@ class PID:
     """PID Controller
     """
 
-    def __init__(self, P=0.2, I=0.0, D=0.0):
+    def __init__(self, P=0.2, I=0.0, D=0.0, get_time=None, default_target=0.0):
+
+        self.default_target = default_target
+
+        self.get_time = get_time or time.time
 
         self.Kp = P
         self.Ki = I
         self.Kd = D
 
         self.sample_time = 0.00
-        self.current_time = time.time()
+        self.current_time = self.get_time()
         self.last_time = self.current_time
 
         self.clear()
 
     def clear(self):
         """Clears PID computations and coefficients"""
-        self.SetPoint = 0.0
+        self.SetPoint = self.default_target
 
         self.PTerm = 0.0
         self.ITerm = 0.0
@@ -60,6 +64,12 @@ class PID:
         self.windup_guard = 20.0
 
         self.output = 0.0
+
+    def set_target(self, v):
+        self.SetPoint = v
+
+    def get_output(self):
+        return self.output
 
     def update(self, feedback_value):
         """Calculates PID value for given reference feedback
@@ -75,7 +85,7 @@ class PID:
         """
         error = self.SetPoint - feedback_value
 
-        self.current_time = time.time()
+        self.current_time = self.get_time()
         delta_time = self.current_time - self.last_time
         delta_error = error - self.last_error
 

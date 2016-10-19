@@ -271,6 +271,7 @@ void loop(){
     	power_controller.external_power_sensor.send_pending(ser, force_sensors);
     	
     	ser.write(ag_sensor.get_reading_packet_accelerometer(force_sensors));
+    	ser.write(ag_sensor.get_reading_packet_gyroscope(force_sensors));
     	ser.write(ag_sensor.get_reading_packet_euler(force_sensors));
     	ser.write(ag_sensor.get_reading_packet_magnetometer(force_sensors));
     	ser.write(ag_sensor.get_reading_packet_calibration(force_sensors));

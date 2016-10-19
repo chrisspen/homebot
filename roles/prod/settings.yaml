@@ -37,6 +37,7 @@ ros_overlay_packages:
 #-   ["robot_upstart", "git clone https://github.com/clearpathrobotics/robot_upstart.git"]
 -   ["rpi_gpio", "git clone https://github.com/chrisspen/rpi_gpio.git"]
 -   ["raspicam_node", "git clone https://github.com/chrisspen/raspicam_node.git"]
+-   ["ros_qr_tracker", "git clone https://github.com/chrisspen/ros_qr_tracker.git"]
 
 ros_source_path: /usr/local/homebot/src/ros/setup.bash
 

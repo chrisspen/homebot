@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # This file is part of IvPID.
 # Copyright (C) 2015 Ivmech Mechatronics Ltd. <bilgi@ivmech.com>

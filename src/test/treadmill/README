@@ -1,7 +1,14 @@
 Proof of concept for driving a robot on a treadmill, attempting to stay a consistent distance from a tracking board directly in front.
 
-It's assumed that only the three forward facing ultrasonic sensors will be used, not the laser range finder.
-
-PID controller will attempt to keep left and right distances equal, and center sensor at a specific value.
+We'll be using the main camera to track a pattern, that the robot will attempt to center and keep at a certain size in the frame.
 
 To do this it has to control the speed of two signals, the left and right motors.
+
+We assume the treadmill is always moving.
+
+There will be two PID controllers.
+
+One to adjust orientation, to drift left or right.
+
+One to adjust speed, to speed up or slow down as the treadmill changes.
+ 

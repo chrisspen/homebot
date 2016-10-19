@@ -1,0 +1,6 @@
+<launch>
+    <node name="qr_tracker" pkg="ros_qr_tracker" type="qr_tracker.py" output="screen">
+        <param name="topic" value="/raspicam/image/compressed" />
+        <param name="mode" type="int" value="2" />
+    </node>
+</launch>
