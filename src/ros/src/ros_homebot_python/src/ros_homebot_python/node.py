@@ -357,13 +357,16 @@ class BaseArduinoNode():
                 print('parameters:', parameters, file=sys.stderr)
                 print('output_format:', output_format, file=sys.stderr)
                 return
-                
-            for (arg_name, arg_type), param in zip(output_format, parameters):
-                setattr(msg, arg_name, to_type(param, arg_type))
             
-            # Publish packet on packet-specific publisher.    
             try:
+                
+                # Convert all params to the correct type.
+                for (arg_name, arg_type), param in zip(output_format, parameters):
+                    setattr(msg, arg_name, to_type(param, arg_type))
+            
+                # Publish packet on packet-specific publisher.
                 publisher.publish(msg)
+                
             #except ROSSerializationException as e:
             except Exception as e:
                 traceback.print_exc(file=sys.stderr)

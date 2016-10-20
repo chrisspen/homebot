@@ -192,43 +192,42 @@ void loop(){
 				ser.write(String(ID_TILT_POWER)+String(' ')+String(tilt_controller.get_power()));
 				break;
 				
-//			case ID_GET_VALUE:
-//			
-//				char arg_id = packet.get_data().charAt(0);
-//				switch(arg_id){
-//				
-//					case ID_PAN_CENTERMARK:
-//						ser.write(
-//							String(ID_GET_VALUE)+String(' ')+
-//							String(arg_id)+String(' ')+
-//							String(pan_controller.is_centermark()));
-//						break;
-//					
-//					//DEPRECATED, remove
+			case ID_GET_VALUE:
+			
+				char arg_id = packet.get_data().charAt(0);
+				switch(arg_id){
+				
+					case ID_PAN_CENTERMARK:
+						ser.write(
+							String(ID_GET_VALUE)+String(' ')+
+							String(arg_id)+String(' ')+
+							String(pan_controller.is_centermark()));
+						break;
+					
+					//DEPRECATED, remove
 //					case ID_PAN_FULL_REV_COUNT:
 //						ser.write(
 //							String(ID_GET_VALUE)+String(' ')+
 //							String(arg_id)+String(' ')+
 //							String(pan_controller.count_for_full_revolution.get()));
 //						break;
-//					
-//						
-//					case ID_PAN_ANGLE:
-//						ser.write(
-//							String(ID_GET_VALUE)+String(' ')+
-//							String(arg_id)+String(' ')+
-//							String((int)pan_controller.actual_angle.get()));
-//						break;
-//						
-//					case ID_TILT_ANGLE:
-//						ser.write(
-//							String(ID_GET_VALUE)+String(' ')+
-//							String(arg_id)+String(' ')+
-//							String((int)tilt_controller.actual_degrees.get()));
-//						break;
-//				
-//				}
-//				break;
+						
+					case ID_PAN_ANGLE:
+						ser.write(
+							String(ID_GET_VALUE)+String(' ')+
+							String(arg_id)+String(' ')+
+							String((int)pan_controller.actual_angle.get()));
+						break;
+						
+					case ID_TILT_ANGLE:
+						ser.write(
+							String(ID_GET_VALUE)+String(' ')+
+							String(arg_id)+String(' ')+
+							String((int)tilt_controller.actual_degrees.get()));
+						break;
+				
+				}
+				break;
 			
 			//TODO: Get/set tilt angle
 		}//switch end

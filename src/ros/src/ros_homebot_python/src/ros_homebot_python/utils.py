@@ -4,6 +4,8 @@ import glob
 import commands
 import math
 
+import rosnode
+
 try:
     from tf import transformations as tf
 except ImportError:
@@ -211,4 +213,8 @@ def rotational_travel_time(speed, degrees):
     circumference = math.pi*c.TORSO_TREAD_WIDTH
     distance = circumference * degrees/(360. * c.DEG)
     return abs(distance / speed)
-    
+
+def assert_node_alive(name):
+    print('Pinging %s...' % name)
+    assert rosnode.rosnode_ping(name, max_count=1, verbose=True), 'Node %s node not detected.' % name
+        

@@ -30,7 +30,7 @@ class SpinHeadServer:
         self.server = actionlib.SimpleActionServer(
             name,
             ros_homebot.msg.SpinHeadAction,
-            self.execute,
+            self.execute_spin_head,
             False)
         self.server.start()
         print 'Ready!'
@@ -70,7 +70,7 @@ class SpinHeadServer:
                     print 'achieved!'
                     return
 
-    def execute(self, goal):
+    def execute_spin_head(self, goal):
         
         desired_angle = self.pan_angle
         
