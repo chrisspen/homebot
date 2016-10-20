@@ -226,8 +226,13 @@ class TrackQR:
 
     def shutdown(self):
         rospy.loginfo('Shutting down...')
+        
+        # Stop QR tracker.
         rospy.ServiceProxy('/qr_tracker/stop', std_srvs.srv.Empty)()
+        
+        # Stop all head motion.
         get_service_proxy(c.HEAD, c.ID_ALL_STOP)()
+        
         rospy.loginfo('Done.')
         
 if __name__ == '__main__':
