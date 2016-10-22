@@ -1,5 +1,8 @@
 #! /usr/bin/env python
-import time, random, sys, traceback
+import time
+import random
+import sys
+import traceback
 from threading import RLock
 
 import roslib
@@ -113,8 +116,12 @@ class MotionServer:
             for motion_slug, motion_name in c.MOTIONS:
                 if exclude != motion_slug:
                     server = getattr(self, motion_name + '_server', None)
-                    if server and server.is_active() and server.current_goal.get_goal() and server.current_goal != server.next_goal:
-                        server.current_goal.set_canceled(None, "This goal was canceled because another goal was received by the simple action server");
+                    if (server and server.is_active() and server.current_goal.get_goal()
+                    and server.current_goal != server.next_goal):
+                        server.current_goal.set_canceled(
+                            None,
+                            "This goal was canceled because another goal was received "
+                            "by the simple action server")
 #                     action_cls = getattr(ros_homebot.msg, '%sAction' % motion_name.title())
 #                     client = actionlib.SimpleActionClient(motion_slug, action_cls)
 #                     client.wait_for_server()
@@ -149,8 +156,8 @@ class MotionServer:
     def ultrasonic_update_rate(self):
         # Returns updates/sec.
         td = time.time() - self.ultrasonic_update_start
-        c = self.ultrasonic_update_count
-        return c/td
+        cnt = self.ultrasonic_update_count
+        return cnt/td
         
 #     @property
 #     def ultrasonic_update_period(self):
@@ -165,7 +172,8 @@ class MotionServer:
         Prevents an action from being executed more than once per rate seconds.
         """
         last_action, last_set = self._last_action
-        if last_action != action or (last_action == action and abs(time.time() - last_set) >= rate):
+        if (last_action != action
+        or (last_action == action and abs(time.time() - last_set) >= rate)):
             self._last_action = action, time.time()
             return True
         return False
@@ -182,47 +190,55 @@ class MotionServer:
         if not self.check_action(c.MOTOR_REVERSE):
             return
         print 'reverse'
-        get_service_proxy(c.TORSO, c.ID_MOTOR_SPEED)(left=-self.motor_speed, right=-self.motor_speed)
+        proxy = get_service_proxy(c.TORSO, c.ID_MOTOR_SPEED)
+        proxy(left=-self.motor_speed, right=-self.motor_speed)
     
     def go_forward(self):
         if not self.check_action(c.MOTOR_FORWARD):
             return
         print 'forward'
-        get_service_proxy(c.TORSO, c.ID_MOTOR_SPEED)(left=self.motor_speed, right=self.motor_speed)
+        proxy = get_service_proxy(c.TORSO, c.ID_MOTOR_SPEED)
+        proxy(left=self.motor_speed, right=self.motor_speed)
     
     def turn_left(self):
         if not self.check_action(c.MOTOR_TURN_CCW):
             return
-        get_service_proxy(c.TORSO, c.ID_MOTOR_SPEED)(left=-self.motor_speed, right=+self.motor_speed)
+        proxy = get_service_proxy(c.TORSO, c.ID_MOTOR_SPEED)
+        proxy(left=-self.motor_speed, right=+self.motor_speed)
      
     def turn_right(self):
         if not self.check_action(c.MOTOR_TURN_CW):
             return
-        get_service_proxy(c.TORSO, c.ID_MOTOR_SPEED)(left=+self.motor_speed, right=-self.motor_speed)
+        proxy = get_service_proxy(c.TORSO, c.ID_MOTOR_SPEED)
+        proxy(left=+self.motor_speed, right=-self.motor_speed)
         
     def pivot_left_cw(self):
         if not self.check_action(c.MOTOR_PIVOT_LEFT_CW):
             return
         print 'pivot_left_cw'
-        get_service_proxy(c.TORSO, c.ID_MOTOR_SPEED)(left=0, right=-self.motor_speed)
+        proxy = get_service_proxy(c.TORSO, c.ID_MOTOR_SPEED)
+        proxy(left=0, right=-self.motor_speed)
         
     def pivot_left_ccw(self):
         if not self.check_action(c.MOTOR_PIVOT_LEFT_CCW):
             return
         print 'pivot_left_ccw'
-        get_service_proxy(c.TORSO, c.ID_MOTOR_SPEED)(left=0, right=+self.motor_speed)
+        proxy = get_service_proxy(c.TORSO, c.ID_MOTOR_SPEED)
+        proxy(left=0, right=+self.motor_speed)
         
     def pivot_right_cw(self):
         if not self.check_action(c.MOTOR_PIVOT_RIGHT_CW):
             return
         print 'pivot_right_cw'
-        get_service_proxy(c.TORSO, c.ID_MOTOR_SPEED)(left=+self.motor_speed, right=0)
+        proxy = get_service_proxy(c.TORSO, c.ID_MOTOR_SPEED)
+        proxy(left=+self.motor_speed, right=0)
         
     def pivot_right_ccw(self):
         if not self.check_action(c.MOTOR_PIVOT_RIGHT_CCW):
             return
         print 'pivot_right_ccw'
-        get_service_proxy(c.TORSO, c.ID_MOTOR_SPEED)(left=-self.motor_speed, right=0)
+        proxy = get_service_proxy(c.TORSO, c.ID_MOTOR_SPEED)
+        proxy(left=-self.motor_speed, right=0)
     
     def execute_forward(self, goal):
         """
@@ -248,7 +264,8 @@ class MotionServer:
             self.reverse()
             
         t0 = time.time()
-        while self.running and not self.wander_server.is_preempt_requested() and (time.time() - t0)*c.SEC < travel_time:
+        while (self.running and not self.wander_server.is_preempt_requested()
+        and (time.time() - t0)*c.SEC < travel_time):
             time.sleep(0.1)
         self.stop()
         
@@ -278,7 +295,8 @@ class MotionServer:
             self.turn_left()
             
         t0 = time.time()
-        while self.running and not self.wander_server.is_preempt_requested() and (time.time() - t0)*c.SEC < travel_time:
+        while (self.running and not self.wander_server.is_preempt_requested()
+        and (time.time() - t0)*c.SEC < travel_time):
             time.sleep(0.1)
         self.stop()
         
@@ -300,7 +318,8 @@ class MotionServer:
         
         self.go_forward()
         t0 = time.time()
-        while self.running and not self.wander_server.is_preempt_requested() and (time.time() - t0)*c.SEC < travel_time:
+        while (self.running and not self.wander_server.is_preempt_requested()
+        and (time.time() - t0)*c.SEC < travel_time):
             time.sleep(0.1)
         self.stop()
         
@@ -361,7 +380,8 @@ class MotionServer:
 #                     continue
                 
                 # If we detect proximity via ultrasound, change course.
-                ultrasonic_states_filtered = [1 if _.get() < 10 else 0 for _ in self.ultrasonic_states]
+                ultrasonic_states_filtered = \
+                    [1 if _.get() < 10 else 0 for _ in self.ultrasonic_states]
                 if delayer.ready():
                     print 'check_rate:', check_rate
                     print 'Ultrasonic update rate:', self.ultrasonic_update_rate
@@ -421,5 +441,5 @@ class MotionServer:
 
 if __name__ == '__main__':
     rospy.init_node('wander')
-    server = MotionServer(rospy.get_name())
+    MotionServer(rospy.get_name())
     rospy.spin()

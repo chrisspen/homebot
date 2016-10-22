@@ -24,7 +24,8 @@ class PowerNode():
         #TODO:subscribe to charge-ratio specific event?
         rospy.Subscriber("/torso_arduino/packet_read", msgs.PacketRead, self.packet_read_callback)
         
-        self.remaining_time_pub = rospy.Publisher('~remaining_time', msgs.RemainingTime, queue_size=1)
+        self.remaining_time_pub = rospy.Publisher(
+            '~remaining_time', msgs.RemainingTime, queue_size=1)
         
         self.first_dt = None
         self.data_points_x = []
@@ -62,7 +63,8 @@ class PowerNode():
             if len(self.data_points_x) > 60:
                 
                 # Calculate linear regression estimate.
-                m, b, r_value, p_value, std_err = linregress(self.data_points_x, self.data_points_y)
+                m, b, r_value, p_value, std_err = \
+                    linregress(self.data_points_x, self.data_points_y)
                 print 'linregress:', m, b, r_value, p_value, std_err
                 # y = mx+b => (y-b)/m = x => -b/m = x 
                 x_at_zero = -b/m

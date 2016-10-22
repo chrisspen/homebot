@@ -1,4 +1,4 @@
 <launch>
-   <node name="power_node" pkg="ros_homebot_python" type="power_node.py" output="screen">
+   <node name="power_node" pkg="ros_homebot" type="power_node.py" output="screen">
    </node>
 </launch>

@@ -19,7 +19,7 @@ from ros_homebot_python.node import (
     packet_to_service_type,
     packet_to_service_request_type,
 )
-from ros_homebot_python.utils import assert_node_alive
+from ros_homebot_python.utils import assert_node_alive, get_angle_of_pixel
 from ros_qr_tracker.msg import Percept
 from ros_qr_tracker.srv import AddTarget, AddTargetResponse, SetTarget, SetTargetResponse
 
@@ -145,7 +145,8 @@ class TrackQR:
                 else:
                     print 'waiting for pan update'
 
-    def set_tilt_angle(self, angle, timeout=30):
+    def set_tilt_angle(self, angle, timeout=30, margin=5):
+        assert c.TILT_MIN <= angle <= c.TILT_MAX
         print 'setting tilt angle to %s...' % angle
         t0 = time.time()
         while time.time() - t0 < timeout:
@@ -155,7 +156,7 @@ class TrackQR:
             # Wait for response.
             for _ in range(10):
                 time.sleep(.1)
-                if abs(self.tilt_angle - angle) < 3:
+                if abs(self.tilt_angle - angle) < margin:
                     print 'achieved!'
                     return
                 else:
@@ -163,7 +164,7 @@ class TrackQR:
 
     def say(self, text):
         say = rospy.ServiceProxy('/sound/say', ros_homebot_msgs.srv.TTS)
-        say(text, '', 0, 0)
+        say(text)
 
     def execute(self):
 #         self.say('QR tracking started.')
@@ -198,14 +199,41 @@ class TrackQR:
             elif self.stage == Stages.TRACKING:
                 
                 # Find QR centerpoint.
+                x = []
+                y = []
+                for point in 'abcd':
+                    x.append(getattr(self.last_match_msg, point)[0])
+                    y.append(getattr(self.last_match_msg, point)[1])
+                x = sum(x)/float(len(x))
+                y = sum(y)/float(len(y))
+                print 'qr center:', x, y
                 
                 # Move pan to center horizontally.
+                # 360->0 = counter clockwise = -1
+                # 0->360 = clockwise = +1
+                if self.pan_rate.ready():
+                    h_angle0 = get_angle_of_pixel(
+                        pixel=x,
+                        resolution=self.last_match_msg.width,
+                        angle_of_view=c.CAMERA_ANGLE_OF_VIEW_H)
+                    h_angle1 = h_angle0 - c.CAMERA_ANGLE_OF_VIEW_H/2
+                    if abs(h_angle1) > 5:
+                        self.pan_angle += h_angle1
+                        self.pan_angle = self.pan_angle % 360
+                        self.set_pan_angle(self.pan_angle)
                 
                 # Move tilt to center vertically.
+                # 0->180 = up
+                # 180->0 = down
+#                 vdiff = y - self.last_match_msg.height/2
+#                 if abs(vdiff) > 5:
+#                     self.tilt_angle += vdiff
+#                     self.tilt_angle = min(max(self.tilt_angle, c.TILT_MIN), c.TILT_MAX)
+#                     self.set_tilt_angle(self.tilt_angle)
                 
                 if self.last_match_time and (time.time() - self.last_match_time) > 5:
                     self.stage = Stages.SEARCHING
-                    self.say('Target lost. Initiating search.')
+                    self.say('Target lost. Initiating search.') 
                 
     #         desired_angle = self.pan_angle
     #         

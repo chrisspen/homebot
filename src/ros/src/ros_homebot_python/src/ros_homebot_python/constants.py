@@ -345,6 +345,12 @@ HEAD_TO_CAMERA_JOINT = 'head_to_camera_joint'
 BATTERY_CHARGE_RATIO_ERROR = 0.8
 BATTERY_CHARGE_RATIO_WARN = 0.85
 
+# Camera.
+
+# http://elinux.org/Rpi_Camera_Module
+CAMERA_ANGLE_OF_VIEW_H = 54
+CAMERA_ANGLE_OF_VIEW_V = 41
+
 # Diagnostic part names.
 
 def write_ros_messages(d, prefix):
@@ -376,16 +382,25 @@ def write_ros_services(d, prefix):
                 print>>fout, '%s %s' % (_ros_type, _name)
             print>>fout, '---'
 
-if __name__ == '__main__':
-    
+def write_cpp_headers():
     # Output the IDs to a C/C++ header.
     with open('../../../ros_homebot_firmware/common/src/ID.h', 'w') as fout:
         print>>fout, '// AUTO-GENERATED. DO NOT EDIT. SEE homebot/constants.py.'
-        for _name, _value in sorted([_ for _ in globals().items() if _[0].startswith('ID_')], key=lambda o: o[1]):
+        items = [
+            _ for _ in globals().items()
+            if _[0].startswith('ID_')]
+        for _name, _value in sorted(items, key=lambda o: o[1]):
             print>>fout, "#define %s '%s'" % (_name.ljust(4*6), _value)
-        for _name, _value in sorted([_ for _ in globals().items() if _[0].startswith('NAME_') and not _[0].startswith('NAME_TO_')], key=lambda o: o[0]):
+        items = [
+            _ for _ in globals().items()
+            if _[0].startswith('NAME_') and not _[0].startswith('NAME_TO_')]
+        for _name, _value in sorted(items, key=lambda o: o[0]):
             print>>fout, '#define %s "%s"' % (_name.ljust(4*6), _value)
     print 'Wrote ID.h.'
+
+if __name__ == '__main__':
+    
+    write_cpp_headers()
     print '''
 Now run:
 

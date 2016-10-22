@@ -65,7 +65,7 @@ class MessageHandler(object):
         self._last_msg = None
         self._condition = None
 
-    def wait_for_condition(self, condition, timeout=10, message=None, message_update=False, quiet=False):
+    def wait_for_condition(self, condition, **kwargs):
         """
         condition := may be:
         
@@ -74,6 +74,12 @@ class MessageHandler(object):
             
         quiet := if True, only displays message once
         """
+        
+        timeout = kwargs.pop('timeout', 10)
+        message = kwargs.pop('message', None)
+        message_update = kwargs.pop('message_update', False)
+        quiet = kwargs.pop('quiet', False)
+        
         t0 = time.time()
         self._condition = condition
         message_shown = False
@@ -168,7 +174,7 @@ class Check(object):
 
     def run(self):
         
-        self.pre_callback and self.pre_callback()
+        ret = self.pre_callback and self.pre_callback()
             
         if self.msg_type:
             # Wait for a packet in response to a user action.
@@ -205,7 +211,7 @@ class Check(object):
         else:
             print(utils.fail('Check failed!'))
             
-        self.post_callback and self.post_callback()
+        ret = self.post_callback and self.post_callback()
 
 class Diagnostic:
     """
@@ -277,17 +283,21 @@ class Diagnostic:
         
         if not self.section or self.section == c.HEAD:
             print('Pinging head node...')
-            assert rosnode.rosnode_ping('/head_arduino', max_count=1, verbose=True), 'Head arduino node not detected.'
+            assert rosnode.rosnode_ping('/head_arduino', max_count=1, verbose=True), \
+                'Head arduino node not detected.'
             
         if not self.section or self.section == c.TORSO:
             print('Pinging torso node...')
-            assert rosnode.rosnode_ping('/torso_arduino', max_count=1, verbose=True), 'Torso arduino node not detected.'
+            assert rosnode.rosnode_ping('/torso_arduino', max_count=1, verbose=True), \
+                'Torso arduino node not detected.'
         
         if (not self.section or self.section == c.HEAD) and (not self.part or self.part == 'lrf'):
             print('Pinging LRF node...')
-            assert rosnode.rosnode_ping('homebot_lrf', max_count=1, verbose=True), 'LRF node not detected.'
+            assert rosnode.rosnode_ping('homebot_lrf', max_count=1, verbose=True), \
+                'LRF node not detected.'
             print('Pinging Raspicam node...')
-            assert rosnode.rosnode_ping('raspicam_node', max_count=1, verbose=True), 'Raspicam node not detected.'
+            assert rosnode.rosnode_ping('raspicam_node', max_count=1, verbose=True), \
+                'Raspicam node not detected.'
             
         self.check_results = {} # {name: success}
         
@@ -322,7 +332,8 @@ class Diagnostic:
         
         self.add_checks()
         
-        self.wait_until_continue('Place the torso on struts so the treads are at least 3cm off the ground.')
+        self.wait_until_continue(
+            'Place the torso on struts so the treads are at least 3cm off the ground.')
         
         # Run all checks.
         total = len(self.checks)
@@ -380,35 +391,35 @@ class Diagnostic:
                 pre_message='Is the RGB LED off?',
                 answer_options=YN,
                 success_answer=Y,
-                pre_callback=partial(self.set_rgbled, value=(0,0,0)),
+                pre_callback=partial(self.set_rgbled, value=(0, 0, 0)),
             ))
             self.checks.append(Check(
                 self,
                 pre_message='Is the RGB LED red?',
                 answer_options=YN,
                 success_answer=Y,
-                pre_callback=partial(self.set_rgbled, value=(254,0,0)),
+                pre_callback=partial(self.set_rgbled, value=(254, 0, 0)),
             ))
             self.checks.append(Check(
                 self,
                 pre_message='Is the RGB LED green?',
                 answer_options=YN,
                 success_answer=Y,
-                pre_callback=partial(self.set_rgbled, value=(0,254,0)),
+                pre_callback=partial(self.set_rgbled, value=(0, 254, 0)),
             ))
             self.checks.append(Check(
                 self,
                 pre_message='Is the RGB LED blue?',
                 answer_options=YN,
                 success_answer=Y,
-                pre_callback=partial(self.set_rgbled, value=(0,0,254)),
+                pre_callback=partial(self.set_rgbled, value=(0, 0, 254)),
             ))
             self.checks.append(Check(
                 self,
                 pre_message='Is the RGB LED off?',
                 answer_options=YN,
                 success_answer=Y,
-                pre_callback=partial(self.set_rgbled, value=(0,0,0)),
+                pre_callback=partial(self.set_rgbled, value=(0, 0, 0)),
             ))
         
         # Laser
@@ -664,7 +675,10 @@ class Diagnostic:
             for i, pos in sensors:
                 self.checks.append(Check(
                     self,
-                    pre_message='Ensure there is nothing obscuring the %s ultrasonic sensor within %i cm. Distance={distance}' % (pos, clear_distance_cm),
+                    pre_message=(
+                        'Ensure there is nothing obscuring the %s '
+                        'ultrasonic sensor within %i cm. Distance={distance}') \
+                            % (pos, clear_distance_cm),
                     msg_type=ros_homebot_msgs.msg.UltrasonicChange,
                     msg_condition={
                         'index': i,
@@ -686,7 +700,10 @@ class Diagnostic:
                 ))
                 self.checks.append(Check(
                     self,
-                    pre_message='Again ensure there is nothing obscuring the %s ultrasonic sensor within %i cm. Distance={distance}' % (pos, clear_distance_cm),
+                    pre_message=(
+                        'Again ensure there is nothing obscuring the %s '
+                        'ultrasonic sensor within %i cm. Distance={distance}') \
+                            % (pos, clear_distance_cm),
                     msg_type=ros_homebot_msgs.msg.UltrasonicChange,
                     msg_condition={
                         'index': i,
@@ -750,7 +767,8 @@ class Diagnostic:
         # External power socket
 
         def pre_external_power():
-            self.wait_until_continue('Ensure main external power is unplugged and battery is inserted.')
+            self.wait_until_continue(
+                'Ensure main external power is unplugged and battery is inserted.')
 
         if not self.part or self.part == 'external_power':
             self.checks.append(Check(
@@ -954,7 +972,9 @@ class Diagnostic:
         
         def show():
             sys.stdout = open(os.devnull)
-            os.system('rosrun image_view image_view image:=/raspicam/image _image_transport:=compressed >/dev/null 2>&1')
+            os.system(
+                'rosrun image_view image_view image:=/raspicam/image '
+                '_image_transport:=compressed >/dev/null 2>&1')
         
         self.raspicam_process = multiprocessing.Process(target=show)
         self.raspicam_process.daemon = True
@@ -962,8 +982,6 @@ class Diagnostic:
 
     def hide_camera_window(self):
         if self.raspicam_process:
-#             while self.raspicam_process.is_alive:
-#                 print('Waiting for camera window process %i to end...' % self.raspicam_process.pid)
             #TODO:fix? leaves a child zombie?
             self.raspicam_process.terminate()
             os.system('pkill -f image_view')

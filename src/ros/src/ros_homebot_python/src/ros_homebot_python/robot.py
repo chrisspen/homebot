@@ -1,4 +1,6 @@
-import constants as c
+
+from ros_homebot_msgs import srv as srvs
+from ros_homebot_python import constants as c
 
 class Robot(object):
     """
@@ -18,6 +20,10 @@ class Robot(object):
     def __init__(self):
         pass
 
+    def say(self, *args, **kwargs):
+        from ros_homebot_python.node import say
+        say(*args, **kwargs)
+
     def move(self, distance, duration):
         """
         Moves the platform a given distance within a given time.
@@ -33,7 +39,7 @@ class Robot(object):
         The vector (1, 0) means turn counter clockwise and move forward 1 meter
         The vector (-1, 0) means turn clockwise and move forward 1 meter
         """
-        todo
+        raise NotImplementedError
     
     def turn(self, theta, duration):
         """
@@ -42,4 +48,4 @@ class Robot(object):
         theta := angle in radians
         duration := scalar in seconds
         """
-        todo
+        raise NotImplementedError

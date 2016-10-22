@@ -8,17 +8,17 @@ import rospy
 import std_srvs.srv
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
 
-OK = DiagnosticStatus.OK
-WARN = DiagnosticStatus.WARN
-ERROR = DiagnosticStatus.ERROR
-STALE = DiagnosticStatus.STALE
-
 import numpy as np
 from scipy.stats import linregress
 import humanize
 
 from ros_homebot_msgs import msg as msgs
 from ros_homebot_python import constants as c
+
+OK = DiagnosticStatus.OK
+WARN = DiagnosticStatus.WARN
+ERROR = DiagnosticStatus.ERROR
+STALE = DiagnosticStatus.STALE
 
 def to_float(v):
     try:
@@ -78,7 +78,9 @@ class SystemNode():
         while not rospy.is_shutdown():
             
             # Find CPU.
-            cpu_usage_percent = to_percent(getoutput("grep 'cpu ' /proc/stat | awk '{usage=($2+$4)*100/($2+$4+$5)} END {print usage }'"))
+            cpu_usage_percent = to_percent(getoutput(
+                "grep 'cpu ' /proc/stat | "
+                "awk '{usage=($2+$4)*100/($2+$4+$5)} END {print usage }'"))
             cpu_usage_percent_level = OK
             if cpu_usage_percent >= c.CPU_USAGE_PERCENT_ERROR:
                 cpu_usage_percent_level = ERROR
@@ -92,9 +94,12 @@ class SystemNode():
             self.cpu_publisher.publish(msg)
             
             # Find memory.
-            memory_usage_free_gbytes = to_float(getoutput("free -m|grep -i 'Mem:'|awk '{print $4}'"))
-            memory_usage_used_gbytes = to_float(getoutput("free -m|grep -i 'Mem:'|awk '{print $3}'"))
-            memory_usage_total_gbytes = to_float(getoutput("free -m|grep -i 'Mem:'|awk '{print $2}'"))
+            memory_usage_free_gbytes = to_float(getoutput(
+                "free -m|grep -i 'Mem:'|awk '{print $4}'"))
+            memory_usage_used_gbytes = to_float(getoutput(
+                "free -m|grep -i 'Mem:'|awk '{print $3}'"))
+            memory_usage_total_gbytes = to_float(getoutput(
+                "free -m|grep -i 'Mem:'|awk '{print $2}'"))
             memory_usage_percent = -1
             if memory_usage_used_gbytes != -1 and memory_usage_total_gbytes != -1:
                 memory_usage_percent = memory_usage_used_gbytes/memory_usage_total_gbytes*100
@@ -114,10 +119,14 @@ class SystemNode():
             self.memory_publisher.publish(msg)
             
             # Find disk.
-            disk_usage_percent = to_percent(getoutput("df -H | grep -i "+self.drive_path+" | awk '{print $5}'"))
-            disk_usage_free_gbytes = to_gbytes(getoutput("df -H | grep -i "+self.drive_path+" | awk '{print $4}'"))
-            disk_usage_used_gbytes = to_gbytes(getoutput("df -H | grep -i "+self.drive_path+" | awk '{print $3}'"))
-            disk_usage_total_gbytes = to_gbytes(getoutput("df -H | grep -i "+self.drive_path+" | awk '{print $2}'"))
+            disk_usage_percent = to_percent(getoutput(
+                "df -H | grep -i "+self.drive_path+" | awk '{print $5}'"))
+            disk_usage_free_gbytes = to_gbytes(getoutput(
+                "df -H | grep -i "+self.drive_path+" | awk '{print $4}'"))
+            disk_usage_used_gbytes = to_gbytes(getoutput(
+                "df -H | grep -i "+self.drive_path+" | awk '{print $3}'"))
+            disk_usage_total_gbytes = to_gbytes(getoutput(
+                "df -H | grep -i "+self.drive_path+" | awk '{print $2}'"))
             disk_usage_level = OK
             if disk_usage_percent >= c.DISK_USAGE_PERCENT_ERROR:
                 disk_usage_level = ERROR

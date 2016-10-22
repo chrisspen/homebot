@@ -3,17 +3,14 @@ import sys
 import glob
 import commands
 import math
+from math import pi, sin, cos
 
 import rosnode
-
-try:
-    from tf import transformations as tf
-except ImportError:
-    tf = None
+from tf import transformations as tf
 import numpy as np
 
-import constants as c
-from exceptions import *
+from ros_homebot_python import constants as c
+from ros_homebot_python.exceptions import *
 
 class Colors:
     HEADER = '\033[95m'
@@ -92,8 +89,6 @@ def to_10(data):
     else:
         raise ValueError
     return data
-
-from math import pi ,sin, cos
 
 def R(theta, u):
     return [[cos(theta) + u[0]**2 * (1-cos(theta)), 
@@ -217,4 +212,12 @@ def rotational_travel_time(speed, degrees):
 def assert_node_alive(name):
     print('Pinging %s...' % name)
     assert rosnode.rosnode_ping(name, max_count=1, verbose=True), 'Node %s node not detected.' % name
-        
+
+def get_angle_of_pixel(pixel, resolution, angle_of_view):
+    """
+    Calculates a pixels's angle from the origin.
+    
+    e.g. A pixel at position 0 would be at angle 0, and a pixel at position=resolution
+    would be at angle=angle_of_view.
+    """
+    return angle_of_view/float(resolution)*pixel

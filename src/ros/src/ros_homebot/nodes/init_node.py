@@ -19,7 +19,7 @@ class InitROS():
         say = rospy.ServiceProxy('/sound/say', ros_homebot_msgs.srv.TTS)
         while not rospy.is_shutdown():
             try:
-                say('System initialized.', '', 0, 0)
+                say('System initialized.')
                 break
             except rospy.service.ServiceException as e:
                 print e

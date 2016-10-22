@@ -20,7 +20,7 @@ class SpinHeadServer:
     Spins the head around in short increments indefinitely.
     """
     _feedback = ros_homebot.msg.SpinHeadFeedback()
-    _result   = ros_homebot.msg.SpinHeadResult()
+    _result = ros_homebot.msg.SpinHeadResult()
   
     def __init__(self, name):
         

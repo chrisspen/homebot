@@ -4,14 +4,15 @@ Displays a real-time plot of the laser range finder measurements.
 """
 from __future__ import print_function
 
-import os, time, sys
+import os
+import time
+import sys
 from math import pi, ceil
 from threading import Thread, RLock
-import yaml
-
 import io
+
+import yaml
 from PIL import Image as PilImage
-import numpy
 import cv2
 import rospy
 from sensor_msgs.msg import CompressedImage, Image, LaserScan

@@ -81,10 +81,12 @@ class ROSSatchel(Satchel):
         
         # Configure your Ubuntu repositories to allow "restricted," "universe," and "multiverse."
         # Note, this appears to be the default?
-        # `cat /etc/apt/sources.list` shows these are already enabled on a default Ubuntu ARM install. 
+        # `cat /etc/apt/sources.list` shows these are already enabled on a default
+        # Ubuntu ARM install.
     
         # Set your Locale
-        # Boost and some of the ROS tools require that the system locale be set. You can set it with:
+        # Boost and some of the ROS tools require that the system locale be set.
+        # You can set it with:
         r.sudo('update-locale LANG=C LANGUAGE=C LC_ALL=C LC_MESSAGES=POSIX')
         
         #self.install_repositories(service=self.name)
@@ -92,10 +94,12 @@ class ROSSatchel(Satchel):
         
         # HANDLED BY PACKAGER
         # Setup your sources.list
-        #r.sudo("sh -c 'echo \"deb http://packages.ros.org/ros/ubuntu {ubuntu_release} main\" > /etc/apt/sources.list.d/ros-latest.list'".format(**self.lenv))
+        #r.sudo("sh -c 'echo \"deb http://packages.ros.org/ros/ubuntu {ubuntu_release} main\" >
+        # /etc/apt/sources.list.d/ros-latest.list'".format(**self.lenv))
         # HANDLED BY PACKAGER
         # Set up your keys
-        #r.sudo("apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 0xB01FA116")
+        #r.sudo("apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 
+        # --recv-key 0xB01FA116")
         
         # HANDLED BY PACKAGER
         # First, make sure your Debian package index is up-to-date:
@@ -115,7 +119,8 @@ class ROSSatchel(Satchel):
         r.run('rosdep update')
         
         # Environment setup
-        # It's convenient if the ROS environment variables are automatically added to your bash session every time a new shell is launched:
+        # It's convenient if the ROS environment variables are automatically added to your bash
+        # session every time a new shell is launched:
         if self.env.update_bash:
             r.run('echo "source /opt/ros/{version_name}/setup.bash" >> ~/.bash_aliases')
         #TODO:how to do this system-wide?
@@ -130,7 +135,8 @@ class ROSSatchel(Satchel):
         if self.env.conf_os_type == UBUNTU:
             return {
                 APT_SOURCE: [
-                    ('deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main', '/etc/apt/sources.list.d/ros-latest.list'),
+                    ('deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main',
+                        '/etc/apt/sources.list.d/ros-latest.list'),
                 ],
                 APT_KEY: [
                     ('hkp://ha.pool.sks-keyservers.net:80', '0xB01FA116'),
@@ -139,11 +145,13 @@ class ROSSatchel(Satchel):
         if self.env.conf_os_type == RASPBIAN:
             return {
                 APT_SOURCE: [
-                    ('deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main', '/etc/apt/sources.list.d/ros-latest.list'),
+                    ('deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main',
+                        '/etc/apt/sources.list.d/ros-latest.list'),
                 ],
                 APT_KEY: [
                     #('hkp://ha.pool.sks-keyservers.net:80', '0xB01FA116'),
-                    #wget https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -O - | sudo apt-key add -
+                    #wget https://raw.githubusercontent.com/ros/rosdistro/master/ros.key
+                    #-O - | sudo apt-key add -
                     'https://raw.githubusercontent.com/ros/rosdistro/master/ros.key',
                 ],
             }
@@ -197,7 +205,7 @@ class ROSSatchel(Satchel):
             http://wiki.ros.org/ROSberryPi/Installing%20ROS%20Indigo%20on%20Raspberry%20Pi
             
         """
-        todo
+        raise NotImplementedError
     
 #     @task
 #     def install_wiringpi(self):
@@ -221,16 +229,17 @@ class ROSSatchel(Satchel):
         """
         Installs all source packages. Should only be run on a source installation.
         """
+        r = self.local_renderer
         
         names = names or [package_name for package_name, _ in r.env.source_packages]
         if isinstance(names, basestring):
             names = [names]
         
-        r = self.local_renderer
         r.pc('Installing source packages.')
         for package_name in names:
             r.env.package_name = package_name
-            r.run('cd {base_catkin_ws}; rosinstall_generator {package_name} --rosdistro {version_name} --deps | wstool merge -t src -')
+            r.run('cd {base_catkin_ws}; rosinstall_generator {package_name} '
+                '--rosdistro {version_name} --deps | wstool merge -t src -')
             r.run('cd {base_catkin_ws}; wstool update -t src -j2 --delete-changed-uris')
     
     @task
@@ -239,8 +248,10 @@ class ROSSatchel(Satchel):
         Compiles packages from source. Should be run after install_source_packages().
         """
         r = self.local_renderer
-        r.run('cd {base_catkin_ws}; rosdep install --from-paths src --ignore-src --rosdistro {version_name} -y -r --os=debian:jessie')
-        r.sudo('cd {base_catkin_ws}; ./src/catkin/bin/catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Release --install-space /opt/ros/{version_name} -j1')
+        r.run('cd {base_catkin_ws}; rosdep install --from-paths src --ignore-src '
+            '--rosdistro {version_name} -y -r --os=debian:jessie')
+        r.sudo('cd {base_catkin_ws}; ./src/catkin/bin/catkin_make_isolated --install '
+            '-DCMAKE_BUILD_TYPE=Release --install-space /opt/ros/{version_name} -j1')
     
     @task
     def install_source_packages_apt(self, version_name=''):
@@ -254,8 +265,8 @@ class ROSSatchel(Satchel):
     @task
     def install_overlay_workspace(self, clean=0):
         """
-        Initializes the ROS overlay of packages we need to compile from source that don't have apt packages
-        but aren't directly included in Homebot.
+        Initializes the ROS overlay of packages we need to compile from source that
+        don't have apt packages but aren't directly included in Homebot.
         """
         clean = int(clean)
         r = self.local_renderer
@@ -300,8 +311,11 @@ class ROSSatchel(Satchel):
          
         r.pc('Create and build catkin workspace')
         r.run('[ ! -d "{base_catkin_ws}" ] && mkdir -p {base_catkin_ws} || true')
-        r.env.package_names = ' '.join(['ros_comm'] + [package_name for package_name, _ in r.env.source_packages])
-        r.run('cd {base_catkin_ws}; rosinstall_generator {package_names} --rosdistro {version_name} --deps --wet-only --exclude roslisp --tar > {version_name}-ros_comm-wet.rosinstall')
+        r.env.package_names = ' '.join(['ros_comm'] \
+            + [package_name for package_name, _ in r.env.source_packages])
+        r.run('cd {base_catkin_ws}; rosinstall_generator {package_names} '
+            '--rosdistro {version_name} --deps --wet-only --exclude roslisp --tar '
+            '> {version_name}-ros_comm-wet.rosinstall')
         r.sudo('[ -d "{base_catkin_ws}/src" ] && rm -Rf {base_catkin_ws}/src || true')
         r.run('cd {base_catkin_ws}; wstool init src {version_name}-ros_comm-wet.rosinstall')
          
@@ -310,13 +324,16 @@ class ROSSatchel(Satchel):
         #TODO:build collada-dom-dev?
          
         r.pc('Installing system dependencies based on desired ROS packages.')
-        r.run('cd {base_catkin_ws}; rosdep install --from-paths src --ignore-src --rosdistro {version_name} -y -r --os=debian:{conf_os_release}')
+        r.run('cd {base_catkin_ws}; rosdep install --from-paths src --ignore-src '
+            '--rosdistro {version_name} -y -r --os=debian:{conf_os_release}')
          
         # If this runs out of memory, try increasing Swap.
         # http://raspberrypimaker.com/adding-swap-to-the-raspberrypi/
-        # Note, -j1 is required, otherwise the build fails at cv_bridge, which consumes too much memory.
+        # Note, -j1 is required, otherwise the build fails at cv_bridge, which consumes
+        # too much memory.
         # Takes about 75 minutes.
-        r.sudo('cd {base_catkin_ws}; ./src/catkin/bin/catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Release --install-space /opt/ros/{version_name} -j1')
+        r.sudo('cd {base_catkin_ws}; ./src/catkin/bin/catkin_make_isolated --install '
+            '-DCMAKE_BUILD_TYPE=Release --install-space /opt/ros/{version_name} -j1')
          
         #r.run('source {base_catkin_ws}/install_isolated/setup.bash')
         r.run('source /opt/ros/{version_name}/setup.bash')
@@ -342,10 +359,21 @@ class ROSSatchel(Satchel):
                 elif self.env.version_name == KINETIC:
                     self.configure_raspbian_kinetic()
             else:
-                raise NotImplementedError, 'Unsupported Raspbian ROS release: %s' % self.env.conf_os_release
+                raise NotImplementedError, \
+                    'Unsupported Raspbian ROS release: %s' % self.env.conf_os_release
         else:
             raise NotImplementedError, 'Unsupported OS: %s' % self.env.conf_os_type
     
-    configure.deploy_before = ['packager', 'user', 'timezone', 'sshnice', 'rpi', 'arduino', 'avahi', 'nm', 'ntpclient']
+    configure.deploy_before = [
+        'packager',
+        'user',
+        'timezone',
+        'sshnice',
+        'rpi',
+        'arduino',
+        'avahi',
+        'nm',
+        'ntpclient',
+    ]
 
-ROSSatchel()
+ros = ROSSatchel()

@@ -115,8 +115,7 @@ class SoundServer:
                     self.tts_server.set_succeeded(result)
                 else:
                     self.tts_server.set_aborted(result)
-            else:
-                return ros_homebot_msgs.srv.TTSResponse()
+        return ros_homebot_msgs.srv.TTSResponse()
     
     def shutdown(self):
         print 'Shutting down...'

@@ -85,8 +85,6 @@ class TiltController{
 
         ChangeTracker<int> actual_degrees = ChangeTracker<int>(0, 0, 1000);
 
-        ChangeTracker<long> raw_position = ChangeTracker<long>(0, 0, 1000);
-
         TiltController(int set_pin, int get_pin){
 
             _set_pin = set_pin; // digital pin that supports PWM
@@ -170,23 +168,9 @@ class TiltController{
                 delay(1);
             }
         }
-        
-        long get_current_position(){
-        	return raw_position.get_latest();
-        }
-
-        long _get_current_position(){
-        	return analogRead(_get_pin);
-        }
 
         int get_current_degrees(){
-            return map(
-            	get_current_position(),
-				TC_MIN_FEEDBACK,
-                TC_MAX_FEEDBACK,
-                get_lower_endstop_degrees(),
-                get_upper_endstop_degrees()
-            );
+            return actual_degrees.get_latest();
         }
 
         int get_target_position(){
@@ -282,7 +266,14 @@ class TiltController{
 
         	_last_update = millis();
 
-        	//raw_position.set(_get_current_position());
+        	// Read position directly from the servo potentiometer.
+        	actual_degrees.set(map(
+				analogRead(_get_pin),
+				TC_MIN_FEEDBACK,
+				TC_MAX_FEEDBACK,
+				get_lower_endstop_degrees(),
+				get_upper_endstop_degrees()
+			));
 
             if(TC_STATE_LIMP == _state){
             

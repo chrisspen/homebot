@@ -1,5 +1,5 @@
 <launch>
-   <node name="system_node" pkg="ros_homebot_python" type="system_node.py" output="screen">
+   <node name="system_node" pkg="ros_homebot" type="system_node.py" output="screen">
       <!--<param name="verbose" type="bool" value="1" />-->
    </node>
 </launch>

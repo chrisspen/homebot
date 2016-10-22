@@ -1,19 +1,16 @@
 #from __future__ import print_function
-import os, sys, time
+import os
+import sys
+import time
 import warnings
 from math import pi, tan, atan
 
-try:
-    from PIL import Image
-    from PIL import ImageFilter
-    from PIL.ImageChops import difference
-    import numpy as np
-except ImportError:
-    pass
-    
+from PIL import Image
+from PIL import ImageFilter
+from PIL.ImageChops import difference
+import numpy as np
 import yaml
 from scipy import stats
-import numpy as np
 
 from . import utils
 
@@ -66,29 +63,6 @@ def calibrate(conf_fn):
     ro = intercept
     print('\n--rpc=%s --ro=%s\n' % (slope, intercept))
     return rpc, ro, h, laser_position
-    
-#     estimated_distances = pixels_to_distance(
-#         pixel_rows=readings,
-#         rpc=rpc,
-#         ro=ro,
-#         h=h,
-#         max_height=image_height,
-#         max_width=image_width,
-#     )
-    #print '\nestimated_distances:', estimated_distances
-#     estimated_distances2 = [_v for _i, _v in enumerate(estimated_distances) if _i in distances.keys()]
-    #print '\nestimated_distances:', estimated_distances2
-    
-#     print '\npixels from center,calc D (mm),actual D (mm),% error'
-#     differences = []
-#     for col in distances.keys():
-#         actual_d = distances[col]
-#         pix_dist = readings[col]
-#         pfc = abs(pix_dist - image_height/2)
-#         estimated_d = estimated_distances[col]
-#         print '%s,%s,%s,%s' % (pfc, estimated_d, actual_d, percent_error(estimated_d, actual_d))
-#         differences.append(abs(actual_d - estimated_d))
-#     print '\naverage error:', sum(differences)/float(len(differences))
 
 class LaserRangeFinder(object):
     
@@ -162,20 +136,24 @@ class LaserRangeFinder(object):
         if self.normalize_brightness:
             off_img = Image.fromarray(utils.normalize(np.array(off_img)).astype('uint8'), 'RGB')
             if save_images_dir:
-                off_img.save(os.path.join(save_images_dir, kwargs.pop('off_img_norm_fn', 'off_img_norm.jpg')))
+                off_img.save(os.path.join(
+                    save_images_dir, kwargs.pop('off_img_norm_fn', 'off_img_norm.jpg')))
             on_img = Image.fromarray(utils.normalize(np.array(on_img)).astype('uint8'), 'RGB')
             if save_images_dir:
-                on_img.save(os.path.join(save_images_dir, kwargs.pop('on_img_norm_fn', 'on_img_norm.jpg')))
+                on_img.save(os.path.join(
+                    save_images_dir, kwargs.pop('on_img_norm_fn', 'on_img_norm.jpg')))
 #         print 'normalize brightness td:', time.time() - t0
         
         # Strip out non-red channels.
         t0 = time.time()
         off_img = utils.only_red(off_img)
         if save_images_dir:
-            off_img.save(os.path.join(save_images_dir, kwargs.pop('off_img_norm_red_fn', 'off_img_norm_red.jpg')))
+            off_img.save(os.path.join(
+                save_images_dir, kwargs.pop('off_img_norm_red_fn', 'off_img_norm_red.jpg')))
         on_img = utils.only_red(on_img)
         if save_images_dir:
-            on_img.save(os.path.join(save_images_dir, kwargs.pop('on_img_norm_red_fn', 'on_img_norm_red.jpg')))
+            on_img.save(os.path.join(
+                save_images_dir, kwargs.pop('on_img_norm_red_fn', 'on_img_norm_red.jpg')))
 #         print 'red only td:', time.time() - t0
                 
         # Calculate difference.
@@ -183,14 +161,16 @@ class LaserRangeFinder(object):
         t0 = time.time() 
         diff_img = difference(off_img, on_img)
         if save_images_dir:
-            diff_img.save(os.path.join(save_images_dir, kwargs.pop('diff_img_fn', 'diff_img.jpg')))
+            diff_img.save(os.path.join(
+                save_images_dir, kwargs.pop('diff_img_fn', 'diff_img.jpg')))
 #         print 'img difference td:', time.time() - t0
         
         if self.blur_radius:
             t0 = time.time()
             diff_img = diff_img.filter(ImageFilter.GaussianBlur(radius=self.blur_radius))
             if save_images_dir:
-                diff_img.save(os.path.join(save_images_dir, kwargs.pop('diff_blur_img_fn', 'diff2_img.jpg')))
+                diff_img.save(os.path.join(
+                    save_images_dir, kwargs.pop('diff_blur_img_fn', 'diff2_img.jpg')))
 #             print 'blurring td:', time.time() - t0
         
         # Estimate the pixels that are the laser by

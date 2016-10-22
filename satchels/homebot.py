@@ -184,7 +184,8 @@ class HomebotSatchel(ServiceSatchel):
     @task
     def rebuild_messages(self):
         r = self.local_renderer
-        r.run('cd /usr/local/homebot/src/ros; . ./setup.bash; time catkin_make --pkg ros_homebot_msgs')
+        r.run('cd /usr/local/homebot/src/ros; . ./setup.bash; time catkin_make '
+            '--pkg ros_homebot_msgs')
     
     @task
     def install_upstart(self, force=0):
@@ -194,11 +195,13 @@ class HomebotSatchel(ServiceSatchel):
         http://docs.ros.org/api/robot_upstart/html/
         """
         force = int(force)
-        print('force:',force)
+        print('force:', force)
         r = self.local_renderer
         #r.sudo('apt-get install ros-indigo-robot-upstart')
         if force or not r.file_exists('/etc/init/homebot.conf'):
-            r.sudo('source /usr/local/homebot/src/ros/setup.bash; rosrun robot_upstart install --setup {upstart_setup} --job {upstart_name} --user {upstart_user} {upstart_launch}')
+            r.sudo('source /usr/local/homebot/src/ros/setup.bash; rosrun robot_upstart install '
+                '--setup {upstart_setup} --job {upstart_name} '
+                '--user {upstart_user} {upstart_launch}')
              
             r.reboot(wait=300, timeout=60)
      
@@ -287,7 +290,8 @@ class HomebotSatchel(ServiceSatchel):
 #     def install_bcm2835(self):
 #         # Needed for the Raspberry Pi to access IMU over I2C
 #         r = self.local_renderer
-#         r.run('cd /tmp; wget http://www.airspayce.com/mikem/bcm2835/bcm2835-1.50.tar.gz; tar zxvf bcm2835-1.50.tar.gz')
+#         r.run('cd /tmp; wget http://www.airspayce.com/mikem/bcm2835/bcm2835-1.50.tar.gz;
+#             tar zxvf bcm2835-1.50.tar.gz')
 #         r.run('cd bcm2835-1.50; ./configure')
 #         r.run('cd bcm2835-1.50; time make')
 #         r.sudo('cd bcm2835-1.50; make check')
@@ -297,16 +301,22 @@ class HomebotSatchel(ServiceSatchel):
 #     def install_i2cdevlib(self):
 #         # Needed for the Raspberry Pi to access IMU over I2C
 #         r = self.local_renderer
-#         #TODO:switch back to https://github.com/jrowberg/i2cdevlib/ when pull request 258 accepted
+#         #TODO:switch back to https://github.com/jrowberg/i2cdevlib/ when pull
+#             request 258 accepted
 #         #https://github.com/jrowberg/i2cdevlib/pull/258
-#         r.sudo('cd /usr/share/arduino/libraries; sudo git clone https://github.com/chrisspen/i2cdevlib.git')
+#         r.sudo('cd /usr/share/arduino/libraries; '
+#             'sudo git clone https://github.com/chrisspen/i2cdevlib.git')
     
     @task
     def init_teleop(self):
         r = self.local_renderer
         if not r.file_exists('/usr/local/homebot/src/ros/src/ros_homebot_teleop/data/db.sqlite3'):
-            r.run('. {project_dir}/src/ros/setup.bash; cd /usr/local/homebot/src/ros/src/ros_homebot_teleop/src; ./manage.py migrate --run-syncdb')
-            r.run('. {project_dir}/src/ros/setup.bash; cd /usr/local/homebot/src/ros/src/ros_homebot_teleop/src; ./manage.py loaddata homebot_dashboard/fixtures/users.json')
+            r.run('. {project_dir}/src/ros/setup.bash; '
+                'cd /usr/local/homebot/src/ros/src/ros_homebot_teleop/src; '
+                './manage.py migrate --run-syncdb')
+            r.run('. {project_dir}/src/ros/setup.bash; '
+                'cd /usr/local/homebot/src/ros/src/ros_homebot_teleop/src; '
+                './manage.py loaddata homebot_dashboard/fixtures/users.json')
     
     @task
     def build_raspicam(self):
@@ -319,8 +329,10 @@ class HomebotSatchel(ServiceSatchel):
             '--exclude=.env '
             '--exclude=.git '
             '--exclude=setup_local.bash '
-            '--delete --rsh "ssh -t -o StrictHostKeyChecking=no -i {key_filename}" src/overlay/src/raspicam_node {user}@{host_string}:{project_dir}/src/overlay/src')
-        r.run('cd {project_dir}/src/overlay; . {project_dir}/src/ros/setup.bash; time catkin_make --pkg raspicam')
+            '--delete --rsh "ssh -t -o StrictHostKeyChecking=no -i {key_filename}" '
+            'src/overlay/src/raspicam_node {user}@{host_string}:{project_dir}/src/overlay/src')
+        r.run('cd {project_dir}/src/overlay; . {project_dir}/src/ros/setup.bash; '
+            'time catkin_make --pkg raspicam')
     
     @task
     def deploy_code(self):
@@ -333,7 +345,8 @@ class HomebotSatchel(ServiceSatchel):
         r.sudo('mkdir -p {project_dir}')
         r.sudo('chown {user}:{user} {project_dir}')
         
-        #archive=-rlptgoD (we don't want g=groups or o=owner or D=devices because remote system has different permissions and hardware)
+        #archive=-rlptgoD (we don't want g=groups or o=owner or D=devices because remote system
+        # has different permissions and hardware)
         r.local('rsync --recursive --verbose --perms --times --links --compress --copy-links '
             '--exclude=.build --exclude=build --exclude=devel '
             '--exclude=overlay '
@@ -342,7 +355,8 @@ class HomebotSatchel(ServiceSatchel):
             '--exclude=bags '
             '--exclude=.env '
             '--exclude=setup_local.bash '
-            '--delete --rsh "ssh -t -o StrictHostKeyChecking=no -i {key_filename}" src {user}@{host_string}:{project_dir}')
+            '--delete --rsh "ssh -t -o StrictHostKeyChecking=no -i {key_filename}" '
+            'src {user}@{host_string}:{project_dir}')
         
         #TODO:remove once lib stable
 #         r.local('rsync --recursive --verbose --perms --times --links --compress --copy-links '
@@ -352,7 +366,8 @@ class HomebotSatchel(ServiceSatchel):
 #             '--exclude=db.sqlite3 '
 #             '--exclude=.env '
 #             '--exclude=setup_local.bash '
-#             '--delete --rsh "ssh -t -o StrictHostKeyChecking=no -i {key_filename}" /home/chris/git/i2cdevlib {user}@{host_string}:/usr/share/arduino/libraries/')
+#             '--delete --rsh "ssh -t -o StrictHostKeyChecking=no -i {key_filename}" '
+#             '/home/chris/git/i2cdevlib {user}@{host_string}:/usr/share/arduino/libraries/')
     
     @task
     def view_head_log(self):

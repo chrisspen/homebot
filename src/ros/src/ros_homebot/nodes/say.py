@@ -2,7 +2,8 @@
 """
 Initiates the spin head action.
 """
-import os, sys
+import os
+import sys
 
 import roslib
 #roslib.load_manifest('ros_homebot')

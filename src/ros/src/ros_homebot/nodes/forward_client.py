@@ -2,8 +2,10 @@
 """
 Initiates the wandering action.
 """
-import os, sys
-import traceback, time
+import os
+import sys
+import traceback
+import time
 
 import roslib
 #roslib.load_manifest('ros_homebot')
@@ -26,7 +28,8 @@ class Client:
         
         # Creates the SimpleActionClient, passing the type of the action
         # (spin_headAction) to the constructor.
-        self.client = actionlib.SimpleActionClient(c.MOTION_FORWARD_X_MM, ros_homebot.msg.ForwardAction)
+        self.client = actionlib.SimpleActionClient(
+            c.MOTION_FORWARD_X_MM, ros_homebot.msg.ForwardAction)
     
         rospy.on_shutdown(self.shutdown)
         
@@ -67,4 +70,3 @@ if __name__ == '__main__':
     parser.add_argument('distance', type=int, default=10,
                        help='distance to move in mm')
     Client(**parser.parse_args().__dict__)
-    

@@ -4,14 +4,15 @@ Controls and publishes readings from the laser range finder.
 """
 from __future__ import print_function
 
-import os, time, sys
+import os
+import time
+import sys
 from math import pi
 from threading import Thread
-import yaml
-
 import io
+
+import yaml
 from PIL import Image as PilImage
-import numpy
 import cv2
 from scipy.signal import medfilt2d
 import rospy
@@ -76,7 +77,8 @@ class CalibrationManager(object):
             pass
         elif self.pending_distances:
             self.current_distance = self.pending_distances.pop(0)
-            print('Please click on the center of the marker for distance %i.' % self.current_distance)
+            print('Please click on the center of the marker for distance %i.' \
+                % self.current_distance)
     
     def run(self):
         
@@ -175,7 +177,7 @@ class NoiseFilter(object):
         
     def get(self):
         lst = [
-            numpy.median(bucket)
+            np.median(bucket)
             for bucket in self.history_buckets
         ]
         lst = self.func(lst, **self.func_kwargs)
@@ -223,8 +225,6 @@ class LRF():
         
         if self.show_straightening:
             # When testing the line laser level, use the non-calibrated LRF.
-#             rpc, ro, h, laser_position = 0.00152454795238, -0.0529450746603, 22.5, 'bottom' # bad
-#             rpc, ro, h, laser_position = 0.00298408515511, -0.0563705005565, 22.5, 'bottom' # good
             print('rpc, ro, h, laser_position:', rpc, ro, h, laser_position)
             self._lrf = LaserRangeFinder(
                 ro=ro,
@@ -348,7 +348,7 @@ class LRF():
     def normalize_image_cv2(self, msg):
         if isinstance(msg, CompressedImage):
             pil_image = self.normalize_compressed_image(msg)
-            cv_image = numpy.array(pil_image)
+            cv_image = np.array(pil_image)
             return cv_image
         else:
             cv_image = self.bridge.imgmsg_to_cv2(msg, "bgra8")
@@ -408,7 +408,8 @@ class LRF():
             t0 = time.time()
             off_img = self.get_image_pil()
             #off_img.save(os.path.expanduser('~/off_img.jpeg'))#TODO
-            image_message = self.bridge.cv2_to_compressed_imgmsg(numpy.array(off_img), dst_format='jpg')
+            image_message = self.bridge.cv2_to_compressed_imgmsg(
+                np.array(off_img), dst_format='jpg')
             self.image_off_pub.publish(image_message)
             self.log('image capture:', time.time() - t0)
             
@@ -420,7 +421,8 @@ class LRF():
             # Save camera image.
             on_img = self.get_image_pil()
 #             on_img.save(os.path.expanduser('~/on_img.jpeg'))#TODO
-            image_message = self.bridge.cv2_to_compressed_imgmsg(numpy.array(on_img), dst_format='jpg')
+            image_message = self.bridge.cv2_to_compressed_imgmsg(
+                np.array(on_img), dst_format='jpg')
             self.image_on_pub.publish(image_message)
             self.log('image capture:', time.time() - t0)
 
@@ -443,8 +445,11 @@ class LRF():
             distances = self.noise_filter.get()
             
             if self.show_straightening:
-                level_variance = numpy.var([_ for _ in distances if _ >= 0])
-                print('raw pixels:', ' '.join(map(lambda v: str(int(v)), compress_list(distances))), 'level variance (should be close to 0):', level_variance)
+                level_variance = np.var([_ for _ in distances if _ >= 0])
+                print(
+                    'raw pixels:',
+                    ' '.join(str(int(v)) for v in compress_list(distances)),
+                    'level variance (should be close to 0):', level_variance)
                 sys.stdout.flush()
                 straight_readings.append(level_variance)
                 if len(straight_readings) >= max_straight_readings:
@@ -455,7 +460,9 @@ class LRF():
                     if is_good:
                         print('Laser is level. Good job!')
                     else:
-                        print('This is not good. Ensure your line laser is level and that it is projecting against a flat wall about 50 cm away.')
+                        print(
+                            'This is not good. Ensure your line laser is level and that '
+                            'it is projecting against a flat wall about 50 cm away.')
                     rospy.signal_shutdown('complete')
                     return
 #             else:
@@ -469,7 +476,7 @@ class LRF():
             if self.show_line_image:
                 t0 = time.time()
                 pil_image = self._lrf.out3.convert('RGB')
-                cv_image = numpy.array(pil_image)
+                cv_image = np.array(pil_image)
                 #cv2.cvtColor(cv_image, cv2.COLOR_BGRA2RGB)
 #                 cv_image = cv_image[:, :, ::-1].copy()
                 image_message = self.bridge.cv2_to_imgmsg(cv_image, encoding='bgr8')#outputs pipe?

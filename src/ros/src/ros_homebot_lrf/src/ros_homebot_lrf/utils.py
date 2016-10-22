@@ -10,8 +10,8 @@ def compress_list(lst, bins=10, as_int=0, ignore_negative=True):
     """
     new_lst = []
     chunk_size = int(round(len(lst)/float(bins)))
-    for bin in xrange(bins):
-        samples = lst[bin*chunk_size:bin*chunk_size+chunk_size]
+    for bin_part in xrange(bins):
+        samples = lst[bin_part*chunk_size:bin_part*chunk_size+chunk_size]
         if ignore_negative:
             samples = [_ for _ in samples if _ >= 0]
             if not samples:
@@ -22,7 +22,7 @@ def compress_list(lst, bins=10, as_int=0, ignore_negative=True):
     return new_lst
 
 def list_to_str(lst, decimals=2, digits=7):
-    return ', '.join(map(lambda o: ('%+0'+str(digits)+'.'+str(decimals)+'f') % o, lst))
+    return ', '.join(('%+0'+str(digits)+'.'+str(decimals)+'f') % v for v in lst)
 
 def only_red(im):
     """
@@ -42,9 +42,9 @@ def normalize(arr):
     arr = arr.astype('float')
     # Do not touch the alpha channel
     for i in range(3):
-        minval = arr[...,i].min()
-        maxval = arr[...,i].max()
+        minval = arr[..., i].min()
+        maxval = arr[..., i].max()
         if minval != maxval:
-            arr[...,i] -= minval
-            arr[...,i] *= (255.0/(maxval-minval))
+            arr[..., i] -= minval
+            arr[..., i] *= (255.0/(maxval-minval))
     return arr

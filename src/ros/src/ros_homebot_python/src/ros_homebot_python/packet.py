@@ -1,7 +1,7 @@
 import re
 
-import constants as c
-import utils
+from ros_homebot_python import constants as c
+from ros_homebot_python import utils
 
 def camelcase_to_underscores(name):
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
@@ -14,7 +14,7 @@ def hash_str(s):
 
 class Packet(object):
     
-    def __init__(self, id, data='', check_id=True):
+    def __init__(self, id, data='', check_id=True): # pylint: disable=W0622
         if isinstance(id, int):
             id = chr(id)
         self.id = str(id)
@@ -71,7 +71,7 @@ class Packet(object):
 
 class KVPacket(Packet):
     
-    def __init__(self, id, *args, **kwargs):
+    def __init__(self, id, *args, **kwargs): # pylint: disable=W0622
         data = ' '.join(map(str, args))
         super(KVPacket, self).__init__(id, data, **kwargs)
         
@@ -80,7 +80,7 @@ class BooleanPacket(Packet):
     A packet with a single parameter that is either true or false.
     """
     
-    def __init__(self, id, data='', **kwargs):
+    def __init__(self, id, data='', **kwargs): # pylint: disable=W0622
         data = utils.to_10(data)
         super(BooleanPacket, self).__init__(id, **kwargs)
         self.data = data

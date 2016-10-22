@@ -18,21 +18,19 @@ from geometry_msgs.msg import Twist
 from std_srvs.srv import Empty, EmptyResponse
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
 
+from rpi_gpio.srv import DigitalWrite
+
+from ros_homebot_msgs import srv as srvs
+from ros_homebot_msgs import msg as msgs
+from ros_homebot_python.packet import Packet, BooleanPacket, LEDPacket
+from ros_homebot_python import constants as c
+from ros_homebot_python import constants as c
+from ros_homebot_python import utils
+
 OK = DiagnosticStatus.OK
 WARN = DiagnosticStatus.WARN
 ERROR = DiagnosticStatus.ERROR
 STALE = DiagnosticStatus.STALE
-
-from rpi_gpio.srv import DigitalWrite
-
-from ros_homebot_python.controller import Arduino
-from ros_homebot_python.packet import Packet, BooleanPacket, LEDPacket
-from ros_homebot_msgs import srv as srvs
-from ros_homebot_msgs import msg as msgs
-from ros_homebot_python import constants as c
-
-import constants as c
-import utils
 
 def get_name(packet_id):
     return get_packet_name(packet_id)
@@ -105,6 +103,10 @@ def packet_to_service_request_type(packet_id):
     name = get_srv_type_name(packet_id)
     return getattr(srvs, name+'Request')
 
+def say(self, text):
+    assert isinstance(text, basestring)
+    rospy.ServiceProxy('/sound/say', srvs.TTS)(text)
+
 def to_type(v, typ):
     if isinstance(typ, type):
         return typ(v)
@@ -133,11 +135,6 @@ def get_service_proxy(device, packet_id):
 def set_line_laser(state):
     state = int(bool(state))
     rospy.ServiceProxy('/rpi_gpio/set_pin', DigitalWrite)(c.LINE_LASER_PIN, state)
-
-def say(text):
-    assert isinstance(text, basestring)
-    say = rospy.ServiceProxy('/sound/say', srvs.TTS)
-    say(text, '', 0, 0)
 
 def camel_to_underscore(name):
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
@@ -353,7 +350,9 @@ class BaseArduinoNode():
             
             # Ignore malformed packets.
             if len(parameters) != len(output_format):
-                print('Expected %i parameters but received %i.\n' % (len(parameters), len(output_format)), file=sys.stderr)
+                print(
+                    'Expected %i parameters but received %i.\n' \
+                        % (len(parameters), len(output_format)), file=sys.stderr)
                 print('parameters:', parameters, file=sys.stderr)
                 print('output_format:', output_format, file=sys.stderr)
                 return
@@ -446,18 +445,7 @@ class BaseArduinoNode():
             if self.last_ping+1 <= time.time():
                 self.last_ping = time.time()
                 self.outgoing_queue.put(Packet(c.ID_PING))
-                
-            # Automatically reset crashed Arduino?
-#             print 'time until timeout:', (time.time() - self._last_pong)
-#             if (time.time() - self._last_pong) > c.ARDUINO_PING_TIMEOUT:
-#                 self.log('!'*80)
-#                 self.log('Arudino unresponsive after %i seconds! Resetting! Possible hardware fault?' % c.ARDUINO_PING_TIMEOUT)
-#                 self.log('!'*80)
-#                 self._t = threading.Thread(target=self.reset)
-#                 self._t.daemon = True
-#                 self._t.start()
-#                 return
-
+            
             # Sending pending commands.
             if not self.outgoing_queue.empty():
                 packet = self.outgoing_queue.get()
