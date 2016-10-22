@@ -22,18 +22,16 @@ _broadcaster = None
 node = None
 
 def get_broadcaster():
-    global _broadcaster
     return _broadcaster
 
 def get_connections():
-    global connections
     return connections
 
 @namespace('/echo')
 class EchoNamespace(BaseNamespace, BroadcastMixin):
     
     def recv_connect(self):
-        global thread, running, connections, incoming_queue, _broadcaster
+        global thread, connections, _broadcaster
         
         def background_thread():
             """Example of how to send server generated events to clients."""
@@ -55,7 +53,6 @@ class EchoNamespace(BaseNamespace, BroadcastMixin):
         connections -= 1
     
     def call_method(self, method_name, packet, *args):
-        global node
         print 'call_method:', method_name, packet, args
         
         if hasattr(self, method_name):
@@ -80,7 +77,6 @@ class EchoNamespace(BaseNamespace, BroadcastMixin):
         rospy.ServiceProxy('/torso_arduino/reset', std_srvs.srv.Empty)()
     
     def on_torso_shutdown(self, state=None):
-        global node
         print 'shutdown:', state
         if node:
             node.publish_packet_write(c.NAME_TORSO, c.ID_SHUTDOWN, state)
@@ -95,4 +91,3 @@ class EchoNamespace(BaseNamespace, BroadcastMixin):
 # 
 #         for sessid, socket in self.socket.server.sockets.iteritems():
 #             socket.send_packet(pkt)
-                

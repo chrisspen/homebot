@@ -6,17 +6,17 @@ Lists the device path for each Arduino.
 import os
 import sys
 
-BASE_DIR = os.path.dirname(os.path.realpath(__file__))
-sys.path.insert(0, os.path.join(BASE_DIR, '..'))
-sys.path.insert(0, os.path.join(BASE_DIR, '../..'))
-
-from ros_homebot_python import utils
 from ros_homebot_python import constants as c
+from ros_homebot_python import utils
 from ros_homebot_python.exceptions import DeviceNotFound
+
+# BASE_DIR = os.path.dirname(os.path.realpath(__file__))
+# sys.path.insert(0, os.path.join(BASE_DIR, '..'))
+# sys.path.insert(0, os.path.join(BASE_DIR, '../..'))
 
 def list_arduinos(verbose=False, target=None):
     target = (target or '').strip().lower()
-    for name in sorted(c.DEVICE_SIGNATURES.keys()):
+    for name in sorted(c.DEVICE_SIGNATURES):
         
         if target and name.lower() != target:
             continue
@@ -48,4 +48,3 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     list_arduinos(verbose=args.verbose, target=(args.target[0] if args.target else None))
-    

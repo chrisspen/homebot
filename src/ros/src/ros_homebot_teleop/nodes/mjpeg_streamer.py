@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
+from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import StringIO
 import time
 from Queue import Queue, Full, Empty
@@ -25,7 +25,9 @@ class CamHandler(BaseHTTPRequestHandler):
             capture = True
             try:
                 self.send_response(200)
-                self.send_header('Content-type','multipart/x-mixed-replace; boundary=--jpgboundary')
+                self.send_header(
+                    'Content-type',
+                    'multipart/x-mixed-replace; boundary=--jpgboundary')
                 self.end_headers()
                 while running:
                     try:
@@ -36,9 +38,7 @@ class CamHandler(BaseHTTPRequestHandler):
                         self.send_header('Content-length', str(len(msg.data)))
                         self.end_headers()
                         self.wfile.write(msg.data)
-                        #time.sleep(0.05)
                     except Empty:
-                        #print 'empty processor'
                         time.sleep(0.1)
                         continue
                     except KeyboardInterrupt:
@@ -46,7 +46,7 @@ class CamHandler(BaseHTTPRequestHandler):
             finally:
                 capture = False
             return
-        else:#if self.path.endswith('.html'):
+        else:
             # Render simple viewer.
             host = self.headers.get('Host')
             self.send_response(200)
@@ -64,7 +64,10 @@ class VideoStreamingNode(object):
         node = self
         try:
             rospy.init_node('homebot_mjpeg', log_level=rospy.DEBUG)
-            #rospy.Subscriber("/raspicam/image/compressed", CompressedImage, self.handle_compressedimage)
+#             rospy.Subscriber(
+#                 "/raspicam/image/compressed",
+#                 CompressedImage,
+#                 self.handle_compressedimage)
             rospy.on_shutdown(self.shutdown)
             
             self.port = int(rospy.get_param('~port', 8181))

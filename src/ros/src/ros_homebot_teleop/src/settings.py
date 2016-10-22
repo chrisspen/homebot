@@ -125,6 +125,6 @@ LOGIN_URL = 'django.contrib.auth.views.login'
 APPEND_SLASH = True
 
 try:
-    from settings_local import *
+    from .settings_local import *
 except ImportError:
     pass

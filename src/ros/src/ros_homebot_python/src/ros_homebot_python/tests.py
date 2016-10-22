@@ -5,13 +5,13 @@ import sys
 import unittest
 from math import pi
 
+from ros_homebot_python import utils
+from ros_homebot_python import constants as c
+
 # sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
 # PKG = 'ros_homebot_python'
 # import roslib; roslib.load_manifest(PKG)  # This line is not needed with Catkin.
-
-from ros_homebot_python import utils
-from ros_homebot_python import constants as c
 
 class Tests(unittest.TestCase):
             

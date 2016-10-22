@@ -3,9 +3,7 @@
 import os
 import time
 import sys
-#import thread
 from threading import Thread, RLock
-#from multiprocessing import Process
 
 import rospy
 from geometry_msgs.msg import Twist
@@ -14,18 +12,7 @@ from ros_homebot_msgs import srv as srvs
 from ros_homebot_msgs import msg as msgs
 
 from django.core.management import call_command
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DJANGO_DIR = os.path.abspath(os.path.join(BASE_DIR, '../src'))
-sys.path.insert(0, DJANGO_DIR)
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
-
-# Fixes error "Apps aren't loaded yet."
 from django.core.wsgi import get_wsgi_application
-application = get_wsgi_application()
-
-from homebot_dashboard.server import Server, DEFAULT_PORT
-from homebot_dashboard import sockets
 
 from ros_homebot_python import constants as c
 from ros_homebot_python.packet import Packet
@@ -37,6 +24,17 @@ from ros_homebot_python.node import (
     subscribe_to_topic,
     camel_to_underscore,
 )
+
+from homebot_dashboard.server import Server, DEFAULT_PORT
+from homebot_dashboard import sockets
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DJANGO_DIR = os.path.abspath(os.path.join(BASE_DIR, '../src'))
+sys.path.insert(0, DJANGO_DIR)
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
+
+# Fixes error "Apps aren't loaded yet."
+application = get_wsgi_application()
 
 class ServerThread(Thread):
     

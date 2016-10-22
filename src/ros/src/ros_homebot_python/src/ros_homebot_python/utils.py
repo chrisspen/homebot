@@ -10,7 +10,7 @@ from tf import transformations as tf
 import numpy as np
 
 from ros_homebot_python import constants as c
-from ros_homebot_python.exceptions import *
+from ros_homebot_python.exceptions import DeviceNotFound
 
 class Colors:
     HEADER = '\033[95m'
@@ -103,10 +103,9 @@ def R(theta, u):
 
 #http://stackoverflow.com/a/17763844/247542
 def rotate(pointToRotate, point1, point2, theta):
-
     u = []
     squaredSum = 0
-    for i,f in zip(point1, point2):
+    for i, f in zip(point1, point2):
         u.append(f-i)
         squaredSum += (f-i) **2
 
@@ -147,7 +146,6 @@ def head_angles_to_point(pan, tilt, distance):
     
     # Apply the tilt angle by rotating about the y-axis of the head.
     if tilt:
-        #point = rotate(point, (0, 0, c.HEIGHT_CENTER_HEIGHT_MM), (0, 10, c.HEIGHT_CENTER_HEIGHT_MM), tilt*pi/180.)
         point = np.add((0, 0, -c.HEIGHT_CENTER_HEIGHT_MM, 0), point)
         print 'point1:', point
         point = tf.rotation_matrix(-tilt*pi/180., yaxis).dot(point)
@@ -159,12 +157,8 @@ def head_angles_to_point(pan, tilt, distance):
     if pan:
         #point = rotate(point, (0, 0, 0), (0, 0, 1), pan*pi/180.)
         point = tf.rotation_matrix(pan*pi/180., zaxis).dot(point)
-        pass
     
     return tuple(point[:3])
-
-def head_point_to_angles(point):
-    pass
 
 def relative_to_absolute_speed(relative):
     assert -c.MOTOR_MAX_SPEED <= relative <= c.MOTOR_MAX_SPEED
@@ -211,7 +205,8 @@ def rotational_travel_time(speed, degrees):
 
 def assert_node_alive(name):
     print('Pinging %s...' % name)
-    assert rosnode.rosnode_ping(name, max_count=1, verbose=True), 'Node %s node not detected.' % name
+    assert rosnode.rosnode_ping(name, max_count=1, verbose=True), \
+        'Node %s node not detected.' % name
 
 def get_angle_of_pixel(pixel, resolution, angle_of_view):
     """
