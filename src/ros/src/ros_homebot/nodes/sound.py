@@ -88,20 +88,22 @@ class SoundServer:
         success = True
         try:
             
-            voice = goal_or_srv.voice.strip() or VOICE1
-            assert voice in VOICES
+#             voice = goal_or_srv.voice.strip() or VOICE1
+            voice = VOICE1
+#             assert voice in VOICES
             
-            speed = goal_or_srv.speed #TODO
+#             speed = goal_or_srv.speed #TODO
             
-            volume = goal_or_srv.volume or 100
-            assert 0 <= volume <= 100
-            if self._last_volume is None or self._last_volume != volume:
-                os.system('amixer cset numid=1 {percent}%'.format(percent=volume))
-                self._last_volume = volume
+#             volume = goal_or_srv.volume or 100
+#             assert 0 <= volume <= 100
+#             if self._last_volume is None or self._last_volume != volume:
+#                 os.system('amixer cset numid=1 {percent}%'.format(percent=volume))
+#                 self._last_volume = volume
             
             lines = goal_or_srv.text.strip().split('\n')
             for line in lines:
-                os.system('espeak -v%s "%s"' % (voice, line))
+#                 os.system('nice -n -19 espeak -v%s "%s"' % (voice, line))
+                os.system('sudo nice -n -19 espeak -v%s "%s" --stdout | aplay' % (voice, line))
                 
         except Exception as e:
             success = False

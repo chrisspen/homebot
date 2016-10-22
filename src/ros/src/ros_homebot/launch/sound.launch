@@ -1,4 +1,4 @@
 <launch>
-   <node name="sound" pkg="ros_homebot" type="sound.py" output="screen">
+   <node name="sound" pkg="ros_homebot" type="sound.py" output="screen" launch-prefix="nice -n -19">
    </node>
 </launch>
