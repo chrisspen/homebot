@@ -1,0 +1,6 @@
+description: Circuit of the battery pack. Incorporates a 2S Lipo Protection Board, pushbutton, and Turnigy Nano-Tech 3000mAh 2S2P lipo battery.
+
+status: production
+
+parts:
+    battery_pack.fzz: Primary circuit.
