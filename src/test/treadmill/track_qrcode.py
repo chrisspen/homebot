@@ -16,11 +16,11 @@ while True:
     frames += 1
     
     # Capture frame-by-frame
-    ret, frame = video_capture.read()
+    ret, frame_np_ary = video_capture.read()
     
-#     print type(frame)
+#     print type(frame_np_ary)
 
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(frame_np_ary, cv2.COLOR_BGR2GRAY)
 
 #     faces = faceCascade.detectMultiScale(
 #         gray,
@@ -45,14 +45,14 @@ while True:
             w = abs(tl[0] - bl[0])
             h = abs(tl[1] - br[1])
             
-            #cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
-            cv2.line(frame, tl, bl, (0,255,0), 3)
-            cv2.line(frame, bl, br, (0,255,0), 3)
-            cv2.line(frame, br, tr, (0,255,0), 3)
-            cv2.line(frame, tr, tl, (0,255,0), 3)
+            #cv2.rectangle(frame_np_ary, (x, y), (x+w, y+h), (0, 255, 0), 2)
+            cv2.line(frame_np_ary, tl, bl, (0,255,0), 3)
+            cv2.line(frame_np_ary, bl, br, (0,255,0), 3)
+            cv2.line(frame_np_ary, br, tr, (0,255,0), 3)
+            cv2.line(frame_np_ary, tr, tl, (0,255,0), 3)
 
-    # Display the resulting frame
-    cv2.imshow('Video', frame)
+    # Display the resulting frame_np_ary
+    cv2.imshow('Video', frame_np_ary)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break

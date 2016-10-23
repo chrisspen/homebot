@@ -103,7 +103,7 @@ def packet_to_service_request_type(packet_id):
     name = get_srv_type_name(packet_id)
     return getattr(srvs, name+'Request')
 
-def say(self, text):
+def say(text):
     assert isinstance(text, basestring)
     rospy.ServiceProxy('/sound/say', srvs.TTS)(text)
 
