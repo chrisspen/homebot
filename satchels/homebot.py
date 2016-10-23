@@ -152,6 +152,9 @@ class HomebotSatchel(ServiceSatchel):
             'python-rosdep',
             'ninja-build',
             
+            # Needed by tf/robot-state-publisher.
+            'libtf2-*',
+            
             #TODO:re-enable once package supports kinetic?
 #             'ros-%s-robot-upstart' % self.genv.ros_version_name,
 
