@@ -11,6 +11,8 @@ This is a list of known design flaws.
     
     Workaround: When the robot is connected to external power, the battery should be charged to a safe storage charge of 7.4V and then removed.
     
+    Effect: serious
+    
 2. limited expansion
 
     The overall footprint was kept small (15cm^2) to minimize cost and 3d printing time.
@@ -19,12 +21,16 @@ This is a list of known design flaws.
     Future designs should double this footprint.
     
     The motors and battery currently selected should still be powerful enough to actuate that size.
+    
+    Effect: average
 
 3. front-panels are difficult to access
 
     The front panels, such as the bumper/edge sensor array, recharging dock, ultrasonic sensor array, and powerbutton, were designed as mainly a single piece, with electronics mounted behind, and then the entire assembly screwed onto the frame. This is difficult to access for maintainence because the panels can't easily be removed without also removing the wire connections to the Arduino. And in order to remove those, the head must be removed.
     
     Future designs should make enough room so wire slack can be added so the panels can be removed, or a socket used so the panel's electrical connections don't need direct wiring.
+    
+    Effect: average
 
 4. battery charger discharges battery when load is off and external power is absent
 
@@ -33,6 +39,8 @@ This is a list of known design flaws.
     Future designs should add a diodes to ensure current only goes to the battery, back into the charger.
 
     Workaround: When the robot is turned off and disconnected from external power, the battery should be removed.
+    
+    Effect: average
 
 5. treads lack suspension
 
@@ -41,3 +49,27 @@ This is a list of known design flaws.
     Future designs should raise the main idlers up, and include smaller more inset idlers, to allow suspension to dampen shocks.
 
     Workaround: place ballast in the bottom panels
+    
+    Effect: average
+
+6. jittery head tilt
+
+    The servo used to tilt the head up and down has considerable jittery, due to either a poor servo, or inadequate shielding along the servo control cable.
+    
+    Effect: average
+
+7. inconsistent head pan reference sensor
+
+    The sensor used to mark a centered head position is an IR sensor detecting a white reflective strip. This leads to false positives if there's considerable ambient light.
+    
+    Future designs should either use IR interruptor switch or hall effect sensor.
+    
+    Effect: minor
+
+8. inadequate restraint in head side panels
+
+    The two head neck struts are mechanically attached to the center head box via the servo spline on one side and a small clamp on the other. This allows for considerable play between the side head panels and the center head panels, creatign several mm of gap.
+    
+    Future designs should add small sliding retaining clasps, that attach to the corners of the head box and loop over the edge of the neck struts.
+
+    Effect: minor
