@@ -14,6 +14,10 @@ description: |-
     
     D1 is necessary so EP stays pulled low when the plug is attached but no external power is present.
     
+    AOD4189 is a P-Channel mosfet that disconnects the battery from the load when the external power is present, and connects the battery to the load when the external power is absent.
+    
+    It's not shown in the schematic, but the battery is implicitly connected to the charger via a 3 wire balance charging cable.
+    
     To etch:
     
     1. export for production as svg or pdf
