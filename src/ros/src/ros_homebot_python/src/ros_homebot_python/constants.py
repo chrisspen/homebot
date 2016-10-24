@@ -333,6 +333,13 @@ DISK_USAGE_PERCENT_WARN = 90
 MEMORY_USAGE_PERCENT_ERROR = 95
 MEMORY_USAGE_PERCENT_WARN = 90
 
+# Links
+
+BASE_FOOTPRINT = 'base_footprint'
+BASE_LINK = 'base_link'
+NECK = 'neck'
+HEAD = 'head'
+
 # Joints
 
 FOOTPRINT_TO_TORSO_JOINT = 'footprint_to_base_link_joint'

@@ -2,7 +2,7 @@ import os
 import sys
 import glob
 import commands
-import math
+import time
 from math import pi, sin, cos
 
 import rosnode
@@ -11,6 +11,39 @@ import numpy as np
 
 from ros_homebot_python import constants as c
 from ros_homebot_python.exceptions import DeviceNotFound
+
+class Limiter(object):
+    """
+    Helper class to time an event based on a certain period.
+    
+    If you were to do something like:
+    
+        period = 5
+        last = time.time()
+        for item in items:
+            if time.time() - last > period
+                do_stuff()
+    
+    you could instead do:
+    
+        rate = Limiter(period=5)
+        for item in items:
+            if rate.ready():
+                do_stuff()
+        
+    """
+    
+    def __init__(self, period):
+        self.first = True
+        self.last_time = time.time()
+        self.period = period
+    
+    def ready(self):
+        ret = self.first or (time.time() - self.last_time) >= self.period
+        if ret:
+            self.last_time = time.time()
+        self.first = False
+        return ret
 
 class Colors:
     HEADER = '\033[95m'
@@ -199,7 +232,7 @@ def linear_travel_time(speed, distance, start_speed=None, end_speed=None, accel=
 def rotational_travel_time(speed, degrees):
     speed = speed.to(c.MM/c.SEC)
     degrees = degrees.to(c.DEG)
-    circumference = math.pi*c.TORSO_TREAD_WIDTH
+    circumference = pi*c.TORSO_TREAD_WIDTH
     distance = circumference * degrees/(360. * c.DEG)
     return abs(distance / speed)
 

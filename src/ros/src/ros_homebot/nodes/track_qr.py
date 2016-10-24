@@ -20,7 +20,7 @@ from ros_homebot_python.node import (
     packet_to_service_request_type,
     say,
 )
-from ros_homebot_python.utils import assert_node_alive, get_angle_of_pixel
+from ros_homebot_python.utils import assert_node_alive, get_angle_of_pixel, Limiter
 from ros_qr_tracker.msg import Percept
 from ros_qr_tracker.srv import AddTarget, AddTargetResponse, SetTarget, SetTargetResponse
 
@@ -28,20 +28,6 @@ class Stages:
     INITIALIZING = 0
     SEARCHING = 1
     TRACKING = 2
-
-class Limiter(object):
-    
-    def __init__(self, period):
-        self.first = True
-        self.last_time = time.time()
-        self.period = period
-    
-    def ready(self):
-        ret = self.first or (time.time() - self.last_time) >= self.period
-        if ret:
-            self.last_time = time.time()
-        self.first = False
-        return ret
 
 class TrackQR:
     """

@@ -1,0 +1,11 @@
+<!--
+When the aggregator is running, this will show a window, listing diagnostic reports.
+
+    sudo apt-get install ros-kinetic-rqt-robot-monitor
+
+http://wiki.ros.org/diagnostics/Tutorials/Configuring%20Diagnostic%20Aggregators
+-->
+<launch>
+    <node pkg="rqt_robot_monitor" type="rqt_robot_monitor" name="rqt_robot_monitor" >
+    </node>
+</launch>

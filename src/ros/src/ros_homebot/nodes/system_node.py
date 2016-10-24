@@ -74,10 +74,13 @@ class SystemNode():
         
         self.rate = 1#float(rospy.get_param("~rate", 1)) # hertz
         
+        rospy.loginfo('Ready')
+        
         r = rospy.Rate(self.rate)
         while not rospy.is_shutdown():
             
             # Find CPU.
+#             rospy.loginfo('Finding CPU.')
             cpu_usage_percent = to_percent(getoutput(
                 "grep 'cpu ' /proc/stat | "
                 "awk '{usage=($2+$4)*100/($2+$4+$5)} END {print usage }'"))

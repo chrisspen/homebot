@@ -7,7 +7,9 @@ Panels:
         - /Global Options1
         - /Status1
         - /RobotModel1
-        - /TF1
+        - /RobotModel1/Status1
+        - /TF1/Status1
+        - /Imu1
       Splitter Ratio: 0.5
     Tree Height: 698
   - Class: rviz/Selection
@@ -120,6 +122,28 @@ Visualization Manager:
                   {}
       Update Interval: 0
       Value: true
+    - Acceleration properties:
+        Acc. vector alpha: 1
+        Acc. vector color: 255; 0; 0
+        Acc. vector scale: 1
+        Derotate acceleration: true
+        Enable acceleration: false
+      Axes properties:
+        Axes scale: 1
+        Enable axes: true
+      Box properties:
+        Box alpha: 1
+        Box color: 255; 0; 0
+        Enable box: false
+        x_scale: 1
+        y_scale: 1
+        z_scale: 1
+      Class: rviz_imu_plugin/Imu
+      Enabled: true
+      Name: Imu
+      Topic: /imu/data_raw
+      Unreliable: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -156,10 +180,10 @@ Visualization Manager:
         Z: 0.0687519312
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.565397024
+      Pitch: 0.60039717
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.12859416
+      Yaw: 2.30360436
     Saved: ~
 Window Geometry:
   Displays:
