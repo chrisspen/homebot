@@ -8,7 +8,7 @@
   
   <meta name="author" content="Chris Spencer">
   
-  <title>Setup - Homebot</title>
+  <title>Flaws - Homebot</title>
   
 
   <link rel="shortcut icon" href="../img/favicon.ico">
@@ -23,9 +23,9 @@
   
   <script>
     // Current page data
-    var mkdocs_page_name = "Setup";
-    var mkdocs_page_input_path = "setup.md";
-    var mkdocs_page_url = "/setup/";
+    var mkdocs_page_name = "Flaws";
+    var mkdocs_page_input_path = "flaws.md";
+    var mkdocs_page_url = "/flaws/";
   </script>
   
   <script src="../js/jquery-2.1.1.min.js"></script>
@@ -76,23 +76,8 @@
 <li>
           
             <li>
-    <li class="toctree-l1 current">
-        <a class="current" href="./">Setup</a>
-        
-            <ul>
-            
-                <li class="toctree-l3"><a href="#software-setup">Software Setup</a></li>
-                
-                    <li><a class="toctree-l4" href="#structure">Structure</a></li>
-                
-                    <li><a class="toctree-l4" href="#configuring-the-deployment-machine">Configuring the Deployment Machine</a></li>
-                
-                    <li><a class="toctree-l4" href="#new-install-checklist">New Install Checklist</a></li>
-                
-                    <li><a class="toctree-l4" href="#installing-the-operating-system">Installing the Operating System</a></li>
-                
-            
-            </ul>
+    <li class="toctree-l1 ">
+        <a class="" href="../setup/">Setup</a>
         
     </li>
 <li>
@@ -126,8 +111,15 @@
 <li>
           
             <li>
-    <li class="toctree-l1 ">
-        <a class="" href="../flaws/">Flaws</a>
+    <li class="toctree-l1 current">
+        <a class="current" href="./">Flaws</a>
+        
+            <ul>
+            
+                <li class="toctree-l3"><a href="#flaws">Flaws</a></li>
+                
+            
+            </ul>
         
     </li>
 <li>
@@ -154,7 +146,7 @@
     
       
     
-    <li>Setup</li>
+    <li>Flaws</li>
     <li class="wy-breadcrumbs-aside">
       
         
@@ -168,64 +160,62 @@
           <div role="main">
             <div class="section">
               
-                <h1 id="software-setup">Software Setup</h1>
-<h2 id="structure">Structure</h2>
-<p>Configuring your robot will require two computers. The first is the Raspberry Pi physically located on the robot. The second is the deployment machine, where the robot's base code and configuration will be managed from and eventually deployed to the Raspberry Pi. Both computers are assumed to be running Linux.</p>
-<h2 id="configuring-the-deployment-machine">Configuring the Deployment Machine</h2>
-<p>Assuming your deployment machine is one you're reading this documentation from, your localhost, start by checking out this project via git. Open a terminal in a directory where you keep your Git projects and run:</p>
-<pre><code>git clone https://github.com/chrisspen/homebot.git
-</code></pre>
-<p>Initialize your deployment environment by running:</p>
-<pre><code>./bootstrap
-</code></pre>
-<p>This command creates a Python virtual environment and installs a few required packages.</p>
-<p>Note, any command presented in this guide beginning with "fab" should be run in a terminal from the project's root directory. Also, that terminal must first have your virtual environment activated by running:</p>
-<pre><code>. ./setup.bash
-</code></pre>
-<p>Set your custom settings by running:</p>
-<pre><code>cp roles/local/settings_local.yaml.template roles/local/settings_local.yaml
-</code></pre>
-<p>By default, it's assumed your deployment machine is running Ubuntu 16.04. Edit this file to select a different OS.</p>
-<p>Next, install ROS by running:</p>
-<pre><code>. ./setup.bash
-fab local ros.configure
-</code></pre>
-<h2 id="new-install-checklist">New Install Checklist</h2>
-<p>Decide on the hostname for your robot. For all intents and purposes, the robot will function like a Linux server</p>
+                <h1 id="flaws">Flaws</h1>
+<p>This is a list of known design flaws.</p>
 <ol>
 <li>
-<p>Ensure you've purged the domain name from your local router's DHCP cache, or it could interfere with the install.</p>
-<p>$ ping <domain>
-ping: unknown host <domain></p>
+<p>battery charger overcharges</p>
+<p>If the battery pack is left connected while the robot is connected to external power, the LinkMan 2S-3S Lipo Balance Charger trickle charges the lipo until dangerously overcharged. Testing found that the 7.4V battery was overcharged to 8.9V, causing the battery to swell.</p>
+<p>Future designs should modify the recharge board to include a transistor that allows disconnecting the charger from the battery once the voltage reaches a safe storage voltage of 7.4V. </p>
+<p>Workaround: When the robot is connected to external power, the battery should be charged to a safe storage charge of 7.4V and then removed.</p>
+<p>Effect: serious</p>
 </li>
 <li>
-<p>Purge all old SSH keys:</p>
-<p>fab prod host.purge_keys</p>
+<p>limited expansion</p>
+<p>The overall footprint was kept small (15cm^2) to minimize cost and 3d printing time.
+However, even with use of small electronics, like the Arduino and Raspberry Pi, this leaves very little room for expansion and wire routing.</p>
+<p>Future designs should double this footprint.</p>
+<p>The motors and battery currently selected should still be powerful enough to actuate that size.</p>
+<p>Effect: average</p>
+</li>
+<li>
+<p>front-panels are difficult to access</p>
+<p>The front panels, such as the bumper/edge sensor array, recharging dock, ultrasonic sensor array, and powerbutton, were designed as mainly a single piece, with electronics mounted behind, and then the entire assembly screwed onto the frame. This is difficult to access for maintainence because the panels can't easily be removed without also removing the wire connections to the Arduino. And in order to remove those, the head must be removed.</p>
+<p>Future designs should make enough room so wire slack can be added so the panels can be removed, or a socket used so the panel's electrical connections don't need direct wiring.</p>
+<p>Effect: average</p>
+</li>
+<li>
+<p>battery charger discharges battery when load is off and external power is absent</p>
+<p>This is caused by the charger drawing current through the 3-pin balanced charging cable</p>
+<p>Future designs should add a diodes to ensure current only goes to the battery, back into the charger.</p>
+<p>Workaround: When the robot is turned off and disconnected from external power, the battery should be removed.</p>
+<p>Effect: average</p>
+</li>
+<li>
+<p>treads lack suspension</p>
+<p>The treads ends are too blunt to overcome some sharp obstacles like door thresholds, without subjecting the robot to extensive shock.</p>
+<p>Future designs should raise the main idlers up, and include smaller more inset idlers, to allow suspension to dampen shocks.</p>
+<p>Workaround: place ballast in the bottom panels</p>
+<p>Effect: average</p>
+</li>
+<li>
+<p>jittery head tilt</p>
+<p>The servo used to tilt the head up and down has considerable jittery, due to either a poor servo, or inadequate shielding along the servo control cable.</p>
+<p>Effect: average</p>
+</li>
+<li>
+<p>inconsistent head pan reference sensor</p>
+<p>The sensor used to mark a centered head position is an IR sensor detecting a white reflective strip. This leads to false positives if there's considerable ambient light.</p>
+<p>Future designs should either use IR interruptor switch or hall effect sensor.</p>
+<p>Effect: minor</p>
+</li>
+<li>
+<p>inadequate restraint in head side panels</p>
+<p>The two head neck struts are mechanically attached to the center head box via the servo spline on one side and a small clamp on the other. This allows for considerable play between the side head panels and the center head panels, creatign several mm of gap.</p>
+<p>Future designs should add small sliding retaining clasps, that attach to the corners of the head box and loop over the edge of the neck struts.</p>
+<p>Effect: minor</p>
 </li>
 </ol>
-<h2 id="installing-the-operating-system">Installing the Operating System</h2>
-<ol>
-<li>
-<p>Set your custom settings by running:</p>
-<p>cp roles/prod/settings_local.yaml.template roles/prod/settings_local.yaml</p>
-</li>
-</ol>
-<p>This file represents your custom software configurations to the robot and will override any defaults.</p>
-<p>Edit the values in this file to suite your preferences. At the very least, you'll need to specify your wifi SSID and password so you can access the robot remotely.</p>
-<ol>
-<li>
-<p>Insert an SD card into the card reader on your deployment machine and run:</p>
-<p>fab local rpi.init_raspbian_disk</p>
-</li>
-<li>
-<p>Insert card into Pi and power on.</p>
-</li>
-<li>
-<p>Begin installation using:</p>
-<p>fab prod deploy.run</p>
-</li>
-</ol>
-<p>Note, this may take up to 5 hours to complete.</p>
               
             </div>
           </div>
@@ -233,10 +223,8 @@ ping: unknown host <domain></p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../hardware/" class="btn btn-neutral float-right" title="Hardware">Next <span class="icon icon-circle-arrow-right"></span></a>
       
-      
-        <a href="../parts/" class="btn btn-neutral" title="Parts & Supplies"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../development/" class="btn btn-neutral" title="Development"><span class="icon icon-circle-arrow-left"></span> Previous</a>
       
     </div>
   
@@ -264,10 +252,8 @@ ping: unknown host <domain></p>
           <a href="https://github.com/chrisspen/homebot" class="icon icon-github" style="float: left; color: #fcfcfc"> GitHub</a>
       
       
-        <span><a href="../parts/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+        <span><a href="../development/" style="color: #fcfcfc;">&laquo; Previous</a></span>
       
-      
-        <span style="margin-left: 15px"><a href="../hardware/" style="color: #fcfcfc">Next &raquo;</a></span>
       
     </span>
 </div>

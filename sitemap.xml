@@ -4,7 +4,7 @@
     
     <url>
      <loc>None/</loc>
-     <lastmod>2016-09-16</lastmod>
+     <lastmod>2016-10-23</lastmod>
      <changefreq>daily</changefreq>
     </url>
     
@@ -12,7 +12,7 @@
     
     <url>
      <loc>None/tools/</loc>
-     <lastmod>2016-09-16</lastmod>
+     <lastmod>2016-10-23</lastmod>
      <changefreq>daily</changefreq>
     </url>
     
@@ -20,7 +20,7 @@
     
     <url>
      <loc>None/parts/</loc>
-     <lastmod>2016-09-16</lastmod>
+     <lastmod>2016-10-23</lastmod>
      <changefreq>daily</changefreq>
     </url>
     
@@ -28,7 +28,7 @@
     
     <url>
      <loc>None/setup/</loc>
-     <lastmod>2016-09-16</lastmod>
+     <lastmod>2016-10-23</lastmod>
      <changefreq>daily</changefreq>
     </url>
     
@@ -36,7 +36,7 @@
     
     <url>
      <loc>None/hardware/</loc>
-     <lastmod>2016-09-16</lastmod>
+     <lastmod>2016-10-23</lastmod>
      <changefreq>daily</changefreq>
     </url>
     
@@ -44,7 +44,7 @@
     
     <url>
      <loc>None/software/</loc>
-     <lastmod>2016-09-16</lastmod>
+     <lastmod>2016-10-23</lastmod>
      <changefreq>daily</changefreq>
     </url>
     
@@ -52,7 +52,7 @@
     
     <url>
      <loc>None/experiment/</loc>
-     <lastmod>2016-09-16</lastmod>
+     <lastmod>2016-10-23</lastmod>
      <changefreq>daily</changefreq>
     </url>
     
@@ -60,7 +60,15 @@
     
     <url>
      <loc>None/development/</loc>
-     <lastmod>2016-09-16</lastmod>
+     <lastmod>2016-10-23</lastmod>
+     <changefreq>daily</changefreq>
+    </url>
+    
+
+    
+    <url>
+     <loc>None/flaws/</loc>
+     <lastmod>2016-10-23</lastmod>
      <changefreq>daily</changefreq>
     </url>
     
