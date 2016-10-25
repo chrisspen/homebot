@@ -1,0 +1,2 @@
+# Needed by imu_visualizer.py.
+vispy

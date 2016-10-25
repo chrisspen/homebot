@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 import time
 import threading
+from math import pi
 
 import rospy
+import tf
 #http://docs.ros.org/api/sensor_msgs/html/msg/Imu.html
 from sensor_msgs.msg import Imu
 from std_msgs.msg import Header
-
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
 
 from ros_homebot_python import constants as c
@@ -84,7 +85,7 @@ class TorsoNode(BaseArduinoNode):
             if not self.received_imu:
                 self.force_sensors()
             self.publish_imu()
-            time.sleep(1)
+            time.sleep(.1)
     
     def publish_imu(self):
         if not self.last_euler or not self.last_accelerometer:
@@ -94,10 +95,18 @@ class TorsoNode(BaseArduinoNode):
             imu_msg.header = Header()
             imu_msg.header.stamp = rospy.Time.now()
             imu_msg.header.frame_id = c.BASE_LINK
-            imu_msg.orientation.x = self.last_euler['x']
-            imu_msg.orientation.y = self.last_euler['y']
-            imu_msg.orientation.z = self.last_euler['z']
-            imu_msg.orientation.w = 0.0
+            
+            # Our sensor returns Euler angles in degrees, but ROS requires radians.
+            roll = self.last_euler['x'] * pi/180.
+            pitch = self.last_euler['y'] * pi/180.
+            yaw = self.last_euler['z'] * pi/180.
+            # http://answers.ros.org/question/69754/quaternion-transformations-in-python/
+            quaternion = tf.transformations.quaternion_from_euler(roll, pitch, yaw)
+            imu_msg.orientation.x = quaternion[0]
+            imu_msg.orientation.y = quaternion[1]
+            imu_msg.orientation.z = quaternion[2]
+            imu_msg.orientation.w = quaternion[3]
+            
             #imu_msg.angular_velocity_covariance = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
 #             imu_msg.angular_velocity.x = ns.omgx();
 #             imu_msg.angular_velocity.y = ns.omgy();

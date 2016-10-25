@@ -1,0 +1,4 @@
+<launch>
+   <node name="imu_visualizer" pkg="ros_homebot" type="imu_visualizer.py" output="screen">
+   </node>
+</launch>
