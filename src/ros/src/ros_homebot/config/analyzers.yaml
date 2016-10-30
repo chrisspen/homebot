@@ -41,6 +41,7 @@ analyzers:
             contains:
             -   'CPU Usage'
             -   'CPU Temperature'
+            -   'CPU Speed'
             -   'Disk Usage'
             -   'Memory Usage'
         controllers:

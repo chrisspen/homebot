@@ -1,0 +1,9 @@
+description: |-
+    Wiring between the battery's balance pins and the charger's balance plug.
+    
+    This is a trivial circuit and is just here to emphasize that two diodes need to be placed on the red and yellow wires to stop that battery from discharging through the charger when external power is disconnected, which isn't a use case the charger was designed to handle.
+
+status: production
+
+parts:
+    battery_balance_cable.fzz: Primary circuit.

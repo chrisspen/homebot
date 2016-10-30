@@ -58,6 +58,36 @@ def get_cpu_temp():
     degrees_celcius = int(getoutput('cat /sys/class/thermal/thermal_zone0/temp').strip())/1000.
     return degrees_celcius
 
+def get_cpu_clock_speed():
+    """
+    Returns the current CPU clock speed in GHz.
+    
+    http://unix.stackexchange.com/a/87537/16477
+    """
+    hertz = int(getoutput('cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq').strip())
+    ghz = hertz/1000./1000.
+    return ghz
+
+def get_cpu_clock_speed_min():
+    return int(getoutput('cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq').strip())
+
+def get_cpu_clock_speed_max():
+    return int(getoutput('cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq').strip())
+
+def get_cpu_clock_speed_percent():
+    """
+    Returns the CPU clock speed percent, on a scale from minimum to maximum speed.
+    
+    http://unix.stackexchange.com/a/87537/16477
+    """
+    min_hertz = get_cpu_clock_speed_min()
+    max_hertz = get_cpu_clock_speed_max()
+    current_hertz = int(getoutput('cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq').strip())
+    
+    percent = (current_hertz - min_hertz)/float(max_hertz - min_hertz)*100
+    
+    return percent
+
 class SystemNode():
     """
     Reports system metrics such as CPU, memory and disk usage.
@@ -145,6 +175,19 @@ class SystemNode():
 #             print msg
             self.disk_publisher.publish(msg)
 
+            # Find CPU clock speed.
+            min_ghz = get_cpu_clock_speed_min()/1000./1000.
+            max_ghz = get_cpu_clock_speed_max()/1000./1000.
+            cpu_clock_speed = get_cpu_clock_speed()
+#             print('cpu_clock_speed:', cpu_clock_speed)
+            cpu_clock_speed_percent = get_cpu_clock_speed_percent()
+#             print('cpu_clock_speed_percent:', cpu_clock_speed_percent)
+            cpu_clock_speed_percent_level = OK
+            if cpu_clock_speed_percent <= c.CPU_CLOCK_SPEED_PERCENT_ERROR:
+                cpu_clock_speed_percent_level = ERROR
+            elif cpu_clock_speed_percent <= c.CPU_CLOCK_SPEED_PERCENT_WARN:
+                cpu_clock_speed_percent_level = WARN
+
             # Find CPU temperature.
             cpu_temp = get_cpu_temp()
             cpu_temp_level = OK
@@ -155,18 +198,31 @@ class SystemNode():
             
             # Publish standard diagnostics.
             array = DiagnosticArray()
+            
             cpu_temperature_status = DiagnosticStatus(
                 name='CPU Temperature',
                 level=cpu_temp_level)
             cpu_temperature_status.values = [
                 KeyValue(key='celcius', value=str(cpu_temp)),
             ]
+            
             cpu_usage_status = DiagnosticStatus(
                 name='CPU Usage',
                 level=cpu_usage_percent_level)
             cpu_usage_status.values = [
                 KeyValue(key='percent', value=str(cpu_usage_percent)),
             ]
+            
+            cpu_clock_speed_status = DiagnosticStatus(
+                name='CPU Speed',
+                level=cpu_clock_speed_percent_level)
+            cpu_clock_speed_status.values = [
+                KeyValue(key='clock speed (GHz)', value=str(cpu_clock_speed)),
+                KeyValue(key='min clock speed (GHz)', value=str(min_ghz)),
+                KeyValue(key='max clock speed (GHz)', value=str(max_ghz)),
+                KeyValue(key='clock speed (percent)', value=str(cpu_clock_speed_percent)),
+            ]
+            
             disk_usage_status = DiagnosticStatus(
                 name='Disk Usage',
                 level=disk_usage_level)
@@ -176,6 +232,7 @@ class SystemNode():
                 KeyValue(key='used gb', value=str(disk_usage_used_gbytes)),
                 KeyValue(key='total gb', value=str(disk_usage_total_gbytes)),
             ]
+            
             memory_usage_status = DiagnosticStatus(
                 name='Memory Usage',
                 level=memory_usage_percent_level)
@@ -185,9 +242,11 @@ class SystemNode():
                 KeyValue(key='used gb', value=str(memory_usage_used_gbytes)),
                 KeyValue(key='total gb', value=str(memory_usage_total_gbytes)),
             ]
+            
             array.status = [
                 cpu_temperature_status,
                 cpu_usage_status,
+                cpu_clock_speed_status,
                 disk_usage_status,
                 memory_usage_status,
             ]

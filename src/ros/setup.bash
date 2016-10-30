@@ -1,6 +1,7 @@
 #!/bin/bash
+# Initializes a shell, running on the robot, for ROS.
 # Call by sourcing, e.g. source setup.bash
-#http://wiki.ros.org/catkin/Tutorials/workspace_overlaying
+# http://wiki.ros.org/catkin/Tutorials/workspace_overlaying
 
 _CURRENT_DIR=$(builtin cd "`dirname "${BASH_SOURCE[0]}"`" > /dev/null && pwd)
 _ROS_VERSION=kinetic

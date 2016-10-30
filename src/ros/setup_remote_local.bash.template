@@ -1,0 +1,3 @@
+#!bin/bash
+
+_ROS_MASTER_URI=http://yourrobotname.local:11311

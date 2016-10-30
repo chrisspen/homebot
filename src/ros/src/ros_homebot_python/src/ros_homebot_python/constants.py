@@ -323,6 +323,10 @@ CPU_TEMP_WARN = 82.5 # over this shown warning, below shown ok
 CPU_USAGE_PERCENT_ERROR = 99
 CPU_USAGE_PERCENT_WARN = 90
 
+# CPU clock speed limits.
+CPU_CLOCK_SPEED_PERCENT_ERROR = 25
+CPU_CLOCK_SPEED_PERCENT_WARN = 50
+
 # Disk limits.
 
 DISK_USAGE_PERCENT_ERROR = 95
