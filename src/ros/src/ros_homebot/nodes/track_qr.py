@@ -38,10 +38,10 @@ class TrackQR:
         
         rospy.init_node('track_qr')
         
-        assert_node_alive('head_arduino')
-        assert_node_alive('qr_tracker')
+#         assert_node_alive('head_arduino')
+#         assert_node_alive('qr_tracker')
         print 'a0'
-        assert_node_alive('sound')
+#         assert_node_alive('sound')
         print 'a1'
         
         # Cleanup when termniating the node

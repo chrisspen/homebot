@@ -119,7 +119,9 @@ def to_type(v, typ):
         raise NotImplementedError, 'Unknown type: %s' % typ
 
 def get_topic_name(device, packet_id):
-    assert device in c.DEVICE_SIGNATURES
+    device = device.upper()
+    assert device in c.DEVICE_SIGNATURES, \
+        'Invalid device: %s. Must be one of %s.' % (device, ', '.join(c.DEVICE_SIGNATURES))
     return '/%s_arduino/%s' % (device.lower(), get_name(packet_id))
 
 def subscribe_to_topic(device, packet_id, callback):

@@ -1,4 +1,5 @@
-description: Wiring of the cooling fan in the head.
-status: production
+description: |-
+    Possible wiring of the cooling fan in the head, to control it from a RPIO pin the the Pi.
+status: reference
 parts:
     head_fan.fzz: Simple wiring connecting the fan to a GVS header on the Pi.
