@@ -82,7 +82,8 @@ def get_cpu_clock_speed_percent():
     """
     min_hertz = get_cpu_clock_speed_min()
     max_hertz = get_cpu_clock_speed_max()
-    current_hertz = int(getoutput('cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq').strip())
+    current_hertz = int(getoutput(
+        'cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq').strip())
     
     percent = (current_hertz - min_hertz)/float(max_hertz - min_hertz)*100
     

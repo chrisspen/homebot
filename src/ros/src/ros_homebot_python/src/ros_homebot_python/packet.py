@@ -41,6 +41,15 @@ class Packet(object):
         return re.sub(r'[^a-z]+', '_', c.ALL_IDS[self.id].lower().strip())
     
     @property
+    def non_get_id(self):
+        """
+        Returns the ID from the data if the ID is "get_value".
+        """
+        if self.id == c.ID_GET_VALUE and self.data:
+            return self.data[0]
+        return self.id
+    
+    @property
     def length(self):
         return len(self.id.strip()) + len(self.data.strip())
     

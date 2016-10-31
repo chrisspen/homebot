@@ -10,6 +10,8 @@ import threading
 import traceback
 from Queue import Queue, Empty as EmptyException, Full as FullException
 from functools import partial
+from collections import defaultdict
+
 import serial
 import termios
 
@@ -155,11 +157,15 @@ class BaseArduinoNode():
         self.verbose = int(rospy.get_param("~verbose", 0))
         self.log('verbose:', self.verbose)
         
+        self.limiter = utils.Limiter(period=1)
+        
         # If true, indicates that all motor processes should halt.
         self.all_stopping = False
         
         # If true, is trying to connect and communicate with Arduino.
         self.running = False
+        
+        self._print_lock = threading.RLock()
         
         # If true, the serial port has been opened.
         self.connected = True
@@ -169,10 +175,16 @@ class BaseArduinoNode():
         
         # Serial port. e.g. /dev/ttyACM0
         self.port = kwargs.pop('port', None) or utils.find_serial_device(self.name)
-        print('Using port %s.' % self.port)
+        self.print('Using port %s.' % self.port)
         
         # Serial speed.
         self.speed = int(kwargs.pop('speed', 57600))
+        
+        # Counter of all packets read from Arduino.
+        self.read_count = 0
+        
+        # Counter of all packets written to Arduino.
+        self.write_count = 0
         
         # The last time we sent a ping request.
         self.last_ping = 0
@@ -185,6 +197,9 @@ class BaseArduinoNode():
         
         # The hash value expected for the next read.
         self.expected_hash = None
+        
+        # Count of times each packet type was received.
+        self.packet_counts = defaultdict(int) # {packet_id: count}
         
         # A registry of acknowledgement receipts
         self._acks = {} # {packet_id: time read}
@@ -215,16 +230,16 @@ class BaseArduinoNode():
             pub_topic_name = '~' + get_name(_packet_id)
             #msg_type = getattr(msgs, get_msg_type_name(_packet_id))
             msg_type = packet_to_message_type(_packet_id)
-            print('creating publisher:')
-            print('    pub_attr_name:', pub_attr_name)
-            print('    pub_topic_name:', pub_topic_name)
-            print('    msg_type:', msg_type)
+            self.print('creating publisher:')
+            self.print('    pub_attr_name:', pub_attr_name)
+            self.print('    pub_topic_name:', pub_topic_name)
+            self.print('    msg_type:', msg_type)
             setattr(
                 self,
                 pub_attr_name,
                 rospy.Publisher(pub_topic_name, msg_type, queue_size=1))
         
-        self.diagnostics_pub = rospy.Publisher('/diagnostics', DiagnosticArray, queue_size=10)
+        self.diagnostics_pub = rospy.Publisher('/diagnostics', DiagnosticArray, queue_size=1)
         self.create_publishers()
         
         # Dynamically create a service for each service type.
@@ -240,7 +255,7 @@ class BaseArduinoNode():
         # Begin processing data to/from Arduino.
         self.connect()
         
-        print('Running.')
+        self.print('Running.')
         
         # Start polling the sensors and base controller
         while not rospy.is_shutdown():
@@ -249,6 +264,31 @@ class BaseArduinoNode():
             now = rospy.Time.now()
             
             r.sleep()
+            
+            if self.limiter.ready():
+                
+                pcounts = ', '.join(
+                    '%s=%i' % (k, v)
+                    for k, v in sorted(self.packet_counts.iteritems(), key=lambda o: o[1]))
+                
+                self.print((
+                    'STATUS: '
+                    'wq={write_queue_size}, '
+                    'wcnt={write_count}, '
+                    'rcnt={read_count} '
+                    'ping={last_ping} '
+                    'pong={last_pong} '
+                    '{pcounts} '
+                ).format(**dict(
+                    write_queue_size=self.outgoing_queue.qsize(),
+                    write_count=self.write_count,
+                    read_count=self.read_count,
+                    last_ping=self.last_ping,
+                    last_pong=self.last_pong,
+                    pcounts=pcounts,
+                )))
+            
+        self.print('Main thread terminated.')
     
     def _on_packet_pong(self, packet):
         """
@@ -262,6 +302,7 @@ class BaseArduinoNode():
         except (ValueError, TypeError) as e:
             return
         
+        self.last_pong = time.time()
         total = packet_dict['total']
         #print('pong total:', total)
         
@@ -292,7 +333,7 @@ class BaseArduinoNode():
         output_format = self.publisher_formats[packet_id]
         
         if len(parameters) != len(output_format):
-            print('malformed packet:', packet)
+            self.print('malformed packet:', packet)
             return
         
         d = dict(
@@ -308,13 +349,13 @@ class BaseArduinoNode():
         self.log('Receiving packet: %s' % packet)
         
         if self.verbose:
-            print('-'*80)
-            print('arduino to ros handler:')
-            print('packet.id:', packet.id, 'data:', packet.data)
+            self.print('-'*80)
+            self.print('arduino to ros handler:')
+            self.print('packet.id:', packet.id, 'data:', packet.data)
         try:
             packet_id = ord(packet.id)
         except TypeError as e:
-            print('Invalid packet ID: %s' % e, file=sys.stderr)
+            self.print('Invalid packet ID: %s' % e, file=sys.stderr)
             traceback.print_exc(file=sys.stderr)
             return
         
@@ -352,11 +393,11 @@ class BaseArduinoNode():
             
             # Ignore malformed packets.
             if len(parameters) != len(output_format):
-                print(
+                self.print(
                     'Expected %i parameters but received %i.\n' \
                         % (len(parameters), len(output_format)), file=sys.stderr)
-                print('parameters:', parameters, file=sys.stderr)
-                print('output_format:', output_format, file=sys.stderr)
+                self.print('parameters:', parameters, file=sys.stderr)
+                self.print('output_format:', output_format, file=sys.stderr)
                 return
             
             try:
@@ -373,7 +414,7 @@ class BaseArduinoNode():
                 traceback.print_exc(file=sys.stderr)
                 #self.log(e)
         else:
-            print('No publisher for %s.' % pub_attr_name)
+            self.print('No publisher for %s.' % pub_attr_name)
 
     def force_sensors(self):
         """
@@ -436,6 +477,7 @@ class BaseArduinoNode():
         self._serial.write(s)
         self._serial.flush()
         time.sleep(delay)
+        self.write_count += 1
         
     def _write_data_to_arduino(self):
         """
@@ -465,6 +507,8 @@ class BaseArduinoNode():
                     else:
                         # Don't wait for acknowledgement.
                         break
+                        
+        self.print('Write thread exited.')
 
     def _wait_for_ack(self, packet_id, sent_time, timeout=5):
         """
@@ -496,7 +540,7 @@ class BaseArduinoNode():
                 packet = Packet.from_string(data)
                 if packet.hash != self.expected_hash:
                     if self.verbose:
-                        print('Invalid packet read due to hash mismatch:', packet)
+                        self.print('Invalid packet read due to hash mismatch:', packet)
                     data = ''
                     
         if data:
@@ -521,7 +565,10 @@ class BaseArduinoNode():
             # Record pong so we know Arduino is still alive.
             if packet.id == c.ID_PONG:
                 self._last_pong = time.time()
-                
+            
+            self.read_count += 1
+            
+            self.packet_counts[packet.non_get_id] += 2
             return packet
     
     def _read_data_from_arduino(self):
@@ -540,6 +587,8 @@ class BaseArduinoNode():
             
             # Process packet.
             self._arduino_to_ros_handler(packet)
+            
+        self.print('Read thread exited.')
             
     def all_stop(self):
         """
@@ -618,18 +667,24 @@ class BaseArduinoNode():
         try:
             if self._read_thread is not None:
                 self._read_thread.join(5)
+                self._read_thread = None
             if self._write_thread is not None:
                 self._write_thread.join(5)
+                self._write_thread = None
         except RuntimeError:
             pass
 
-    def log(self, *msg):
-        if self.verbose:
+    def print(self, *msg, **kwargs):
+        with self._print_lock:
             #rospy.log(' '.join(map(str, msg)))
             try:
-                print(u' '.join(map(unicode, msg)).encode('utf-8'))
+                print(u' '.join(map(unicode, msg)).encode('utf-8'), **kwargs)
             except UnicodeDecodeError as e:
                 traceback.print_exc(file=sys.stderr)
+
+    def log(self, *msg):
+        if self.verbose:
+            self.print(*msg)
             
     @property
     def name_index(self):

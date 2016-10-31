@@ -23,7 +23,8 @@
 */
 
 /* Set the delay between fresh samples */
-#define BNO055_SAMPLERATE_DELAY_MS (100)
+//#define BNO055_SAMPLERATE_DELAY_MS 100
+#define BNO055_SAMPLERATE_DELAY_MS 200
 
 class AccelGyroSensor: public Sensor{
 
@@ -43,21 +44,21 @@ class AccelGyroSensor: public Sensor{
 		// - VECTOR_LINEARACCEL   - m/s^2
 		// - VECTOR_GRAVITY       - m/s^2
     
-        ChangeTracker<double> ax = ChangeTracker<double>(0, 0, 100);
-        ChangeTracker<double> ay = ChangeTracker<double>(0, 0, 100);
-        ChangeTracker<double> az = ChangeTracker<double>(0, 0, 100);
+        ChangeTracker<double> ax = ChangeTracker<double>(0, 0, BNO055_SAMPLERATE_DELAY_MS);
+        ChangeTracker<double> ay = ChangeTracker<double>(0, 0, BNO055_SAMPLERATE_DELAY_MS);
+        ChangeTracker<double> az = ChangeTracker<double>(0, 0, BNO055_SAMPLERATE_DELAY_MS);
 
-        ChangeTracker<double> ex = ChangeTracker<double>(0, 0, 100);
-        ChangeTracker<double> ey = ChangeTracker<double>(0, 0, 100);
-        ChangeTracker<double> ez = ChangeTracker<double>(0, 0, 100);
+        ChangeTracker<double> ex = ChangeTracker<double>(0, 0, BNO055_SAMPLERATE_DELAY_MS);
+        ChangeTracker<double> ey = ChangeTracker<double>(0, 0, BNO055_SAMPLERATE_DELAY_MS);
+        ChangeTracker<double> ez = ChangeTracker<double>(0, 0, BNO055_SAMPLERATE_DELAY_MS);
 
-        ChangeTracker<double> gx = ChangeTracker<double>(0, 0, 100);
-        ChangeTracker<double> gy = ChangeTracker<double>(0, 0, 100);
-        ChangeTracker<double> gz = ChangeTracker<double>(0, 0, 100);
+        ChangeTracker<double> gx = ChangeTracker<double>(0, 0, BNO055_SAMPLERATE_DELAY_MS);
+        ChangeTracker<double> gy = ChangeTracker<double>(0, 0, BNO055_SAMPLERATE_DELAY_MS);
+        ChangeTracker<double> gz = ChangeTracker<double>(0, 0, BNO055_SAMPLERATE_DELAY_MS);
 
-        ChangeTracker<double> mx = ChangeTracker<double>(0, 0, 100);
-        ChangeTracker<double> my = ChangeTracker<double>(0, 0, 100);
-        ChangeTracker<double> mz = ChangeTracker<double>(0, 0, 100);
+        ChangeTracker<double> mx = ChangeTracker<double>(0, 0, BNO055_SAMPLERATE_DELAY_MS);
+        ChangeTracker<double> my = ChangeTracker<double>(0, 0, BNO055_SAMPLERATE_DELAY_MS);
+        ChangeTracker<double> mz = ChangeTracker<double>(0, 0, BNO055_SAMPLERATE_DELAY_MS);
 
         ChangeTracker<uint8_t> sys_calib = ChangeTracker<uint8_t>(0, 0, 1000);
         ChangeTracker<uint8_t> gyr_calib = ChangeTracker<uint8_t>(0, 0, 1000);
