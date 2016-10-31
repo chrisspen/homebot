@@ -8,6 +8,7 @@ import time
 import datetime
 import threading
 import traceback
+import gc
 from Queue import Queue, Empty as EmptyException, Full as FullException
 from functools import partial
 from collections import defaultdict
@@ -186,6 +187,9 @@ class BaseArduinoNode():
         # Counter of all packets written to Arduino.
         self.write_count = 0
         
+        # Counter of each time the Arduino failed to acknowledge a packet.
+        self.ack_failure_count = 0
+        
         # The last time we sent a ping request.
         self.last_ping = 0
         
@@ -278,6 +282,7 @@ class BaseArduinoNode():
                     'rcnt={read_count} '
                     'ping={last_ping} '
                     'pong={last_pong} '
+                    'ackfails={ack_failure_count} '
                     '{pcounts} '
                 ).format(**dict(
                     write_queue_size=self.outgoing_queue.qsize(),
@@ -285,6 +290,7 @@ class BaseArduinoNode():
                     read_count=self.read_count,
                     last_ping=self.last_ping,
                     last_pong=self.last_pong,
+                    ack_failure_count=self.ack_failure_count,
                     pcounts=pcounts,
                 )))
             
@@ -494,16 +500,23 @@ class BaseArduinoNode():
             if not self.outgoing_queue.empty():
                 packet = self.outgoing_queue.get()
                 
-                for attempt in xrange(50):
+                for attempt in xrange(2):
                     self.log('Sending: %s, attempt %i' % (packet, attempt))
 
                     sent_time = time.time()
                     self._write_packet(packet)
                     
-                    if packet.id in c.ACK_IDS:
+                    if not self.running:
+                        break
+                    elif packet.id in c.ACK_IDS:
                         # Wait for acknowledgement.
                         if self._wait_for_ack(packet.id, sent_time):
                             break
+                        else:
+                            self.print(
+                                'Timed out waiting for ack of packet %s, on attempt %i.' \
+                                    % (packet, attempt))
+                            self.ack_failure_count += 1
                     else:
                         # Don't wait for acknowledgement.
                         break
@@ -639,6 +652,7 @@ class BaseArduinoNode():
             termios.tcsetattr(f, termios.TCSAFLUSH, attrs)
     
         # Instantiate serial interface.
+        self.print('Opening serial connection...')
         self._serial = serial.Serial(
             port=self.port,
             baudrate=self.speed,
@@ -651,10 +665,12 @@ class BaseArduinoNode():
         self.connected = True
         assert self.confirm_identity(), 'Device identity could not be confirmed.'
 
+        self.print('Starting read thread...')
         self._read_thread = threading.Thread(target=self._read_data_from_arduino)
         self._read_thread.daemon = True
         self._read_thread.start()
         
+        self.print('Starting write thread...')
         self._write_thread = threading.Thread(target=self._write_data_to_arduino)
         self._write_thread.daemon = True
         self._write_thread.start()
@@ -663,16 +679,30 @@ class BaseArduinoNode():
         """
         Terminates the communication thread and closes the serial connection.
         """
+        if self._serial is None:
+            return
+        
+        # Stop serial IO threads.
         self.running = False
         try:
             if self._read_thread is not None:
+                self.print('Stopping read thread...')
                 self._read_thread.join(5)
                 self._read_thread = None
             if self._write_thread is not None:
+                self.print('Stopping write thread...')
                 self._write_thread.join(5)
                 self._write_thread = None
-        except RuntimeError:
-            pass
+        except RuntimeError as e:
+            self.print('Error when attempting to disconnect: %s' % e)
+        
+        # Delete serial connection.
+        self.print('Closing serial connection...')
+        self._serial.close()
+        self._serial = None
+        self.print('Deleting garbage...')
+        gc.collect()
+        self.print('Disconnected.')
 
     def print(self, *msg, **kwargs):
         with self._print_lock:
