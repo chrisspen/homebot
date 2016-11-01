@@ -151,11 +151,14 @@ class BaseArduinoNode():
     
     def __init__(self, **kwargs):
         
+        self._print_lock = threading.RLock()
+        
         assert self.name in (c.NAME_TORSO, c.NAME_HEAD)
         
         rospy.init_node('%s_arduino' % self.name.lower(), log_level=rospy.DEBUG)
         
         self.verbose = int(rospy.get_param("~verbose", 0))
+        
         self.log('verbose:', self.verbose)
         
         self.limiter = utils.Limiter(period=1)
@@ -166,13 +169,13 @@ class BaseArduinoNode():
         # If true, is trying to connect and communicate with Arduino.
         self.running = False
         
-        self._print_lock = threading.RLock()
-        
         # If true, the serial port has been opened.
         self.connected = True
         
         # The duplex Serial() instance.
         self._serial = None
+        
+        self._serial_lock = threading.RLock()
         
         # Serial port. e.g. /dev/ttyACM0
         self.port = kwargs.pop('port', None) or utils.find_serial_device(self.name)
@@ -186,6 +189,9 @@ class BaseArduinoNode():
         
         # Counter of all packets written to Arduino.
         self.write_count = 0
+        
+        # The time in seconds of the last write.
+        self.write_time = 0
         
         # Counter of each time the Arduino failed to acknowledge a packet.
         self.ack_failure_count = 0
@@ -257,6 +263,7 @@ class BaseArduinoNode():
         rospy.Service('~reset', Empty, self.reset)
 
         # Begin processing data to/from Arduino.
+        #self.connect(hard=True)#TODO:FIXME? breaks serial connection
         self.connect()
         
         self.print('Running.')
@@ -279,6 +286,7 @@ class BaseArduinoNode():
                     'STATUS: '
                     'wq={write_queue_size}, '
                     'wcnt={write_count}, '
+                    'wtm={write_time} '
                     'rcnt={read_count} '
                     'ping={last_ping} '
                     'pong={last_pong} '
@@ -287,6 +295,7 @@ class BaseArduinoNode():
                 ).format(**dict(
                     write_queue_size=self.outgoing_queue.qsize(),
                     write_count=self.write_count,
+                    write_time=self.write_time,
                     read_count=self.read_count,
                     last_ping=self.last_ping,
                     last_pong=self.last_pong,
@@ -453,7 +462,7 @@ class BaseArduinoNode():
         resp_cls = getattr(srvs, name + 'Response')
         return resp_cls()
     
-    def _write_packet(self, packet, delay=0.1):
+    def _write_packet(self, packet, delay=0.01):
         """
         Sends the main packet, prefixed with a checksum packet.
         
@@ -466,11 +475,16 @@ class BaseArduinoNode():
         to process it and extract the checksum.
         """
         
+        # Note, the time.sleep()s are necessary to give the Arduino enough time to respond.
+        # Otherwise, the Arduino appears to not respond.
+        t0 = time.time()
+        
         # Send checksum packet.
         s = '%s %s\n' % (c.ID_HASH, packet.hash)
         self.log('writing_hash_packet:', repr(s))
-        self._serial.write(s)
-        self._serial.flush()
+        with self._serial_lock:
+            self._serial.write(s)
+            self._serial.flush()
         time.sleep(delay)
         
         # Send main packet.
@@ -480,10 +494,15 @@ class BaseArduinoNode():
         else:
             s = '%s\n' % packet.id
         self.log('writing_main_packet:', repr(s))
-        self._serial.write(s)
-        self._serial.flush()
+        with self._serial_lock:
+            self._serial.write(s)
+            self._serial.flush()
         time.sleep(delay)
+        
+        td = time.time() - t0
+        
         self.write_count += 1
+        self.write_time = td
         
     def _write_data_to_arduino(self):
         """
@@ -501,7 +520,7 @@ class BaseArduinoNode():
                 packet = self.outgoing_queue.get()
                 
                 for attempt in xrange(2):
-                    self.log('Sending: %s, attempt %i' % (packet, attempt))
+                    self.print('Sending: %s, attempt %i' % (packet, attempt))
 
                     sent_time = time.time()
                     self._write_packet(packet)
@@ -538,7 +557,8 @@ class BaseArduinoNode():
         """
         Reads a raw line of data from the Arduino.
         """
-        data = (self._serial.readline() or '').strip()
+        with self._serial_lock:
+            data = (self._serial.readline() or '').strip()
         
         if data:
             
@@ -599,7 +619,11 @@ class BaseArduinoNode():
             self.log('Received:', packet)
             
             # Process packet.
-            self._arduino_to_ros_handler(packet)
+            try:
+                self._arduino_to_ros_handler(packet)
+            except Exception as e:
+                self.print('Error sending packet to ros.')
+                self.print(traceback.format_exc())
             
         self.print('Read thread exited.')
             
@@ -634,7 +658,7 @@ class BaseArduinoNode():
                 self.log('Invalid identity:', ret)
         return False
 
-    def connect(self):
+    def connect(self, check_identity=True, hard=False):
         """
         Starts the thread that establishes serial connection and begins communication.
         """
@@ -650,9 +674,20 @@ class BaseArduinoNode():
             attrs = termios.tcgetattr(f)
             attrs[2] = attrs[2] & ~termios.HUPCL
             termios.tcsetattr(f, termios.TCSAFLUSH, attrs)
+        
+        # Forcibly cause Arduino to reset.
+        if hard:
+            self.print('Resetting Arduino on port %s...' % self.port)
+            with serial.Serial(self.port) as arduino:
+                arduino.setDTR(False)
+                time.sleep(3)
+                arduino.flushInput()
+                arduino.setDTR(True)
+                time.sleep(10)
+            self.print('Arduino reset.')
     
         # Instantiate serial interface.
-        self.print('Opening serial connection...')
+        self.print('Opening serial connection on port %s...' % self.port)
         self._serial = serial.Serial(
             port=self.port,
             baudrate=self.speed,
@@ -661,9 +696,12 @@ class BaseArduinoNode():
             stopbits=serial.STOPBITS_ONE,
             bytesize=serial.EIGHTBITS,
             dsrdtr=False,
+            write_timeout=5,
         )
         self.connected = True
-        assert self.confirm_identity(), 'Device identity could not be confirmed.'
+        
+        if check_identity:
+            assert self.confirm_identity(), 'Device identity could not be confirmed.'
 
         self.print('Starting read thread...')
         self._read_thread = threading.Thread(target=self._read_data_from_arduino)
@@ -687,19 +725,20 @@ class BaseArduinoNode():
         try:
             if self._read_thread is not None:
                 self.print('Stopping read thread...')
-                self._read_thread.join(5)
+                self._read_thread.join(15)
                 self._read_thread = None
             if self._write_thread is not None:
                 self.print('Stopping write thread...')
-                self._write_thread.join(5)
+                self._write_thread.join(15)
                 self._write_thread = None
         except RuntimeError as e:
             self.print('Error when attempting to disconnect: %s' % e)
         
         # Delete serial connection.
         self.print('Closing serial connection...')
-        self._serial.close()
-        self._serial = None
+        with self._serial_lock:
+            self._serial.close()
+            self._serial = None
         self.print('Deleting garbage...')
         gc.collect()
         self.print('Disconnected.')
@@ -738,18 +777,14 @@ class BaseArduinoNode():
             formats_out.update(c.TORSO_FORMATS_IN)
         return formats_out
 
-    def reset(self, req=None):
+    def reset(self, req=None, hard=False):
         """
-        Triggers the Arduino to reset as though we pushed its reset button.
+        Resets the serial connection by disconnecting and reconnecting.
+        
+        If hard=True, also causes the Arduinio to reset, as though its reset button was pressed.
         """
         self.disconnect()
-        with serial.Serial(self.port) as arduino:
-            arduino.setDTR(False)
-            time.sleep(1)
-            arduino.flushInput()
-            arduino.setDTR(True)
-        time.sleep(1)
-        self.connect()
+        self.connect(check_identity=False, hard=hard)
         return EmptyResponse()
  
     def shutdown(self):
@@ -762,7 +797,7 @@ class BaseArduinoNode():
         self.outgoing_queue.put(Packet(c.ID_ALL_STOP))
         t0 = time.time()
         while not self.outgoing_queue.empty():
-            time.sleep(0.1)
+            time.sleep(1)
             self.log('Waiting for write queue to clear...')
             if time.time() - t0 > 5:
                 break
