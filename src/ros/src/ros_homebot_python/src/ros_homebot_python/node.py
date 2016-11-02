@@ -5,7 +5,7 @@ import os
 import re
 import sys
 import time
-import datetime
+from datetime import datetime
 import threading
 import traceback
 import gc
@@ -161,6 +161,11 @@ class BaseArduinoNode():
         
         self.log('verbose:', self.verbose)
         
+        self.reset_log = open(os.path.expanduser(
+            '~/.ros/log/latest/%s_reset.log' % self.name.lower()), 'a')
+        
+        self._last_reset = 0
+        
         self.limiter = utils.Limiter(period=1)
         
         # If true, indicates that all motor processes should halt.
@@ -290,6 +295,7 @@ class BaseArduinoNode():
                     'rcnt={read_count} '
                     'ping={last_ping} '
                     'pong={last_pong} '
+                    'lpt={last_pong_timeout} '
                     'ackfails={ack_failure_count} '
                     '{pcounts} '
                 ).format(**dict(
@@ -299,11 +305,27 @@ class BaseArduinoNode():
                     read_count=self.read_count,
                     last_ping=self.last_ping,
                     last_pong=self.last_pong,
+                    last_pong_timeout=self.last_pong_timeout,
                     ack_failure_count=self.ack_failure_count,
                     pcounts=pcounts,
                 )))
             
+            # Occassionally, the serial port becomes unresponsive.
+            # This mainly happens on the torso link, possibly due to the slip ring
+            # causing interference.
+            # The Arduino is still running and sending data, but we can't receive it.
+            # When this happens, we need to reset the serial link.
+            if (self.last_pong and self.last_pong_timeout > 5
+            and (time.time() - self._last_reset > 10)):
+                print('[%s] reset' % datetime.now(), file=self.reset_log)
+                self.reset_log.flush()
+                self.reset()
+            
         self.print('Main thread terminated.')
+    
+    @property
+    def last_pong_timeout(self):
+        return time.time() - self.last_pong
     
     def _on_packet_pong(self, packet):
         """
@@ -596,12 +618,13 @@ class BaseArduinoNode():
                 self._acks[packet.id] = time.time()
     
             # Record pong so we know Arduino is still alive.
-            if packet.id == c.ID_PONG:
-                self._last_pong = time.time()
+#             if packet.id == c.ID_PONG:
+#                 self.last_pong = time.time()
             
             self.read_count += 1
             
-            self.packet_counts[packet.non_get_id] += 2
+            if packet.non_get_id in c.ALL_IDS:
+                self.packet_counts[packet.non_get_id] += 2
             return packet
     
     def _read_data_from_arduino(self):
@@ -783,6 +806,7 @@ class BaseArduinoNode():
         
         If hard=True, also causes the Arduinio to reset, as though its reset button was pressed.
         """
+        self._last_reset = time.time()
         self.disconnect()
         self.connect(check_identity=False, hard=hard)
         return EmptyResponse()
