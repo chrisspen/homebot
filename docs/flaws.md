@@ -7,7 +7,9 @@ This is a list of known design flaws.
 
     If the battery pack is left connected while the robot is connected to external power, the LinkMan 2S-3S Lipo Balance Charger trickle charges the lipo until dangerously overcharged. Testing found that the 7.4V battery was overcharged to 8.9V, causing the battery to swell.
     
-    Future designs should modify the recharge board to include a transistor that allows disconnecting the charger from the battery once the voltage reaches a safe storage voltage of 7.4V. 
+    Future designs should modify the recharge board to include a transistor that allows disconnecting the charger from the battery once the voltage reaches a safe storage voltage of 7.4V.
+    
+    This is really caused by the larger problem of our use of LiPo batteries. We're essentially trying to use the LiPo like an uninterruptible power supply, which means we try to keep the battery fully charged at all times. However, unlike Lead Acid batteries, used in most UPSes, which like to be kept fully charge, LiPo batteries tend to deterioate if kept at their full voltage for a few days.
     
     Workaround: When the robot is connected to external power, the battery should be charged to a safe storage charge of 7.4V and then removed.
     

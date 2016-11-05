@@ -1,4 +1,5 @@
-Protection Circuit Module (PCB) for 7.4V Li-PO & Li-ion 18650 / 18500 Battery Packs (11A Limit) 
+Protection Circuit Module (PCB) for 7.4V Li-PO & Li-ion 18650 / 18500 Battery Packs (11A Limit)
+=============================================================================================== 
 
 http://www.amazon.com/Protection-Circuit-Module-Li-ion-Battery/dp/B00N48RCS8
 
@@ -30,8 +31,6 @@ Specifications:
     Dimensions: 38 x 8 x 3.5 mm
 
 I thought this board was DOA because I wired it up to a 18650 cell holder, popped in a couple of fully charged cells, and got no output from it. It somehow occurred to me to apply a charge voltage to the output of the pack (P- and P+) and voila the output latched on. So if this board detects an over-discharged cell, it will latch off until a charger is connected to the pack. This is OK if you want to solder it into your pack, but for swapping in cells, watch out. I'm working around this by installing a momentary switch between B- and P-. Shorting these will create the cell voltage at the P+, P- terminals and will latch the circuit on.
-
-As you may have guessed, the B- terminal goes to cell 1 -, B1 goes to cell 1 + / cell 2 -, and B+ goes to cell 2 +. So B- = 0.0v, B1 = 3.7v, B+ = 7.4v. P- is pack out - (0v) and P+ is pack out + (7.4v). The pad under P- has no connection and the T pad has no connection.
 
 As far as I can tell, the controlling IC is a Ricoh R5460N208AF. It does not balance cells during charging, it shuts off all the current if the voltage of either cell exceeds a limit (4.25). It also shuts off the current if the voltage of either cell drops below the limit (2.40). With a set of really unbalanced cells, I think you can quickly get into trouble.
 
