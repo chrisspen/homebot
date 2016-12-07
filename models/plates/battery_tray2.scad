@@ -330,6 +330,12 @@ module make_battery_nub(){
     }//end diff
 }
 
+module make_SBS_LI_74(){
+    color("blue")
+    cube([45, 90, 5], center=true);
+}
+
+if(0)
 translate([0,0,5]){
     /*
     color([1,1,0,0.5])
@@ -388,3 +394,17 @@ color("purple")
 translate([0,0,0])
 import("../printable/horizontal_mount_20150816.stl");
 */
+
+import("../printable/battery_tray2_cartridge_bottom_20160522.stl");
+//import("../printable/battery_tray2_cartridge_top_20160522.stl");
+
+if(0)
+translate([10,18,20])
+make_SBS_LI_74();
+
+//translate([31,30,0])rotate([0,0,90])
+color("red")
+for(i=[0:2])
+translate([0,52 - 21*i,15])
+rotate([90,0,90])
+make_battery_18650();

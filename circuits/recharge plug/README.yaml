@@ -43,6 +43,26 @@ description: |-
         Batt = 22 awg
         Sensors = 24 awg
 
+    Maximum external input voltage
+    ------------------------------
+
+    The main limit on the input voltage is the voltage divider on the Arduino inputs used to measure connection of battery voltage.
+    The Arduino's ADC pin only supports at most 5V.
+    
+    Vout_max = Vin_max * R2/(R1 + R2) = 5 = Vin_max * 1./(2 + 1) = Vin * 1/3 => Vin_max = 5 * 3 = 15V
+    
+    Maximum external input current
+    ------------------------------
+    
+    Testing showed up to 5A could be briefly handled, but caused the charging dock and connection magnets to become dangerously hot.
+    
+    Recommend input current to not exceed 2.5A. Since the total system current load when idle is a little less than 1A, that should leave another 1.5A to charge the battery at a reasonably fast and safe rate. A minimum 1A supply could be used, but the charging rate would likely be very slow.
+    
+    Maximum battery voltage
+    -----------------------
+    
+    Vout_max = Vin_max * R2/(R1 + R2) = 5 = Vin_max * 1./(1 + 1) = Vin * 1/2 => Vin_max = 5 * 2 = 10V
+
 status: production
 parts:
     recharge_plug_female_12v_v2.fzz: The primary circuit.

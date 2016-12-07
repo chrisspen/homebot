@@ -18,6 +18,10 @@ module make_powerboost_1000(){
     cube([23,45,10], center=true);
 }
 
+module make_battery_18650(tab=0){
+    cylinder(d=18.5, h=65+(tab?1:0), center=true);
+}
+
 module make_battery_tray_1(){
     color("red"){
     
@@ -58,4 +62,5 @@ module make_battery_dc1298A(){
 
 //make_battery_patriot();
 //make_battery_tenergy_4400();
-make_powerboost_1000();
+//make_powerboost_1000();
+make_battery_18650();
