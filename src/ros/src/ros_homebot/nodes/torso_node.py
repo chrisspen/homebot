@@ -39,9 +39,6 @@ class WheelTracker(object):
         self._PreviousLeftEncoderCounts = None
         self._PreviousRightEncoderCounts = None
         
-#         self.current_time_encoder = None
-#         self.last_time_encoder = None
-        
         self.x = 0.
         self.y = 0.
         self.th = 0.
@@ -58,11 +55,12 @@ class WheelTracker(object):
         #self.odom_broadcaster = tf.TransformBroadcaster()
         self.odom_broadcaster = tf2_ros.TransformBroadcaster()
         
-        self.rate = rospy.Rate(1.0)
-        
         self.last_time = None
         
     def update_left(self, count):
+        """
+        Called when the left encoder generates a tick.
+        """
         if self._PreviousLeftEncoderCounts is not None:
             self.deltaLeft = count - self._PreviousLeftEncoderCounts
             self.vx = self.deltaLeft * DistancePerCount
@@ -70,6 +68,9 @@ class WheelTracker(object):
         self._PreviousLeftEncoderCounts = count
         
     def update_right(self, count):
+        """
+        Called when the right encoder generates a tick.
+        """
         if self._PreviousRightEncoderCounts is not None:
             self.deltaRight = count - self._PreviousRightEncoderCounts
             self.vy = self.deltaRight * DistancePerCount
