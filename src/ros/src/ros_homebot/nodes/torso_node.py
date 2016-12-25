@@ -3,14 +3,16 @@ import time
 import threading
 from math import pi, sin, cos
 
+#import numpy as np
 import rospy
 import tf
 import tf2_ros
 #http://docs.ros.org/api/sensor_msgs/html/msg/Imu.html
 from sensor_msgs.msg import Imu
 from std_msgs.msg import Header
+from std_srvs.srv import Empty, EmptyResponse
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import TransformStamped, Quaternion
+from geometry_msgs.msg import TransformStamped, Quaternion, Point
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
 
 from ros_homebot_python import constants as c
@@ -25,57 +27,89 @@ STALE = DiagnosticStatus.STALE
 # Driver wheel radius = 14 mm
 # Tread length = 228 mm
 #(revolution_of_shaft/counts) * (wheel_diameter)/(revolution_of_shaft)
-#(revolution_of_shaft/464.6 counts) * (2*pi*14 mm)/(1 revolution_of_shaft)
-#DistancePerCount = (3.14159265 * 0.1524) / 64000
+#(revolution_of_shaft/464.6 counts) * (2*pi*14 mm)/(1 revolution_of_shaft) * (1m/1000mm)
+#DistancePerCount = (3.14159265 * 0.1524) / 64000 * (1/1000.)
 #TODO:the 464.6 counts may mean for quadrature, but we're only using a single channel
-DistancePerCount = (3.141592653589793 * 28) / 464.6
+# Note, ROS distance assumes meters.
+DistancePerCount = (3.141592653589793 * 28) / 464.6 / 1000.
 
 # Based on https://goo.gl/mY0th1
 # http://wiki.ros.org/tf2/Tutorials/Writing%20a%20tf2%20broadcaster%20%28Python%29
+# http://wiki.ros.org/navigation/Tutorials/RobotSetup/Odom
+# http://answers.ros.org/question/79851/python-odometry/
 class WheelTracker(object):
+  
+    frame_id = '/odom'
     
+    child_frame_id = '/base_link'
+    
+    # Covariance
+    #P = np.mat(np.diag([0.0]*3))
+  
     def __init__(self):
+        
+        self._lock = threading.RLock()
+        
+        self._reset_odometry()
+        
+        self.odom_pub = rospy.Publisher('/odom', Odometry, queue_size=10)
+        
+        # http://wiki.ros.org/tf/Tutorials/Writing%20a%20tf%20broadcaster%20%28Python%29
+        self.tf_br = tf.TransformBroadcaster()
+        #self.tf_br = tf2_ros.TransformBroadcaster()
+        
+        rospy.Service('~reset_odometry', Empty, self.reset_odometry)
+    
+    def _reset_odometry(self):
         
         self._PreviousLeftEncoderCounts = None
         self._PreviousRightEncoderCounts = None
         
         self.x = 0.
         self.y = 0.
+        self.z = 0.
         self.th = 0.
         
         self.vx = 0.
         self.vy = 0.
+        self.vz = 0.
         self.vth = 0.
         
         self.deltaLeft = 0
         self.deltaRight = 0
         
-        self.odom_pub = rospy.Publisher('odom', Odometry, queue_size=10)
-        
-        #self.odom_broadcaster = tf.TransformBroadcaster()
-        self.odom_broadcaster = tf2_ros.TransformBroadcaster()
-        
         self.last_time = None
-        
+    
+    def reset_odometry(self, msg=None):
+        with self._lock:
+            self._reset_odometry()
+            self.update()
+            time.sleep(0.10)
+            self.update()
+            
+        return EmptyResponse()
+    
     def update_left(self, count):
         """
         Called when the left encoder generates a tick.
         """
-        if self._PreviousLeftEncoderCounts is not None:
-            self.deltaLeft = count - self._PreviousLeftEncoderCounts
-            self.vx = self.deltaLeft * DistancePerCount
-            self.update()
-        self._PreviousLeftEncoderCounts = count
+        with self._lock:
+            if self._PreviousLeftEncoderCounts is not None:
+                self.deltaLeft = count - self._PreviousLeftEncoderCounts
+                self.vx = self.deltaLeft * DistancePerCount
+                self.update()
+            self._PreviousLeftEncoderCounts = count
         
     def update_right(self, count):
         """
         Called when the right encoder generates a tick.
         """
-        if self._PreviousRightEncoderCounts is not None:
-            self.deltaRight = count - self._PreviousRightEncoderCounts
-            self.vy = self.deltaRight * DistancePerCount
-            self.update()
-        self._PreviousRightEncoderCounts = count
+        with self._lock:
+            if self._PreviousRightEncoderCounts is not None:
+                self.deltaRight = count - self._PreviousRightEncoderCounts
+                self.vy = self.deltaRight * DistancePerCount
+                self.update()
+            self._PreviousRightEncoderCounts = count
         
     def update(self):
         
@@ -87,7 +121,6 @@ class WheelTracker(object):
             delta_x = (self.vx * cos(self.th) - self.vy * sin(self.th)) * dt
             delta_y = (self.vx * sin(self.th) + self.vy * cos(self.th)) * dt
             delta_th = self.vth * dt
-        
             self.x += delta_x
             self.y += delta_y
             self.th += delta_th
@@ -96,40 +129,59 @@ class WheelTracker(object):
             #geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(th);
             odom_quat = Quaternion(*tf.transformations.quaternion_from_euler(0, 0, self.th))
         
-            # first, we'll publish the transform over tf
-            #geometry_msgs::TransformStamped odom_trans;
-            odom_trans = TransformStamped()
-            odom_trans.header.stamp = self.current_time
-            odom_trans.header.frame_id = "odom"
-            odom_trans.child_frame_id = "base_link"
-            odom_trans.transform.translation.x = self.x
-            odom_trans.transform.translation.y = self.y
-            odom_trans.transform.translation.z = 0.0
-            odom_trans.transform.rotation = odom_quat
-        
-            # send the transform
-            self.odom_broadcaster.sendTransform(odom_trans)
-        
             # next, we'll publish the odometry message over ROS
             #nav_msgs::Odometry odom
-            odom = Odometry()
-            odom.header.stamp = self.current_time
-            odom.header.frame_id = "odom"
+            msg = Odometry()
+            msg.header.stamp = self.current_time
+            msg.header.frame_id = self.frame_id
+            msg.child_frame_id = self.child_frame_id
         
             # set the position
-            odom.pose.pose.position.x = self.x
-            odom.pose.pose.position.y = self.y
-            odom.pose.pose.position.z = 0.0
-            odom.pose.pose.orientation = odom_quat
-        
+            msg.pose.pose.position = Point(self.x, self.y, self.z)
+            msg.pose.pose.orientation = odom_quat
+            
+            # position covariance
+#             p_cov[0:2,0:2] = self.P[0:2,0:2]
+#             # orientation covariance for Yaw
+#             # x and Yaw
+#             p_cov[5,0] = p_cov[0,5] = self.P[2,0]
+#             # y and Yaw
+#             p_cov[5,1] = p_cov[1,5] = self.P[2,1]
+#             # Yaw and Yaw
+#             p_cov[5,5] = self.P[2,2]
+#             msg.pose.covariance = tuple(p_cov.ravel().tolist())
+
             # set the velocity
-            odom.child_frame_id = "base_link"
-            odom.twist.twist.linear.x = self.vx
-            odom.twist.twist.linear.y = self.vy
-            odom.twist.twist.angular.z = self.vth
+            msg.twist.twist.linear.x = self.vx
+            msg.twist.twist.linear.y = self.vy
+            msg.twist.twist.angular.z = self.vth
         
-            # publish the message
-            self.odom_pub.publish(odom)
+            # publish the odometry message
+            self.odom_pub.publish(msg)
+
+            pos = (msg.pose.pose.position.x,
+                   msg.pose.pose.position.y,
+                   msg.pose.pose.position.z)
+            
+            ori = (msg.pose.pose.orientation.x,
+                   msg.pose.pose.orientation.y,
+                   msg.pose.pose.orientation.z,
+                   msg.pose.pose.orientation.w)
+
+            # first, we'll publish the transform over tf
+            #geometry_msgs::TransformStamped odom_trans;
+#             odom_trans = TransformStamped()
+#             odom_trans.header.stamp = self.current_time
+#             odom_trans.header.frame_id = self.frame_id
+#             odom_trans.child_frame_id = self.child_frame_id
+#             odom_trans.transform.translation.x = self.x
+#             odom_trans.transform.translation.y = self.y
+#             odom_trans.transform.translation.z = self.z
+#             odom_trans.transform.rotation = odom_quat
+        
+            # send the transform
+#             self.tf_br.sendTransform(odom_trans) # for tf2
+            self.tf_br.sendTransform(pos, ori, msg.header.stamp, msg.child_frame_id, msg.header.frame_id)
     
         self.last_time = self.current_time
         
