@@ -765,7 +765,8 @@ class BaseArduinoNode():
             parity=serial.PARITY_NONE,
             stopbits=serial.STOPBITS_ONE,
             bytesize=serial.EIGHTBITS,
-            dsrdtr=False,
+            #rtscts=False,#TODO:set to True?
+            dsrdtr=True,#TODO:set to True to fix odd write timeout error?
             #write_timeout=10,#TODO:reenable to prevent infinite hangs if arduino locks up?
         )
         self.connected = True
