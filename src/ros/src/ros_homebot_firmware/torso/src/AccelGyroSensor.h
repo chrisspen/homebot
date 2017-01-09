@@ -24,7 +24,7 @@
 
 /* Set the delay between fresh samples */
 //#define BNO055_SAMPLERATE_DELAY_MS 100
-#define BNO055_SAMPLERATE_DELAY_MS 200
+#define BNO055_SAMPLERATE_DELAY_MS 1000
 
 class AccelGyroSensor: public Sensor{
 
@@ -60,10 +60,10 @@ class AccelGyroSensor: public Sensor{
         ChangeTracker<double> my = ChangeTracker<double>(0, 0, BNO055_SAMPLERATE_DELAY_MS);
         ChangeTracker<double> mz = ChangeTracker<double>(0, 0, BNO055_SAMPLERATE_DELAY_MS);
 
-        ChangeTracker<uint8_t> sys_calib = ChangeTracker<uint8_t>(0, 0, 1000);
-        ChangeTracker<uint8_t> gyr_calib = ChangeTracker<uint8_t>(0, 0, 1000);
-        ChangeTracker<uint8_t> acc_calib = ChangeTracker<uint8_t>(0, 0, 1000);
-        ChangeTracker<uint8_t> mag_calib = ChangeTracker<uint8_t>(0, 0, 1000);
+        ChangeTracker<uint8_t> sys_calib = ChangeTracker<uint8_t>(0, 0, BNO055_SAMPLERATE_DELAY_MS);
+        ChangeTracker<uint8_t> gyr_calib = ChangeTracker<uint8_t>(0, 0, BNO055_SAMPLERATE_DELAY_MS);
+        ChangeTracker<uint8_t> acc_calib = ChangeTracker<uint8_t>(0, 0, BNO055_SAMPLERATE_DELAY_MS);
+        ChangeTracker<uint8_t> mag_calib = ChangeTracker<uint8_t>(0, 0, BNO055_SAMPLERATE_DELAY_MS);
 
         AccelGyroSensor(){
         	// Note default address is BNO055_ADDRESS_A=0x28

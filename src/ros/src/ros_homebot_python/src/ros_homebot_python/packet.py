@@ -21,7 +21,18 @@ class Packet(object):
         if check_id:
             assert self.id in c.ALL_IDS, 'Invalid ID: %s' % self.id
         self.data = str(data)
+    
+    def __hash__(self):
+        return self.hash
+    
+    def __cmp__(self, other):
+        if not isinstance(other, Packet):
+            return NotImplementedError
+        return cmp(hash(self), hash(other))
         
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+    
     @property
     def hash(self):
         return hash_str(self.id + self.data)

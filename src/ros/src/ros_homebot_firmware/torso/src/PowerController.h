@@ -110,7 +110,7 @@ class PowerController: public Sensor{
             }else if(_power_state == POWERCONTROLLER_WAITING){
             
                 if(is_pressed){
-                    // While button is held down for less than 5 seconds...
+                    // When button is held down for less than 5 seconds...
                     if((millis() - _power_button_pressed_timestamp) < 5000){
                         // Toggle LED.
                         status_light.set((bool)(((millis() - _power_button_pressed_timestamp)/500) % 2));

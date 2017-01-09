@@ -228,6 +228,8 @@ class BaseArduinoNode():
         # Serial IO queues.
         queue_size = kwargs.pop('queue_size', 100)
         self.outgoing_queue = Queue(maxsize=queue_size)
+        self.ack_queue = {} # {packet: ack_success}
+        self.ack_queue_lock = threading.RLock()
         self.serial_out_lock = threading.RLock()
         self.serial_in_lock = threading.RLock()
         
@@ -289,6 +291,7 @@ class BaseArduinoNode():
                 
                 self.print((
                     'STATUS: '
+                    '{timestamp} '
                     'wq={write_queue_size}, '
                     'wcnt={write_count}, '
                     'wtm={write_time} '
@@ -299,6 +302,7 @@ class BaseArduinoNode():
                     'ackfails={ack_failure_count} '
                     '{pcounts} '
                 ).format(**dict(
+                    timestamp=datetime.now(),
                     write_queue_size=self.outgoing_queue.qsize(),
                     write_count=self.write_count,
                     write_time=self.write_time,
@@ -311,20 +315,23 @@ class BaseArduinoNode():
                 )))
             
             # Occassionally, the serial port becomes unresponsive.
-            # This mainly happens on the torso link, possibly due to the slip ring
-            # causing interference.
+            # Unsure what the cause is.
+            # Happens primarily with an Arduino Uno.
             # The Arduino is still running and sending data, but we can't receive it.
             # When this happens, we need to reset the serial link.
-            if (self.last_pong and self.last_pong_timeout > 5
-            and (time.time() - self._last_reset > 10)):
-                print('[%s] reset' % datetime.now(), file=self.reset_log)
-                self.reset_log.flush()
-                self.reset()
+#             if (self.last_pong and self.last_pong_timeout > 10
+#             and (time.time() - self._last_reset > 10)):
+#                 print('[%s] reset' % datetime.now(), file=self.reset_log)
+#                 self.reset_log.flush()
+#                 self.reset()
             
         self.print('Main thread terminated.')
     
     @property
     def last_pong_timeout(self):
+        """
+        Calculates the number of seconds since we last received a pong response from the Arduino.
+        """
         return time.time() - self.last_pong
     
     def _on_packet_pong(self, packet):
@@ -465,9 +472,11 @@ class BaseArduinoNode():
         """
         Handles ROS service requests and forwards them to the Arduino.
         """
+        t0 = time.time()
         self.log('Received service request: %s %s' % (req, packet_id))
         
         # Convert ROS message to Arduino packet.
+        t1 = time.time()
         input_formats = self.service_formats
         parameters = input_formats[packet_id]
         data = []
@@ -475,16 +484,37 @@ class BaseArduinoNode():
             value = getattr(req, arg_name)
             data.append(str(value))
         packet = Packet(id=packet_id, data=' '.join(data))
+        t2 = time.time()
+        print('t_packet:', t2 - t1)
         
         # Queue for sending.
         self.outgoing_queue.put(packet)
+        t3 = time.time()
+        
+        # If this packet requires acknowledgement, then block until received or timed out.
+        ack_success = True
+        if packet.id in c.ACK_IDS:
+            self.print('waiting for ack...')
+            while 1:
+                with self.ack_queue_lock:
+                    if packet in self.ack_queue:
+                        ack_success = self.ack_queue.pop(packet)
+                        self.print('ack received:', ack_success)
+                        break
+                time.sleep(0.01)
+        t4 = time.time()
+        print('t_ack:', time.time() - t3)
+        
+        print('t_total:', time.time() - t0)
         
         # Return service response.
+        if not ack_success:
+            raise Exception('ack failed')
         name = type(req).__name__.replace('Request', '')
         resp_cls = getattr(srvs, name + 'Response')
         return resp_cls()
     
-    def _write_packet(self, packet, delay=0.01):
+    def _write_packet(self, packet, delay=0.01, max_retries=5):
         """
         Sends the main packet, prefixed with a checksum packet.
         
@@ -505,8 +535,13 @@ class BaseArduinoNode():
         s = '%s %s\n' % (c.ID_HASH, packet.hash)
         self.log('writing_hash_packet:', repr(s))
         with self._serial_lock:
-            self._serial.write(s)
-            self._serial.flush()
+            for retry in range(max_retries):
+                try:
+                    self._serial.write(s)
+                    self._serial.flush()
+                    break
+                except serial.SerialTimeoutException as e:
+                    self.print('Error writing hash:', e)
         time.sleep(delay)
         
         # Send main packet.
@@ -517,8 +552,13 @@ class BaseArduinoNode():
             s = '%s\n' % packet.id
         self.log('writing_main_packet:', repr(s))
         with self._serial_lock:
-            self._serial.write(s)
-            self._serial.flush()
+            for retry in range(max_retries):
+                try:
+                    self._serial.write(s)
+                    self._serial.flush()
+                    break
+                except serial.SerialTimeoutException as e:
+                    self.print('Error writing packet:', e)
         time.sleep(delay)
         
         td = time.time() - t0
@@ -526,7 +566,7 @@ class BaseArduinoNode():
         self.write_count += 1
         self.write_time = td
         
-    def _write_data_to_arduino(self):
+    def _write_data_to_arduino(self, retries=5):
         """
         Continually writes data from outgoing queue to the Arduino.
         """
@@ -541,17 +581,20 @@ class BaseArduinoNode():
             if not self.outgoing_queue.empty():
                 packet = self.outgoing_queue.get()
                 
-                for attempt in xrange(2):
+                ack_success = False
+                for attempt in xrange(retries):
                     self.print('Sending: %s, attempt %i' % (packet, attempt))
 
                     sent_time = time.time()
                     self._write_packet(packet)
                     
                     if not self.running:
+                        ack_success = True
                         break
                     elif packet.id in c.ACK_IDS:
                         # Wait for acknowledgement.
                         if self._wait_for_ack(packet.id, sent_time):
+                            ack_success = True
                             break
                         else:
                             self.print(
@@ -561,6 +604,10 @@ class BaseArduinoNode():
                     else:
                         # Don't wait for acknowledgement.
                         break
+                        
+                if packet.id in c.ACK_IDS:
+                    with self.ack_queue_lock:
+                        self.ack_queue[packet] = ack_success
                         
         self.print('Write thread exited.')
 
@@ -636,7 +683,7 @@ class BaseArduinoNode():
             # Read packet from Arduino.
             packet = self._read_packet()
             if not packet:
-                time.sleep(0.01)
+                time.sleep(0.001)
                 continue
             #self.log(u'Received: %s' % packet).encode('utf-8'))
             self.log('Received:', packet)
@@ -714,12 +761,12 @@ class BaseArduinoNode():
         self._serial = serial.Serial(
             port=self.port,
             baudrate=self.speed,
-            timeout=.1,
+            timeout=1,
             parity=serial.PARITY_NONE,
             stopbits=serial.STOPBITS_ONE,
             bytesize=serial.EIGHTBITS,
             dsrdtr=False,
-            write_timeout=5,
+            #write_timeout=10,#TODO:reenable to prevent infinite hangs if arduino locks up?
         )
         self.connected = True
         
@@ -806,6 +853,7 @@ class BaseArduinoNode():
         
         If hard=True, also causes the Arduinio to reset, as though its reset button was pressed.
         """
+        self.print('Resetting connection...')
         self._last_reset = time.time()
         self.disconnect()
         self.connect(check_identity=False, hard=hard)

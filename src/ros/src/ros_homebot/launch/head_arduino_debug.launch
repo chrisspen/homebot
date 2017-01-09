@@ -1,5 +1,5 @@
 <launch>
-   <node name="head_arduino" pkg="ros_homebot" type="head_node.py" output="screen">
+   <node name="head_arduino" pkg="ros_homebot" type="head_node.py" output="screen" launch-prefix="nice -n 19 ionice -n0">
       <param name="verbose" type="bool" value="1" />
    </node>
 </launch>

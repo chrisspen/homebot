@@ -1,16 +1,15 @@
 #! /usr/bin/env python
 import time
-import random
 from threading import RLock
 
-import roslib
-#roslib.load_manifest('ros_homebot')
+# import roslib
+# roslib.load_manifest('ros_homebot')
 import rospy
 import actionlib
 import std_srvs.srv
 
-import ros_homebot.msg
-import ros_homebot_msgs.srv
+# import ros_homebot.msg
+# import ros_homebot_msgs.srv
 from ros_homebot_python import constants as c
 from ros_homebot_python.node import (
     subscribe_to_topic,

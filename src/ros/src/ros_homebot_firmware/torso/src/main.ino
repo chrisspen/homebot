@@ -39,7 +39,7 @@ UltrasonicSensor sonic[3] = {
 	UltrasonicSensor(SONIC_R_PIN, 3)
 };
 
-ArduinoTemperatureSensor arduino_temperature_sensor = ArduinoTemperatureSensor();
+//ArduinoTemperatureSensor arduino_temperature_sensor = ArduinoTemperatureSensor();
 
 AccelGyroSensor ag_sensor = AccelGyroSensor();
 
@@ -47,7 +47,7 @@ AccelGyroSensor ag_sensor = AccelGyroSensor();
 
 MotionController motion_controller;
 
-SerialPort ser = SerialPort(38400); // must match ano.ini
+SerialPort ser = SerialPort(115200); // must match ano.ini
 
 PowerController power_controller = PowerController(POWER_OFF_PIN, ser);
 
@@ -265,7 +265,7 @@ void loop(){
     		}
     	}
     	
-    	arduino_temperature_sensor.send_pending(ser, force_sensors);
+    	//arduino_temperature_sensor.send_pending(ser, force_sensors);
     	power_controller.status_button.send_pending(ser, force_sensors);
     	power_controller.battery_voltage_sensor.send_pending(ser, force_sensors);
     	power_controller.external_power_sensor.send_pending(ser, force_sensors);
@@ -282,20 +282,6 @@ void loop(){
 				ser.write(motion_controller.get_b_encoder_packet());
 				ser.write(motion_controller.get_eflag_packet());
 			}
-//			Serial.println(String("is_connected:")+String(motion_controller.is_connected()));
-//			Serial.println(String("checks:")+String(motion_controller.checks));
-//			Serial.flush();
-//			Serial.println(String("aspeed:")+String(motion_controller.aspeed));
-//			Serial.println(String("bspeed:")+String(motion_controller.bspeed));
-//			Serial.flush();
-//			Serial.println(String("acount:")+String(motion_controller.acount));
-//			Serial.println(String("bcount:")+String(motion_controller.bcount));
-//			Serial.flush();
-			
-//    		last_output = millis();
-//		}
-		//ser.write(motion_controller.get_a_encoder_packet());
-		//ser.write(motion_controller.get_b_encoder_packet());
     }
     force_sensors = false;
     
@@ -317,7 +303,7 @@ void loop(){
     	bumper[i].update();
         edge[i].update();
     }
-    arduino_temperature_sensor.update();
+    //arduino_temperature_sensor.update();
     power_controller.update();
     motion_controller.update();
 	

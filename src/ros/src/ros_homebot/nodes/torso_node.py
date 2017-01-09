@@ -309,6 +309,6 @@ class TorsoNode(BaseArduinoNode):
             self.imu_pub.publish(imu_msg)
            
 if __name__ == '__main__':
-    speed = 38400
-    #speed = 115200
+    #speed = 38400
+    speed = 115200
     TorsoNode(speed=speed)

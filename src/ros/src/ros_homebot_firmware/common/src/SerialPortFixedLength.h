@@ -1,3 +1,7 @@
+/*
+Modified SerialPort.h, attempting to improve performance by using a fixed length character array instead of
+a String for serial data handling.
+*/
 #ifndef SerialPort_h
 #define SerialPort_h
 
@@ -14,6 +18,12 @@
 
 #define OK "OK"
 #define PONG "PONG"
+
+#define WAITING_FOR_ID 1
+#define WAITING_FOR_NL 2
+
+#define MAX_ID_LENGTH 10
+#define MAX_DATA_LENGTH 50
 
 class Packet{
 
@@ -94,7 +104,15 @@ class SerialPort{
     
         long _speed = 57600;
         
-        String _pending;
+        unsigned int mode = WAITING_FOR_ID;
+
+        char _id[MAX_ID_LENGTH];
+        unsigned int _id_length = 0;
+
+        char _data[MAX_DATA_LENGTH];
+        unsigned int _data_length = 0;
+
+        //String _pending;
         
         bool _enabled = false;
     
@@ -127,39 +145,54 @@ class SerialPort{
         
         Packet read(){
         
-            String id = String("");
-            String data = String("");
+            //String id = String("");
+            //String data = String("");
             int i = 0;
         
             if(_enabled){
                 while (Serial.available() > 0)
                 {
-                    char recieved = Serial.read();
-            
-                    // Process message when new line character is recieved
-                    if(recieved == '\n'){
-                        i = _pending.indexOf(' ');
-                        if(i >= 0){
-                            id = _pending.substring(0, i);
-                            id.trim();
-                            data = _pending.substring(i);
-                            data.trim();
-                        }else{
-                            id = _pending;
-                            id.trim();
-                        }
-                        _pending = ""; // Clear recieved buffer
-                    }else{
-                        _pending += recieved; 
+                    char received = Serial.read();
+                    if(mode == WAITING_FOR_ID){
+                    	if(_id_length+2 >= MAX_ID_LENGTH){
+                    		// Corrupt.
+                    		_id_length = 0;
+                    		_data_length = 0;
+                    		break;
+                    	}else if(received == ' '){
+                    		mode = WAITING_FOR_NL;
+                    	}else if(received == '\n'){
+                    		mode = WAITING_FOR_ID;
+                    		break;
+                    	}else{
+                    		_id[_id_length] = received;
+                    		_id_length += 1;
+                    	}
+                    }else if(mode == WAITING_FOR_NL){
+                    	if(_data_length+2 >= MAX_DATA_LENGTH){
+							// Corrupt.
+							_id_length = 0;
+							_data_length = 0;
+							break;
+                    	}else if(received == '\n'){
+                    		mode = WAITING_FOR_ID;
+                    		break;
+                    	}else{
+                    		_data[_data_length] = received;
+                    		_data_length += 1;
+                    	}
                     }
                 }
             }
+            
+            _id[_id_length] = '\0';
+            _data[_data_length] = '\0';
 
-            // Stops non-deterministic serial dropout?
-            Serial.end();
-            init();
+            Packet packet = Packet(String(_id), String(_data));
 
-            return Packet(id, data);
+            _id_length = 0;
+            _data_length = 0;
+            return packet;
         }
 
         void write(String data){
@@ -168,10 +201,6 @@ class SerialPort{
             if(_enabled && data.length()){
                 Serial.println(data);
                 Serial.flush();
-
-                // Stops non-deterministic serial dropout?
-                Serial.end();
-                init();
             }
         }
 
