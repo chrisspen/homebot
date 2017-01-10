@@ -157,6 +157,8 @@ class BaseArduinoNode():
         
         rospy.init_node('%s_arduino' % self.name.lower(), log_level=rospy.DEBUG)
         
+        self.start_dt = datetime.now()
+        
         self.verbose = int(rospy.get_param("~verbose", 0))
         
         self.log('verbose:', self.verbose)
@@ -203,9 +205,11 @@ class BaseArduinoNode():
         
         # The last time we sent a ping request.
         self.last_ping = 0
+        self.last_ping_dt = None
         
         # The time we last received a pong response.
         self.last_pong = 0
+        self.last_pong_dt = None
         
         # The time we last received data from the Arduino.
         self.last_read = 0
@@ -292,26 +296,29 @@ class BaseArduinoNode():
                 self.print((
                     'STATUS: '
                     '{timestamp} '
+                    'st={start_dt} '
                     'wq={write_queue_size}, '
                     'wcnt={write_count}, '
                     'wtm={write_time} '
                     'rcnt={read_count} '
                     'ping={last_ping} '
-                    'pong={last_pong} '
-                    'lpt={last_pong_timeout} '
+                    'pong={last_pong_dt} '
+                    #'lpt={last_pong_timeout} '
                     'ackfails={ack_failure_count} '
-                    '{pcounts} '
+                    #'{pcounts} '
                 ).format(**dict(
                     timestamp=datetime.now(),
+                    start_dt=self.start_dt,
                     write_queue_size=self.outgoing_queue.qsize(),
                     write_count=self.write_count,
                     write_time=self.write_time,
                     read_count=self.read_count,
                     last_ping=self.last_ping,
                     last_pong=self.last_pong,
+                    last_pong_dt=self.last_pong_dt,
                     last_pong_timeout=self.last_pong_timeout,
                     ack_failure_count=self.ack_failure_count,
-                    pcounts=pcounts,
+                    #pcounts=pcounts,
                 )))
             
             # Occassionally, the serial port becomes unresponsive.
@@ -347,6 +354,7 @@ class BaseArduinoNode():
             return
         
         self.last_pong = time.time()
+        self.last_pong_dt = datetime.now()
         total = packet_dict['total']
         #print('pong total:', total)
         
@@ -575,6 +583,7 @@ class BaseArduinoNode():
             # Check heartbeat.
             if self.last_ping+1 <= time.time():
                 self.last_ping = time.time()
+                self.last_ping_dt = datetime.now()
                 self.outgoing_queue.put(Packet(c.ID_PING))
             
             # Sending pending commands.
@@ -762,11 +771,9 @@ class BaseArduinoNode():
             port=self.port,
             baudrate=self.speed,
             timeout=1,
-            parity=serial.PARITY_NONE,
-            stopbits=serial.STOPBITS_ONE,
-            bytesize=serial.EIGHTBITS,
-            #rtscts=False,#TODO:set to True?
-            dsrdtr=True,#TODO:set to True to fix odd write timeout error?
+            #dsrdtr=True,#doesn't work
+            #rtscts=True,#doesn't work
+            xonxoff=True,
             #write_timeout=10,#TODO:reenable to prevent infinite hangs if arduino locks up?
         )
         self.connected = True
