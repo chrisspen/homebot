@@ -6,14 +6,14 @@ from math import pi, sin, cos
 #import numpy as np
 import rospy
 import tf
-import tf2_ros
+# import tf2_ros
 #http://docs.ros.org/api/sensor_msgs/html/msg/Imu.html
 from sensor_msgs.msg import Imu
 from std_msgs.msg import Header
 from std_srvs.srv import Empty, EmptyResponse
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import TransformStamped, Quaternion, Point
-from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
+from geometry_msgs.msg import Quaternion, Point
+from diagnostic_msgs.msg import DiagnosticStatus
 
 from ros_homebot_python import constants as c
 from ros_homebot_python.node import BaseArduinoNode

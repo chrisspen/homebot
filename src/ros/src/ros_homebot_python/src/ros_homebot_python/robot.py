@@ -1,6 +1,6 @@
 
-from ros_homebot_msgs import srv as srvs
-from ros_homebot_python import constants as c
+# from ros_homebot_msgs import srv as srvs
+# from ros_homebot_python import constants as c
 
 class Robot(object):
     """

@@ -1,6 +1,6 @@
 
-from django.contrib.auth.decorators import user_passes_test, login_required
-from django.shortcuts import get_object_or_404, render, redirect
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
 # from django_socketio import broadcast, broadcast_channel, NoSocket
 
 from ros_homebot_python import constants as c

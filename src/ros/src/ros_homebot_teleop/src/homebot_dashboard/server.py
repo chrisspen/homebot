@@ -1,5 +1,3 @@
-from optparse import make_option
-from re import match
 from thread import start_new_thread
 from time import sleep
 from os import getpid, kill, environ
@@ -7,8 +5,7 @@ from signal import SIGINT
 
 from django.conf import settings
 from django.core.handlers.wsgi import WSGIHandler
-from django.core.management.base import BaseCommand, CommandError
-from django.core.management.commands.runserver import naiveip_re
+# from django.core.management.commands.runserver import naiveip_re
 from django.utils import six
 from django.utils.autoreload import code_changed, restart_with_reloader
 from socketio.server import SocketIOServer

@@ -3,21 +3,16 @@
 import os
 import time
 import sys
-from threading import Thread, RLock
+from threading import Thread
 
 import rospy
-from geometry_msgs.msg import Twist
 
-from ros_homebot_msgs import srv as srvs
 from ros_homebot_msgs import msg as msgs
 
-from django.core.management import call_command
 from django.core.wsgi import get_wsgi_application
 
 from ros_homebot_python import constants as c
-from ros_homebot_python.packet import Packet
 from ros_homebot_python.node import (
-    get_name,
     packet_to_service_type,
     packet_to_service_request_type,
     get_topic_name,
@@ -25,7 +20,7 @@ from ros_homebot_python.node import (
     camel_to_underscore,
 )
 
-from homebot_dashboard.server import Server, DEFAULT_PORT
+from homebot_dashboard.server import Server
 from homebot_dashboard import sockets
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

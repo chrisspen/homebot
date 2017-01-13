@@ -12,3 +12,4 @@ catkin_pkg
 # Needed by system_node.py
 scipy
 humanize
+numpy

@@ -14,12 +14,11 @@ import io
 import yaml
 from PIL import Image as PilImage
 import cv2
-from scipy.signal import medfilt2d
+# from scipy.signal import medfilt2d
 import rospy
-import actionlib
 from sensor_msgs.msg import CompressedImage, Image, LaserScan
 from std_srvs.srv import Empty as EmptySrv, EmptyResponse
-from cv_bridge import CvBridge, CvBridgeError
+from cv_bridge import CvBridge
 import numpy as np
 
 from rpi_gpio.srv import DigitalWrite

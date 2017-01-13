@@ -3,7 +3,7 @@
 Initiates the spin head action.
 """
 
-import roslib
+# import roslib
 #roslib.load_manifest('ros_homebot')
 import rospy
 

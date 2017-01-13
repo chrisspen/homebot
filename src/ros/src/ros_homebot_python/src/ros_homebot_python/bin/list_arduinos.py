@@ -3,7 +3,6 @@
 2015.12.19 CKS
 Lists the device path for each Arduino.
 """
-import os
 import sys
 
 from ros_homebot_python import constants as c

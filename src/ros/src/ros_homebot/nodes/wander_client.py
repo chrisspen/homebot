@@ -6,7 +6,7 @@ import sys
 import traceback
 import time
 
-import roslib
+# import roslib
 #roslib.load_manifest('ros_homebot')
 import rospy
 

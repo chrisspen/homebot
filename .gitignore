@@ -63,3 +63,4 @@ docs/_build/
 /*.img
 /raspbian_lite_latest.zip
 /*.img.xz
+/pip-requirements.txt

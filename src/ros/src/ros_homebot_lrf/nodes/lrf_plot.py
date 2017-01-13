@@ -4,30 +4,15 @@ Displays a real-time plot of the laser range finder measurements.
 """
 from __future__ import print_function
 
-import os
 import time
-import sys
-from math import pi, ceil
-from threading import Thread, RLock
-import io
+from threading import RLock
 
-import yaml
-from PIL import Image as PilImage
 import cv2
 import rospy
-from sensor_msgs.msg import CompressedImage, Image, LaserScan
-from std_srvs.srv import Empty as EmptySrv, EmptyResponse
-from cv_bridge import CvBridge, CvBridgeError
+from sensor_msgs.msg import LaserScan
 import numpy as np
 
-from rpi_gpio.srv import DigitalWrite
-from rpi_gpio import msg as msgs
-
 from ros_homebot_msgs.srv import *
-from ros_homebot_msgs import msg as msgs
-from ros_homebot_lrf.lrf import LaserRangeFinder, calibrate
-from ros_homebot_lrf.utils import compress_list
-from ros_homebot_python.utils import fail, success
 
 # DEFAULT_LOG_LEVEL = rospy.DEBUG
 DEFAULT_LOG_LEVEL = rospy.ERROR

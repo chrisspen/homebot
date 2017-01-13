@@ -1,12 +1,10 @@
 #! /usr/bin/env python
 import os
-import time
-import random
 import sys
 import traceback
 from threading import RLock
 
-import roslib
+# import roslib
 #roslib.load_manifest('ros_homebot')
 import rospy
 import actionlib
@@ -15,14 +13,7 @@ import std_srvs.srv
 import ros_homebot_msgs.srv
 import ros_homebot.msg
 from ros_homebot_python import constants as c
-from ros_homebot_python.node import (
-    subscribe_to_topic,
-    get_service_proxy,
-    get_topic_name,
-    packet_to_service_type,
-    packet_to_service_request_type,
-)
-from ros_homebot_python import utils
+# from ros_homebot_python import utils
 
 VOICE1 = 'en+f3'
 VOICE2 = 'english-mb-en1'

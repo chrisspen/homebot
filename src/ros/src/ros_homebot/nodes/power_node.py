@@ -1,12 +1,9 @@
 #!/usr/bin/env python
 
-import time
 from datetime import datetime, timedelta
 
 import rospy
-import std_srvs.srv
 
-import numpy as np
 from scipy.stats import linregress
 import humanize
 

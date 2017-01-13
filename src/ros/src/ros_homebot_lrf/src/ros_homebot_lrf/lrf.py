@@ -1,9 +1,8 @@
 #from __future__ import print_function
 import os
-import sys
 import time
 import warnings
-from math import pi, tan, atan
+from math import tan, atan
 
 from PIL import Image
 from PIL import ImageFilter

@@ -8,10 +8,6 @@ Renders a 3d model showing the IMU readings.
 """
 from __future__ import print_function
 
-import sys
-import time
-import random
-from threading import RLock
 from math import pi
 
 import rospy
@@ -21,8 +17,8 @@ import numpy as np
 from vispy import app, gloo
 from vispy.util.transforms import perspective, translate, rotate
 
-from ros_homebot_python import constants as c
-from ros_homebot_python.utils import assert_node_alive
+# from ros_homebot_python import constants as c
+# from ros_homebot_python.utils import assert_node_alive
 
 vert = """
 // Uniforms

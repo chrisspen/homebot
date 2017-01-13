@@ -2,12 +2,11 @@
 """
 Initiates the wandering action.
 """
-import os
 import sys
 import traceback
 import time
 
-import roslib
+# import roslib
 #roslib.load_manifest('ros_homebot')
 import rospy
 

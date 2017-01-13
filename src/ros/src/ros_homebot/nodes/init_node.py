@@ -3,7 +3,6 @@
 import time
 
 import rospy
-import std_srvs.srv
 
 import ros_homebot_msgs.srv
 

@@ -1,12 +1,9 @@
 #!/usr/bin/env python
 
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
-import StringIO
 import time
-from Queue import Queue, Full, Empty
+from Queue import Queue, Empty
 
-import cv2
-import numpy as np
 import rospy
 from sensor_msgs.msg import CompressedImage
 

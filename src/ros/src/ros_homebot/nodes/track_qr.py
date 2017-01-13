@@ -5,23 +5,17 @@ from threading import RLock
 # import roslib
 # roslib.load_manifest('ros_homebot')
 import rospy
-import actionlib
 import std_srvs.srv
 
-# import ros_homebot.msg
-# import ros_homebot_msgs.srv
 from ros_homebot_python import constants as c
 from ros_homebot_python.node import (
     subscribe_to_topic,
-    get_topic_name,
     get_service_proxy,
-    packet_to_service_type,
-    packet_to_service_request_type,
     say,
 )
-from ros_homebot_python.utils import assert_node_alive, get_angle_of_pixel, Limiter
+from ros_homebot_python.utils import get_angle_of_pixel, Limiter
 from ros_qr_tracker.msg import Percept
-from ros_qr_tracker.srv import AddTarget, AddTargetResponse, SetTarget, SetTargetResponse
+from ros_qr_tracker.srv import SetTarget
 
 class Stages:
     INITIALIZING = 0
@@ -39,9 +33,7 @@ class TrackQR:
         
 #         assert_node_alive('head_arduino')
 #         assert_node_alive('qr_tracker')
-        print 'a0'
 #         assert_node_alive('sound')
-        print 'a1'
         
         # Cleanup when termniating the node
         rospy.on_shutdown(self.shutdown)
@@ -76,12 +68,9 @@ class TrackQR:
         
         self.subscribe()
         
-        print 'a2'
         self.request_sensor_update()
-        print 'a3'
         
         self.set_qr_target(self.target)
-        print 'a4'
         
 #         rospy.spin()
         self.execute()

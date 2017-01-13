@@ -9,7 +9,7 @@ from datetime import datetime
 import threading
 import traceback
 import gc
-from Queue import Queue, Empty as EmptyException, Full as FullException
+from Queue import Queue
 from functools import partial
 from collections import defaultdict
 
@@ -17,7 +17,6 @@ import serial
 import termios
 
 import rospy
-from geometry_msgs.msg import Twist
 from std_srvs.srv import Empty, EmptyResponse
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
 
@@ -25,7 +24,7 @@ from rpi_gpio.srv import DigitalWrite
 
 from ros_homebot_msgs import srv as srvs
 from ros_homebot_msgs import msg as msgs
-from ros_homebot_python.packet import Packet, BooleanPacket, LEDPacket
+from ros_homebot_python.packet import Packet
 from ros_homebot_python import constants as c
 from ros_homebot_python import constants as c
 from ros_homebot_python import utils
@@ -166,7 +165,7 @@ class BaseArduinoNode():
         self.reset_log = open(os.path.expanduser(
             '~/.ros/log/latest/%s_reset.log' % self.name.lower()), 'a')
         
-        self._last_reset = 0
+        self._last_reset = time.time()
         
         self.limiter = utils.Limiter(period=1)
         
@@ -222,6 +221,7 @@ class BaseArduinoNode():
         
         # A registry of acknowledgement receipts
         self._acks = {} # {packet_id: time read}
+        self._acks_lock = threading.RLock()
         
         # The main read thread handle.
         self._read_thread = None
@@ -326,11 +326,10 @@ class BaseArduinoNode():
             # Happens primarily with an Arduino Uno.
             # The Arduino is still running and sending data, but we can't receive it.
             # When this happens, we need to reset the serial link.
-#             if (self.last_pong and self.last_pong_timeout > 10
-#             and (time.time() - self._last_reset > 10)):
-#                 print('[%s] reset' % datetime.now(), file=self.reset_log)
-#                 self.reset_log.flush()
-#                 self.reset()
+            if self.needs_reset:
+                print('[%s] reset' % datetime.now(), file=self.reset_log)
+                self.reset_log.flush()
+                self.reset()
             
         self.print('Main thread terminated.')
     
@@ -626,8 +625,9 @@ class BaseArduinoNode():
         """
         t0 = time.time()
         while (time.time() - t0) < timeout:
-            if self._acks.get(packet_id, 0) > sent_time:
-                return True
+            with self._acks_lock:
+                if self._acks.get(packet_id, 0) > sent_time:
+                    return True
             time.sleep(timeout/100.)
         return False
 
@@ -637,8 +637,10 @@ class BaseArduinoNode():
         """
         with self._serial_lock:
             data = (self._serial.readline() or '').strip()
+            #self._serial.reset_input_buffer()
         
         if data:
+#             self.print('read raw data:', data)
             
             if data[0] == c.ID_HASH:
                 # Check for new hash.
@@ -650,8 +652,8 @@ class BaseArduinoNode():
                 # Validate packet.
                 packet = Packet.from_string(data)
                 if packet.hash != self.expected_hash:
-                    if self.verbose:
-                        self.print('Invalid packet read due to hash mismatch:', packet)
+#                     if self.verbose:
+                    self.print('Invalid packet read due to hash mismatch:', packet)
                     data = ''
                     
         if data:
@@ -671,7 +673,8 @@ class BaseArduinoNode():
             # Keep a receipt of when we receive acknowledgments so the write thread
             # knows when to stop waiting.
             if packet.data == c.OK:
-                self._acks[packet.id] = time.time()
+                with self._acks_lock:
+                    self._acks[packet.id] = time.time()
     
             # Record pong so we know Arduino is still alive.
 #             if packet.id == c.ID_PONG:
@@ -741,55 +744,60 @@ class BaseArduinoNode():
         """
         Starts the thread that establishes serial connection and begins communication.
         """
-        if self.running:
-            return
-        self.running = True
-    
-        # Disable reset after hangup.
-        # This prevents the Arduino Uno from resetting if we disconnect or lose power.
-        # This is necessary if we want to "sleep" by disconnecting head power and using
-        # the Arduino to wake us up afterwards.
-        with open(self.port) as f:
-            attrs = termios.tcgetattr(f)
-            attrs[2] = attrs[2] & ~termios.HUPCL
-            termios.tcsetattr(f, termios.TCSAFLUSH, attrs)
-        
-        # Forcibly cause Arduino to reset.
-        if hard:
-            self.print('Resetting Arduino on port %s...' % self.port)
-            with serial.Serial(self.port) as arduino:
-                arduino.setDTR(False)
-                time.sleep(3)
-                arduino.flushInput()
-                arduino.setDTR(True)
-                time.sleep(10)
-            self.print('Arduino reset.')
-    
-        # Instantiate serial interface.
-        self.print('Opening serial connection on port %s...' % self.port)
-        self._serial = serial.Serial(
-            port=self.port,
-            baudrate=self.speed,
-            timeout=1,
-            #dsrdtr=True,#doesn't work
-            #rtscts=True,#doesn't work
-            xonxoff=True,
-            #write_timeout=10,#TODO:reenable to prevent infinite hangs if arduino locks up?
-        )
-        self.connected = True
-        
-        if check_identity:
-            assert self.confirm_identity(), 'Device identity could not be confirmed.'
+        with self._serial_lock:
+            
+            # Disconnect if currently connected.
+            if self._serial:
+                self._serial.close()
+                self._serial = None
+                gc.collect()
 
-        self.print('Starting read thread...')
-        self._read_thread = threading.Thread(target=self._read_data_from_arduino)
-        self._read_thread.daemon = True
-        self._read_thread.start()
+            self.running = True
         
-        self.print('Starting write thread...')
-        self._write_thread = threading.Thread(target=self._write_data_to_arduino)
-        self._write_thread.daemon = True
-        self._write_thread.start()
+            # Disable reset after hangup.
+            # This prevents the Arduino Uno from resetting if we disconnect or lose power.
+            # This is necessary if we want to "sleep" by disconnecting head power and using
+            # the Arduino to wake us up afterwards.
+            with open(self.port) as f:
+                attrs = termios.tcgetattr(f)
+                attrs[2] = attrs[2] & ~termios.HUPCL
+                termios.tcsetattr(f, termios.TCSAFLUSH, attrs)
+            
+            # Forcibly cause Arduino to reset.
+            if hard:
+                self.print('Resetting Arduino on port %s...' % self.port)
+                with serial.Serial(self.port) as arduino:
+                    arduino.setDTR(False)
+                    time.sleep(3)
+                    arduino.flushInput()
+                    arduino.setDTR(True)
+                    time.sleep(10)
+                self.print('Arduino reset.')
+        
+            # Instantiate serial interface.
+            self.print('Opening serial connection on port %s...' % self.port)
+            self._serial = serial.Serial(
+                port=self.port,
+                baudrate=self.speed,
+                timeout=1,
+                write_timeout=10,
+            )
+            self.connected = True
+            
+            if check_identity:
+                assert self.confirm_identity(), 'Device identity could not be confirmed.'
+    
+            if self._read_thread is None:
+                self.print('Starting read thread...')
+                self._read_thread = threading.Thread(target=self._read_data_from_arduino)
+                self._read_thread.daemon = True
+                self._read_thread.start()
+            
+            if self._write_thread is None:
+                self.print('Starting write thread...')
+                self._write_thread = threading.Thread(target=self._write_data_to_arduino)
+                self._write_thread.daemon = True
+                self._write_thread.start()
     
     def disconnect(self):
         """
@@ -820,6 +828,36 @@ class BaseArduinoNode():
         self.print('Deleting garbage...')
         gc.collect()
         self.print('Disconnected.')
+
+    @property
+    def needs_reset(self):
+        
+        # Reset if we're no longer receiving ping responses.
+        # This seems to happen after about 4-5 hours due to an unknown reason.
+        if (self.last_pong and self.last_pong_timeout > 10 and (time.time() - self._last_reset > 10)):
+            return True
+        
+        # Reset if we haven't reset in an hour.
+        # This is done to pre-empt the first case, since it's better to stop
+        # the timeout from occurring by proactively resetting on our own timeframe then waiting
+        # until our commands are ignored and having to reactively reset.
+        # The reset happens very quickly and does not cause the Arduino to reset
+        # so it should have no effect on messages other than to restore proper transmission by PySerial.
+        if (time.time() - self._last_reset) > 3600:
+            return True
+            
+        return False
+
+    def reset(self, req=None, hard=False):
+        """
+        Resets the serial connection by disconnecting and reconnecting.
+        
+        If hard=True, also causes the Arduino to reset, as though its reset button was pressed.
+        """
+        self.print('Resetting connection...')
+        self._last_reset = time.time()
+        self.connect(check_identity=False, hard=hard)
+        return EmptyResponse()
 
     def print(self, *msg, **kwargs):
         with self._print_lock:
@@ -854,18 +892,6 @@ class BaseArduinoNode():
         if self.name == c.NAME_TORSO:
             formats_out.update(c.TORSO_FORMATS_IN)
         return formats_out
-
-    def reset(self, req=None, hard=False):
-        """
-        Resets the serial connection by disconnecting and reconnecting.
-        
-        If hard=True, also causes the Arduinio to reset, as though its reset button was pressed.
-        """
-        self.print('Resetting connection...')
-        self._last_reset = time.time()
-        self.disconnect()
-        self.connect(check_identity=False, hard=hard)
-        return EmptyResponse()
  
     def shutdown(self):
         """

@@ -6,34 +6,24 @@ from __future__ import print_function
 
 import os
 import time
-import random
 import sys
-import traceback
 import operator
 from threading import RLock
 from functools import partial
-import subprocess
-import shlex
 import multiprocessing
 
-import roslib
+# import roslib
 #roslib.load_manifest('ros_homebot')
 import rospy
 import rosnode
-import actionlib
-import std_srvs.srv
 
 import ros_homebot_msgs.srv
 import ros_homebot_msgs.msg
-import ros_homebot.msg
 from ros_homebot_python import constants as c
 from ros_homebot_python.node import (
     subscribe_to_topic,
     get_service_proxy,
-    get_topic_name,
     packet_to_message_type,
-    packet_to_service_type,
-    packet_to_service_request_type,
     set_line_laser,
     say,
 )

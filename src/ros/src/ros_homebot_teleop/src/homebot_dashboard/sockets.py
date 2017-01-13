@@ -1,16 +1,13 @@
 import time
-from threading import Thread, RLock
-from Queue import Queue
+from threading import Thread
 
 from socketio.namespace import BaseNamespace
 from socketio.mixins import BroadcastMixin
 from socketio.sdjango import namespace
 
 import rospy
-import std_msgs.msg
 import std_srvs.srv
 
-from ros_homebot_msgs import msg as msgs
 from ros_homebot_python import constants as c
 from ros_homebot_python.node import get_packet_id
 

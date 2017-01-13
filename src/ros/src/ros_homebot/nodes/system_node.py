@@ -1,16 +1,9 @@
 #!/usr/bin/env python
 
-import time
-from datetime import datetime, timedelta
 from commands import getoutput
 
 import rospy
-import std_srvs.srv
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
-
-import numpy as np
-from scipy.stats import linregress
-import humanize
 
 from ros_homebot_msgs import msg as msgs
 from ros_homebot_python import constants as c

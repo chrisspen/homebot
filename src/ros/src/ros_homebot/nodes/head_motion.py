@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 import time
 
-import roslib
+# import roslib
 #roslib.load_manifest('ros_homebot')
 import rospy
 import actionlib
@@ -12,7 +12,6 @@ from ros_homebot_python.node import (
     subscribe_to_topic,
     get_topic_name,
     packet_to_service_type,
-    packet_to_service_request_type,
 )
 
 class SpinHeadServer:
