@@ -216,6 +216,7 @@ class Diagnostic(Robot):
     
     raspicam_process = None
     
+    #pylint: disable=super-init-not-called
     def __init__(self, name):
         
         self.running = True
