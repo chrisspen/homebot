@@ -23,16 +23,6 @@ WARN = DiagnosticStatus.WARN
 ERROR = DiagnosticStatus.ERROR
 STALE = DiagnosticStatus.STALE
 
-# Pololu 2282 Gear Motor => 464.64 counts per revolution of the gearbox's output shaft
-# Driver wheel radius = 14 mm
-# Tread length = 228 mm
-#(revolution_of_shaft/counts) * (wheel_diameter)/(revolution_of_shaft)
-#(revolution_of_shaft/464.6 counts) * (2*pi*14 mm)/(1 revolution_of_shaft) * (1m/1000mm)
-#DistancePerCount = (3.14159265 * 0.1524) / 64000 * (1/1000.)
-#TODO:the 464.6 counts may mean for quadrature, but we're only using a single channel
-# Note, ROS distance assumes meters.
-DistancePerCount = (3.141592653589793 * 28) / 464.6 / 1000.
-
 # Based on https://goo.gl/mY0th1
 # http://wiki.ros.org/tf2/Tutorials/Writing%20a%20tf2%20broadcaster%20%28Python%29
 # http://wiki.ros.org/navigation/Tutorials/RobotSetup/Odom
@@ -96,7 +86,7 @@ class WheelTracker(object):
         with self._lock:
             if self._PreviousLeftEncoderCounts is not None:
                 self.deltaLeft = count - self._PreviousLeftEncoderCounts
-                self.vx = self.deltaLeft * DistancePerCount
+                self.vx = self.deltaLeft * c.METERS_PER_COUNT
                 self.update()
             self._PreviousLeftEncoderCounts = count
         
@@ -107,7 +97,7 @@ class WheelTracker(object):
         with self._lock:
             if self._PreviousRightEncoderCounts is not None:
                 self.deltaRight = count - self._PreviousRightEncoderCounts
-                self.vy = self.deltaRight * DistancePerCount
+                self.vy = self.deltaRight * c.METERS_PER_COUNT
                 self.update()
             self._PreviousRightEncoderCounts = count
         

@@ -43,9 +43,14 @@
 #define ID_ULTRASONIC            'u'
 #define ID_PONG                  'v'
 #define ID_FORCE_SENSORS         'w'
+#define ID_TWIST                 'x'
 #define ID_PAN_CENTERMARK        'y'
 #define ID_SET_VALUE             'z'
 #define NAME_HEAD                "HEAD"
 #define NAME_PAN                 "PAN"
 #define NAME_TILT                "TILT"
 #define NAME_TORSO               "TORSO"
+#define METERS_PER_COUNT         0.0001893340385288726
+#define TORSO_TREAD_WIDTH_METERS 0.1
+#define VELOCITY_TO_SPEED        728.5714285714287
+#define SPEED_TO_VELOCITY        0.001372549019607843

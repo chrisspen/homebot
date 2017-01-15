@@ -58,6 +58,7 @@ add_service_files(FILES
     TiltAngle.srv
     TiltPower.srv
     Tone.srv
+    Twist.srv
 )
 
 generate_messages(   

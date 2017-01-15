@@ -28,6 +28,7 @@ from ros_homebot_python.node import (
     say,
 )
 from ros_homebot_python import utils
+from ros_homebot_python.robot import Robot
 from ros_homebot_python.exceptions import DeviceNotFound
 from ros_homebot_lrf.utils import compress_list, list_to_str as line_list_to_str
 
@@ -203,7 +204,7 @@ class Check(object):
             
         ret = self.post_callback and self.post_callback()
 
-class Diagnostic:
+class Diagnostic(Robot):
     """
     Manual diagnostic tool for checking base functionality.
     
@@ -924,14 +925,6 @@ class Diagnostic:
     def subscribe_torso(self, packet_id):
         self._subscribe(packet_id, c.TORSO)
         
-    def set_ultrabright(self, value):
-        assert 0 <= value <= 255
-        get_service_proxy(c.HEAD, c.ID_LED)(3, value)
-
-    def set_rgbled(self, value):
-        assert len(value) == 3
-        for i, v in enumerate(value):
-            get_service_proxy(c.HEAD, c.ID_LED)(i, v)
 
     def enable_ultrasonics(self):
         get_service_proxy(c.TORSO, c.ID_SONAR_POWER)(1)

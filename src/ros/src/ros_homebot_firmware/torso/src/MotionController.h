@@ -22,6 +22,9 @@
 // so save time by talking directly to IC2.
 #define DEFAULT_COMMOTION_ADDR COMMOTION_ADDR2
 
+#define COMPLETE 0
+#define ACTIVE 1
+
 // ComMotion variables
 
 byte read_byte(){
@@ -242,6 +245,12 @@ class MotionController: public Sensor
         
         unsigned long _last_encoder_check;
 
+        // Movement parameters.
+    	float _linear = 0;
+    	float _angular = 0;
+    	float _distance = 0;
+    	unsigned int _status = COMPLETE;
+
     public:
 
         //int acount = 0;
@@ -320,11 +329,21 @@ class MotionController: public Sensor
             if(!is_connected()){
                 return;
             }
+
             _motor_left.set_speed(left_speed);
             _motor_right.set_speed(right_speed);
             //NA NA left right
             set_motor_speeds(0, 0, _motor_left.get_speed(), _motor_right.get_speed());
         }
+
+    	void set_movement(float linear, float angular, float distance){
+    		_linear = linear;
+    		_angular = angular;
+    		_distance = distance;
+    		float left_speed_out = linear - angular*TORSO_TREAD_WIDTH_METERS/2;
+    		float right_speed_out = linear + angular*TORSO_TREAD_WIDTH_METERS/2;
+    		set(left_speed_out, right_speed_out);
+    	}
         
         void set_acceleration(unsigned int a){
             _motor_left.set_acceleration(a);
@@ -395,6 +414,11 @@ class MotionController: public Sensor
                 return;
             }
             
+        	_linear = 0;
+        	_angular = 0;
+        	_distance = 0;
+        	_status = COMPLETE;
+
             _motor_left.set_speed(0);
             _motor_right.set_speed(0);
             //NA NA left right

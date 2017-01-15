@@ -162,6 +162,15 @@ void loop(){
 				ser.write(String(ID_PONG)+String(' ')+String(total_pings));
 				break;
 				
+			class ID_TWIST:
+				motion_controller.set_movement(
+					packet.get_arg(0).toFloat(),
+					packet.get_arg(1).toFloat(),
+					packet.get_arg(2).toFloat()
+				);
+				ack = true;
+				break;
+				
 			case ID_MOTOR_SPEED:
 				if(packet.arg_length >= 2){
 					int left_speed = packet.get_arg(0).toInt();

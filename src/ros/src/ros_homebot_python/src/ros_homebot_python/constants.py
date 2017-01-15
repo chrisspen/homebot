@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os
 import threading
 import re
@@ -78,7 +80,7 @@ ID_CALIBRATE = 't'
 ID_ULTRASONIC = 'u'
 ID_PONG = 'v'
 ID_FORCE_SENSORS = 'w'
-# 'x'
+ID_TWIST = 'x'
 ID_PAN_CENTERMARK = 'y'
 ID_SET_VALUE = 'z'
 ID_PAN_POWER = 'A'
@@ -155,6 +157,7 @@ ALL_IDS = {
     ID_MOTOR_CALIBRATION: 'motor calibration',
     ID_MOTOR_ENCODER: 'motor encoder',
     ID_MOTOR_ERROR: 'motor error',
+    ID_TWIST: 'twist',
 }
 NAME_TO_IDS = dict((re.sub(r'[^a-z]+', '_', v.lower()), k) for k, v in ALL_IDS.iteritems())
 
@@ -235,6 +238,9 @@ TORSO_FORMATS_IN = {
     ID_RECHARGE_POWERDOWN: [],
     ID_GO_TO_SLEEP: [('duration', int)],
     ID_SHUTDOWN: [],
+    # Mimics Twist format. http://docs.ros.org/api/geometry_msgs/html/msg/Twist.html
+    # Linear is linear.x, Angular is angular.z.
+    ID_TWIST: [('linear', float), ('angular', float), ('distance', float)],
 }
 
 # Packets using these IDs will require acknowledgement.
@@ -274,6 +280,20 @@ MOTOR_MAX_ACCEL = MOTOR_MAX_SPEED
 MOTOR_MAX_SPEED_REAL = 745 * MM/SEC
 MOTOR_DEFAULT_ACCEL_REAL = float(MOTOR_DEFAULT_ACCEL) / MOTOR_MAX_SPEED * MOTOR_MAX_SPEED_REAL / SEC
 
+# Pololu 2282 Gear Motor => 464.64 counts per revolution of the gearbox's output shaft
+# Driver wheel radius = 14 mm
+# Tread length = 228 mm
+#(revolution_of_shaft/counts) * (wheel_diameter)/(revolution_of_shaft)
+#(revolution_of_shaft/464.6 counts) * (2*pi*14 mm)/(1 revolution_of_shaft) * (1m/1000mm) = meter/count
+#METERS_PER_COUNT = (3.14159265 * 0.1524) / 64000 * (1/1000.)
+#TODO:the 464.6 counts may mean for quadrature, but we're only using a single channel
+# Note, ROS distance assumes meters.
+METERS_PER_COUNT = (3.141592653589793 * 28) / 464.6 / 1000.
+
+# Convert the relative speed to absolute velocity in meters/second.
+SPEED_TO_VELOCITY = 0.35/MOTOR_MAX_SPEED
+VELOCITY_TO_SPEED = MOTOR_MAX_SPEED/0.35
+
 TILT_CENTER = 90
 TILT_MIN = 90-65
 TILT_MAX = 90+65
@@ -295,6 +315,7 @@ TORSO_DIAMETER = TORSO_DIAMETER_MM * MM
 
 # The distance between the treads.
 TORSO_TREAD_WIDTH = 100 * MM
+TORSO_TREAD_WIDTH_METERS = TORSO_TREAD_WIDTH.to(METER).magnitude
 
 # The distance from the ground to the center of the head.
 HEIGHT_CENTER_HEIGHT_MM = 235
@@ -362,6 +383,13 @@ BATTERY_CHARGE_RATIO_WARN = 0.85
 CAMERA_ANGLE_OF_VIEW_H = 54
 CAMERA_ANGLE_OF_VIEW_V = 41
 
+EXPORT_TO_ARDUINO = [
+    'METERS_PER_COUNT',
+    'TORSO_TREAD_WIDTH_METERS',
+    'VELOCITY_TO_SPEED',
+    'SPEED_TO_VELOCITY',
+]
+
 # Diagnostic part names.
 
 def write_ros_messages(d, prefix):
@@ -373,11 +401,11 @@ def write_ros_messages(d, prefix):
             name = name + 'Change'
         #name = prefix.title() + name
         v = [('device', 'uint8')] + v
-        print name, v
+        print(name, v)
         with open(os.path.join(msg_dir, '%s.msg' % name), 'w') as fout:
             for _name, _type in v:
                 _ros_type = PYTHON_TO_ROS_TYPES.get(_type, _type)
-                print>>fout, '%s %s' % (_ros_type, _name)
+                print('%s %s' % (_ros_type, _name), file=fout)
 
 def write_ros_services(d, prefix):
     msg_dir = '../../../ros_homebot_msgs/srv'
@@ -386,39 +414,42 @@ def write_ros_services(d, prefix):
         name = (''.join(map(str.title, name.split(' '))))
         #name = prefix.title() + name
         #v = [('device', 'uint8')] + v
-        print name, v
+        print(name, v)
         with open(os.path.join(msg_dir, '%s.srv' % name), 'w') as fout:
             for _name, _type in v:
                 _ros_type = PYTHON_TO_ROS_TYPES.get(_type, _type)
-                print>>fout, '%s %s' % (_ros_type, _name)
-            print>>fout, '---'
+                print('%s %s' % (_ros_type, _name), file=fout)
+            print('---', file=fout)
 
 def write_cpp_headers():
     # Output the IDs to a C/C++ header.
     with open('../../../ros_homebot_firmware/common/src/ID.h', 'w') as fout:
-        print>>fout, '// AUTO-GENERATED. DO NOT EDIT. SEE homebot/constants.py.'
+        print('// AUTO-GENERATED. DO NOT EDIT. SEE homebot/constants.py.', file=fout)
         items = [
             _ for _ in globals().items()
             if _[0].startswith('ID_')]
         for _name, _value in sorted(items, key=lambda o: o[1]):
-            print>>fout, "#define %s '%s'" % (_name.ljust(4*6), _value)
+            print("#define %s '%s'" % (_name.ljust(4*6), _value), file=fout)
         items = [
             _ for _ in globals().items()
             if _[0].startswith('NAME_') and not _[0].startswith('NAME_TO_')]
         for _name, _value in sorted(items, key=lambda o: o[0]):
-            print>>fout, '#define %s "%s"' % (_name.ljust(4*6), _value)
-    print 'Wrote ID.h.'
+            print('#define %s "%s"' % (_name.ljust(4*6), _value), file=fout)
+        for _name in EXPORT_TO_ARDUINO:
+            _value = globals()[_name]
+            print('#define %s %s' % (_name.ljust(4*6), repr(_value)), file=fout)
+    print('Wrote ID.h.')
 
 if __name__ == '__main__':
     
     write_cpp_headers()
-    print '''
+    print('''
 Now run:
 
     cd /home/`user`/git/homebot/src/ros
     . ./setup.bash
     catkin_make --pkg ros_homebot_msgs
-'''
+''')
     
     t = HEAD_FORMATS_OUT.copy()
     t.update(BOTH_FORMATS_OUT)
@@ -438,5 +469,5 @@ Now run:
     
     os.system('cd ../../../ros_homebot_msgs; python update_makelist.py')
     
-    print 'Remember to run:\n'
-    print '    fab prod homebot.rebuild_messages'
+    print('Remember to run:\n')
+    print('    fab prod homebot.rebuild_messages')
