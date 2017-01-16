@@ -178,6 +178,9 @@ class BaseArduinoNode():
         # If true, the serial port has been opened.
         self.connected = True
         
+        # Set to True once the connected device has been identified.
+        self.identified = False
+        
         # The duplex Serial() instance.
         self._serial = None
         
@@ -540,7 +543,7 @@ class BaseArduinoNode():
         
         # Send checksum packet.
         s = '%s %s\n' % (c.ID_HASH, packet.hash)
-        self.log('writing_hash_packet:', repr(s))
+#         self.print('writing_hash_packet:', repr(s))
         with self._serial_lock:
             for retry in range(max_retries):
                 try:
@@ -557,7 +560,7 @@ class BaseArduinoNode():
             s = '%s %s\n' % (packet.id, data)
         else:
             s = '%s\n' % packet.id
-        self.log('writing_main_packet:', repr(s))
+#         self.print('writing_main_packet:', repr(s))
         with self._serial_lock:
             for retry in range(max_retries):
                 try:
@@ -583,6 +586,7 @@ class BaseArduinoNode():
             if self.last_ping+1 <= time.time():
                 self.last_ping = time.time()
                 self.last_ping_dt = datetime.now()
+#                self.print('Queuing ping.')
                 self.outgoing_queue.put(Packet(c.ID_PING))
             
             # Sending pending commands.
@@ -640,7 +644,7 @@ class BaseArduinoNode():
             #self._serial.reset_input_buffer()
         
         if data:
-#             self.print('read raw data:', data)
+#            self.print('read raw data:', data)
             
             if data[0] == c.ID_HASH:
                 # Check for new hash.
@@ -752,6 +756,7 @@ class BaseArduinoNode():
                 self._serial = None
                 gc.collect()
 
+            self.identified = False
             self.running = True
         
             # Disable reset after hangup.
@@ -780,12 +785,13 @@ class BaseArduinoNode():
                 port=self.port,
                 baudrate=self.speed,
                 timeout=1,
-                write_timeout=10,
+                write_timeout=1,
             )
             self.connected = True
             
             if check_identity:
                 assert self.confirm_identity(), 'Device identity could not be confirmed.'
+            self.identified = True
     
             if self._read_thread is None:
                 self.print('Starting read thread...')

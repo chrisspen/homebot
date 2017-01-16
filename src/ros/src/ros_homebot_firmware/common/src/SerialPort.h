@@ -3,6 +3,8 @@
 
 #include "ID.h"
 
+#define BLANK_ID String("")
+
 #define HEAD "HEAD"
 #define TORSO "TORSO"
 
@@ -38,7 +40,7 @@ class Packet{
         }
 
         bool is_valid(){
-        	return _id != String("");
+        	return _id != BLANK_ID;
         }
         
         char get_id(){
@@ -127,7 +129,7 @@ class SerialPort{
         
         Packet read(){
         
-            String id = String("");
+            String id = BLANK_ID;
             String data = String("");
             int i = 0;
         
@@ -155,9 +157,11 @@ class SerialPort{
                 }
             }
 
+            // Minimizes non-deterministic serial dropout?
             // Stops non-deterministic serial dropout?
-            Serial.end();
-            init();
+            // This prevents opening on serial port on most recent bootloader?
+//            Serial.end();
+//            init();
 
             return Packet(id, data);
         }
@@ -169,9 +173,10 @@ class SerialPort{
                 Serial.println(data);
                 Serial.flush();
 
-                // Stops non-deterministic serial dropout?
-                Serial.end();
-                init();
+                // Minimizes non-deterministic serial dropout?
+                // This prevents opening on serial port on most recent bootloader?
+//                Serial.end();
+//                init();
             }
         }
 

@@ -262,9 +262,12 @@ class TorsoNode(BaseArduinoNode):
     def publish_imu_thread(self):
         time.sleep(3)
         while 1:
-            if not self.received_imu:
-                self.force_sensors()
-            self.publish_imu()
+            # Don't flood the Arduino with force sensor requests until we're idenified.
+            if self.identified:
+                if not self.received_imu:
+                    self.force_sensors()
+                    time.sleep(5)
+                self.publish_imu()
             time.sleep(.1)
     
     def publish_imu(self):
@@ -300,5 +303,6 @@ class TorsoNode(BaseArduinoNode):
            
 if __name__ == '__main__':
     #speed = 38400
+    #speed = 57600
     speed = 115200
     TorsoNode(speed=speed)

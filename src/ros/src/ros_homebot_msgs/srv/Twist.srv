@@ -1,4 +1,5 @@
 float32 linear
 float32 angular
-float32 distance
+float32 seconds
+int32 force
 ---

@@ -22,8 +22,8 @@
 // so save time by talking directly to IC2.
 #define DEFAULT_COMMOTION_ADDR COMMOTION_ADDR2
 
-#define COMPLETE 0
-#define ACTIVE 1
+#define MOVEMENT_COMPLETE 0
+#define MOVEMENT_ACTIVE 1
 
 // ComMotion variables
 
@@ -246,10 +246,15 @@ class MotionController: public Sensor
         unsigned long _last_encoder_check;
 
         // Movement parameters.
-    	float _linear = 0;
-    	float _angular = 0;
-    	float _distance = 0;
-    	unsigned int _status = COMPLETE;
+    	float _movement_linear = 0;
+    	float _movement_angular = 0;
+    	float _movement_seconds = 0;
+    	int _movement_force = 0; // 0=stop if error encountered, 1=ignore errors
+    	int _movement_error_code = 0;
+    	bool _movement_encoder_changed = false;
+    	bool _movement_send_done = false;
+    	unsigned long _movement_start_millis = 0;
+    	unsigned int _movement_status = MOVEMENT_COMPLETE;
 
     public:
 
@@ -284,47 +289,59 @@ class MotionController: public Sensor
             }else{
             	connected.set(false);
             }
+            if(is_connected()){
+				// Normal mode, Rover 5 with mecanum wheels, lowbat = 6V, motor currents =2.5A, no offset, Master address=1;
+				//Serial.println(String(F("set_basic_config()"));Serial.flush();
+				set_basic_config(
+					0, //mode, 0=normal
+					CHASSIS_CONFIG_INDIVIDUAL, //chassis, 3=individual
+					60, //lowbat, 0-255    55=5.5V (given 6V battery, 80%=4.8V=dead, 92%=5.5V=low)
+					250, //maxcur1, 0-255   255=2.55A (left)
+					250, //maxcur2, 0-255   255=2.55A (right)
+					250, //maxcur3, 0-255   255=2.55A (unused)
+					250, //maxcur4, 0-255   255=2.55A (unused)
+					0, //i2coffset
+					TORSO_ARDUINO_ADDR //1 //i2cmaster
+				);
+
+				// Max motor rpm = 8500rpm, encoder resolution = 2.00 state changes per motor revolution, 10% reserve power, stall at 25uS
+				//Serial.println(String(F("set_encoder_config()")));Serial.flush();
+				set_encoder_config(
+					8500, //maxrpm=maximum rpms
+					200, //encres=encoder resolution
+					//600, //maxrpm=maximum rpms, Pololu Metal Gearmotor 2282
+					//465, //encres=encoder resolution, Pololu Metal Gearmotor 2282
+					10, //reserve=0-50%     reserve power - use when constant speed under variable load is critical
+					25 //maxstall=1-255mS   number of milli-seconds between encoder pulses before stall is assumed  10 for Scamper, 25 for Rover 5
+				);
+            }
         }
 
         void init(){
 
         	_last_encoder_check = millis();
-                  
+
             _motor_left = SpeedController();
             _motor_right = SpeedController();
             
             // Do this in main.ino setup()
             //Wire.onReceive(handle_commotion_status_response);
-            
+
+            reset_movement();
+
             connect();
-            
-            // Normal mode, Rover 5 with mecanum wheels, lowbat = 6V, motor currents =2.5A, no offset, Master address=1;
-            //Serial.println(String(F("set_basic_config()"));Serial.flush();
-            set_basic_config(
-                0, //mode, 0=normal
-				CHASSIS_CONFIG_INDIVIDUAL, //chassis, 3=individual
-                60, //lowbat, 0-255    55=5.5V (given 6V battery, 80%=4.8V=dead, 92%=5.5V=low)
-                250, //maxcur1, 0-255   255=2.55A (left)
-                250, //maxcur2, 0-255   255=2.55A (right)
-                250, //maxcur3, 0-255   255=2.55A (unused)
-                250, //maxcur4, 0-255   255=2.55A (unused)
-                0, //i2coffset
-				TORSO_ARDUINO_ADDR //1 //i2cmaster
-            );
-            
-            // Max motor rpm = 8500rpm, encoder resolution = 2.00 state changes per motor revolution, 10% reserve power, stall at 25uS
-            //Serial.println(String(F("set_encoder_config()")));Serial.flush();
-            set_encoder_config(
-                8500, //maxrpm=maximum rpms
-                200, //encres=encoder resolution
-                //600, //maxrpm=maximum rpms, Pololu Metal Gearmotor 2282
-                //465, //encres=encoder resolution, Pololu Metal Gearmotor 2282
-                10, //reserve=0-50%     reserve power - use when constant speed under variable load is critical
-                25 //maxstall=1-255mS   number of ������S between encoder pulses before stall is assumed  10 for Scamper, 25 for Rover 5
-            );
-            
+
         }
         
+        void reset_movement(){
+            _movement_linear = 0;
+            _movement_angular = 0;
+            _movement_seconds = 0;
+            _movement_force = 0;
+            _movement_status = MOVEMENT_COMPLETE;
+            _movement_encoder_changed = false;
+        }
+
         void set(int left_speed, int right_speed){
             if(!is_connected()){
                 return;
@@ -336,13 +353,52 @@ class MotionController: public Sensor
             set_motor_speeds(0, 0, _motor_left.get_speed(), _motor_right.get_speed());
         }
 
-    	void set_movement(float linear, float angular, float distance){
-    		_linear = linear;
-    		_angular = angular;
-    		_distance = distance;
-    		float left_speed_out = linear - angular*TORSO_TREAD_WIDTH_METERS/2;
-    		float right_speed_out = linear + angular*TORSO_TREAD_WIDTH_METERS/2;
+    	void set_movement(float linear, float angular, float seconds, int force){
+    		reset_movement();
+    		_movement_linear = linear; // meter/second
+    		_movement_angular = angular; // radians/second
+    		_movement_seconds = seconds;
+    		_movement_force = force;
+    		_movement_start_millis = millis();
+    		_movement_status = MOVEMENT_ACTIVE;
+    		_movement_send_done = false;
+    		float left_speed_out = (linear - angular*TORSO_TREAD_WIDTH_METERS/2) * VELOCITY_TO_SPEED;
+    		float right_speed_out = (linear + angular*TORSO_TREAD_WIDTH_METERS/2) * VELOCITY_TO_SPEED;
     		set(left_speed_out, right_speed_out);
+    	}
+
+    	bool is_executing_movement(){
+    		return MOVEMENT_ACTIVE == _movement_status;
+    	}
+
+    	bool is_checking_movement_error(){
+    		return !_movement_force;
+    	}
+
+    	bool is_encoder_stalled(){
+    		// Motors/encoders are considered stalled if we should be moving but haven't received an encoder update in 500ms.
+    		return !_movement_encoder_changed && (millis() - _movement_start_millis) > 500;
+    	}
+
+    	void end_movement(int error_code){
+
+    		reset_movement();
+
+            // Queue a movement completion status report.
+            _movement_send_done = true;
+            _movement_error_code = error_code;
+
+            if(error_code){
+            	// Something bad may have just happened (like we just detected an edge or wall) so stop immediately.
+            	stop();
+            }else{
+            	// Movement completed without issue, so stop gradually using deceleration.
+                set(0, 0);
+            }
+    	}
+
+    	bool has_movement_expired(){
+    		return is_executing_movement() && (millis() - _movement_start_millis)/1000 >= _movement_seconds;
     	}
         
         void set_acceleration(unsigned int a){
@@ -395,6 +451,9 @@ class MotionController: public Sensor
 				a_encoder.set(receive_wire_int16());
 				b_encoder.set(receive_wire_int16());
 
+				_movement_encoder_changed |= a_encoder.is_changed();
+				_movement_encoder_changed |= b_encoder.is_changed();
+
 //				acount = receive_wire_int16();
 //				bcount = receive_wire_int16();
 
@@ -414,10 +473,7 @@ class MotionController: public Sensor
                 return;
             }
             
-        	_linear = 0;
-        	_angular = 0;
-        	_distance = 0;
-        	_status = COMPLETE;
+            reset_movement();
 
             _motor_left.set_speed(0);
             _motor_right.set_speed(0);
@@ -460,6 +516,15 @@ class MotionController: public Sensor
 				String(ID_MOTOR_ERROR)+String(' ')+
 				String(eflag.get())
 			;
+        }
+
+        String get_movement_packet(){
+        	if(_movement_send_done){
+        		_movement_send_done = false;
+        		return String(ID_TWIST_DONE)+String(' ')+String(_movement_error_code);
+        	}else{
+        		return String("");
+        	}
         }
 
         //DEPRECATED

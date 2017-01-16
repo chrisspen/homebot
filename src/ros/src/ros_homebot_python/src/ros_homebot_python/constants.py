@@ -99,7 +99,7 @@ ID_MOTOR_ACCEL = 'M'
 ID_IMU_CALIBRATION = 'N'
 ID_MOTOR_CALIBRATION = 'O'
 ID_MOTOR_ENCODER = 'P'
-# 'Q'
+ID_TWIST_DONE = 'Q'
 ID_MOTOR_ERROR = 'R'
 ID_GO_TO_SLEEP = 'S'
 ID_SHUTDOWN = 'T'
@@ -158,8 +158,23 @@ ALL_IDS = {
     ID_MOTOR_ENCODER: 'motor encoder',
     ID_MOTOR_ERROR: 'motor error',
     ID_TWIST: 'twist',
+    ID_TWIST_DONE: 'twist done',
 }
 NAME_TO_IDS = dict((re.sub(r'[^a-z]+', '_', v.lower()), k) for k, v in ALL_IDS.iteritems())
+
+MOVEMENT_ERROR_NONE = 0    
+MOVEMENT_ERROR_EDGE = 1
+MOVEMENT_ERROR_ULTRASONIC = 2
+MOVEMENT_ERROR_TILT = 3
+MOVEMENT_ERROR_ACCEL = 4
+MOVEMENT_ERROR_ENCODER = 5
+MOVEMENT_ERROR_BUMPER = 6
+
+# Movement will be halted if ultrasonics detect we're this distance from an obstacle.
+MOVEMENT_ULTRASONIC_THRESHOLD_CM = 5
+
+# This amount of tilt will be allowed on the logic x or y axis before movement is cancelled.
+MOVEMENT_MAX_TILT = 10
 
 # These map to ROS messages.
 BOTH_FORMATS_OUT = {
@@ -210,6 +225,7 @@ TORSO_FORMATS_OUT = {
     ID_STATUS_BUTTON: [('state', int)],
     ID_MOTOR_ENCODER: [('channel', int), ('count', int)],
     ID_MOTOR_ERROR: [('error', int)],# single byte
+    ID_TWIST_DONE: [('error', int)], # 0=no error, 1=edge, 2=ultrasonic, 3=tilt, 4=accel, 5=encoder
 }
 
 BOTH_FORMATS_IN = {
@@ -240,7 +256,7 @@ TORSO_FORMATS_IN = {
     ID_SHUTDOWN: [],
     # Mimics Twist format. http://docs.ros.org/api/geometry_msgs/html/msg/Twist.html
     # Linear is linear.x, Angular is angular.z.
-    ID_TWIST: [('linear', float), ('angular', float), ('distance', float)],
+    ID_TWIST: [('linear', float), ('angular', float), ('seconds', float), ('force', int)],
 }
 
 # Packets using these IDs will require acknowledgement.
@@ -388,6 +404,15 @@ EXPORT_TO_ARDUINO = [
     'TORSO_TREAD_WIDTH_METERS',
     'VELOCITY_TO_SPEED',
     'SPEED_TO_VELOCITY',
+    'MOVEMENT_ERROR_NONE',
+    'MOVEMENT_ERROR_EDGE',
+    'MOVEMENT_ERROR_ULTRASONIC',
+    'MOVEMENT_ERROR_TILT',
+    'MOVEMENT_ERROR_ACCEL',
+    'MOVEMENT_ERROR_ENCODER',
+    'MOVEMENT_ERROR_BUMPER',
+    'MOVEMENT_ULTRASONIC_THRESHOLD_CM',
+    'MOVEMENT_MAX_TILT',
 ]
 
 # Diagnostic part names.

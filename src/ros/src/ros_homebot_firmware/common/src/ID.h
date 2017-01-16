@@ -15,6 +15,7 @@
 #define ID_IMU_CALIBRATION       'N'
 #define ID_MOTOR_CALIBRATION     'O'
 #define ID_MOTOR_ENCODER         'P'
+#define ID_TWIST_DONE            'Q'
 #define ID_MOTOR_ERROR           'R'
 #define ID_GO_TO_SLEEP           'S'
 #define ID_SHUTDOWN              'T'
@@ -54,3 +55,12 @@
 #define TORSO_TREAD_WIDTH_METERS 0.1
 #define VELOCITY_TO_SPEED        728.5714285714287
 #define SPEED_TO_VELOCITY        0.001372549019607843
+#define MOVEMENT_ERROR_NONE      0
+#define MOVEMENT_ERROR_EDGE      1
+#define MOVEMENT_ERROR_ULTRASONIC 2
+#define MOVEMENT_ERROR_TILT      3
+#define MOVEMENT_ERROR_ACCEL     4
+#define MOVEMENT_ERROR_ENCODER   5
+#define MOVEMENT_ERROR_BUMPER    6
+#define MOVEMENT_ULTRASONIC_THRESHOLD_CM 5
+#define MOVEMENT_MAX_TILT        10

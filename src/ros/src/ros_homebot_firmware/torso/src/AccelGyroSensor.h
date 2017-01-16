@@ -72,7 +72,21 @@ class AccelGyroSensor: public Sensor{
         
         void init(){
         	connected = bno.begin();
-			bno.setExtCrystalUse(true);
+        	if(connected){
+        		bno.setExtCrystalUse(true);
+        	}
+        }
+
+        double get_absolute_tilt_x(){
+        	return abs(ex.get_latest());//logical z?
+        }
+
+        double get_absolute_tilt_y(){
+        	return abs(ey.get_latest());//logical x?
+        }
+
+        double get_absolute_tilt_z(){
+        	return abs(ez.get_latest());//logical y?
         }
 
         virtual void update(){
@@ -87,6 +101,7 @@ class AccelGyroSensor: public Sensor{
         }
         
         String get_reading_packet_accelerometer(bool force){
+        	if(!connected) return String("");
 			imu::Vector<3> vector = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
 			ax.set(vector.x());
 			ay.set(vector.y());
@@ -103,6 +118,7 @@ class AccelGyroSensor: public Sensor{
 		}
 
         String get_reading_packet_euler(bool force){
+        	if(!connected) return String("");
 			imu::Vector<3> vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
 			ex.set(vector.x());
 			ey.set(vector.y());
@@ -119,6 +135,7 @@ class AccelGyroSensor: public Sensor{
 		}
 
         String get_reading_packet_gyroscope(bool force){
+        	if(!connected) return String("");
 			imu::Vector<3> vector = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
 			gx.set(vector.x());
 			gy.set(vector.y());
@@ -135,6 +152,7 @@ class AccelGyroSensor: public Sensor{
 		}
 
         String get_reading_packet_magnetometer(bool force){
+        	if(!connected) return String("");
 			imu::Vector<3> vector = bno.getVector(Adafruit_BNO055::VECTOR_MAGNETOMETER);
 			mx.set(vector.x());
 			my.set(vector.y());
@@ -150,7 +168,12 @@ class AccelGyroSensor: public Sensor{
 			}
 		}
 
+        bool is_euler_ready(){
+        	return gyr_calib.get_latest();
+        }
+
         String get_reading_packet_calibration(bool force){
+        	if(!connected) return String("");
 			uint8_t _sys, _gyr, _acc, _mag = 0;
 			bno.getCalibration(&_sys, &_gyr, &_acc, &_mag);
 			sys_calib.set(_sys);

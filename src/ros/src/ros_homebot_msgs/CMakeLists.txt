@@ -32,6 +32,7 @@ add_message_files(FILES
     RemainingTime.msg
     StatusButtonChange.msg
     TiltAngleChange.msg
+    TwistDoneChange.msg
     UltrasonicChange.msg
 )
 
