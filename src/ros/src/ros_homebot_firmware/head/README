@@ -7,5 +7,7 @@ https://www.arduino.cc/en/Main/ArduinoBoardLeonardo
 Installation
 ------------
 
-    ./build
-    ./upload
+Connect the Arduino via USB and then run:
+
+    make
+    make upload

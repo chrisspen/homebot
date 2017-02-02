@@ -169,7 +169,7 @@ class HomebotSatchel(ServiceSatchel):
             
             # Needed by homebot_description.
             'ros-%s-diagnostics' % self.genv.ros_version_name,
-            'ros-%s-diagnostics-msgs' % self.genv.ros_version_name,
+#             'ros-%s-diagnostics-msgs' % self.genv.ros_version_name,
             'ros-%s-robot-model' % self.genv.ros_version_name,
 
         ]

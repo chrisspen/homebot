@@ -5,6 +5,7 @@ It's primarily responsible for directly controlling the motors, monitoring batte
 Installation
 ------------
 
-    ./build
-    ./upload
-    
+Connect the Arduino via USB and then run:
+
+    make
+    make upload

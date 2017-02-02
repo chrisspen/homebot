@@ -1,7 +1,0 @@
-#!/bin/bash
-set -e
-
-./buildall
-./upload
-sleep 1
-./serial

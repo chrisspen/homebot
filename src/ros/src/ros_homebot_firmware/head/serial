@@ -1,2 +1,0 @@
-#!/bin/bash
-ano serial -p `../../ros_homebot_python/src/ros_homebot_python/bin/list_arduinos.py head`
