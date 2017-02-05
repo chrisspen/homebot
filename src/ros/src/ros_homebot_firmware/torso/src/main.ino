@@ -109,6 +109,11 @@ void loop(){
     
     Packet packet = ser.read();
     if(packet.is_valid() && (packet.get_id() == ID_HASH || packet.get_hash_sum() == expected_hash_sum)){
+    	
+    	if(packet.get_id() != ID_HASH){
+    		power_controller.status_light.toggle();
+    	}
+    	
         switch(packet.get_id()){
         
             case ID_HASH:

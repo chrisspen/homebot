@@ -184,7 +184,8 @@ class BaseArduinoNode():
         # The duplex Serial() instance.
         self._serial = None
         
-        self._serial_lock = threading.RLock()
+        self._serial_read_lock = threading.RLock()
+        self._serial_write_lock = threading.RLock()
         
         # Serial port. e.g. /dev/ttyACM0
         self.port = kwargs.pop('port', None) or utils.find_serial_device(self.name)
@@ -514,7 +515,6 @@ class BaseArduinoNode():
                 time.sleep(0.01)
         t4 = time.time()
         print('t_ack:', time.time() - t3)
-        
         print('t_total:', time.time() - t0)
         
         # Return service response.
@@ -544,7 +544,7 @@ class BaseArduinoNode():
         # Send checksum packet.
         s = '%s %s\n' % (c.ID_HASH, packet.hash)
 #         self.print('writing_hash_packet:', repr(s))
-        with self._serial_lock:
+        with self._serial_write_lock:
             for retry in range(max_retries):
                 try:
                     self._serial.write(s)
@@ -561,7 +561,7 @@ class BaseArduinoNode():
         else:
             s = '%s\n' % packet.id
 #         self.print('writing_main_packet:', repr(s))
-        with self._serial_lock:
+        with self._serial_write_lock:
             for retry in range(max_retries):
                 try:
                     self._serial.write(s)
@@ -595,10 +595,12 @@ class BaseArduinoNode():
                 
                 ack_success = False
                 for attempt in xrange(retries):
-                    self.print('Sending: %s, attempt %i' % (packet, attempt))
+                    self.print('Sending: %s, attempt %i, (%i packets remaining)' % (packet, attempt, self.outgoing_queue.qsize()))
 
                     sent_time = time.time()
                     self._write_packet(packet)
+                    t0 = time.time() - sent_time
+                    self.print('Sent secs:', t0, ' self.write_time:', self.write_time)
                     
                     if not self.running:
                         ack_success = True
@@ -609,9 +611,7 @@ class BaseArduinoNode():
                             ack_success = True
                             break
                         else:
-                            self.print(
-                                'Timed out waiting for ack of packet %s, on attempt %i.' \
-                                    % (packet, attempt))
+                            self.print('Timed out waiting for ack of packet %s, on attempt %i.' % (packet, attempt))
                             self.ack_failure_count += 1
                     else:
                         # Don't wait for acknowledgement.
@@ -639,7 +639,7 @@ class BaseArduinoNode():
         """
         Reads a raw line of data from the Arduino.
         """
-        with self._serial_lock:
+        with self._serial_read_lock:
             data = (self._serial.readline() or '').strip()
             #self._serial.reset_input_buffer()
         
@@ -731,6 +731,7 @@ class BaseArduinoNode():
             self._write_packet(Packet(c.ID_IDENTIFY))
             
             ret = self._read_raw_packet()
+            print('confirm identity read:', ret)
             if ret == c.ID_IDENTIFY+' '+self.name.upper():
                 return True
             elif ret and ret[0] == c.ID_LOG:
@@ -748,7 +749,7 @@ class BaseArduinoNode():
         """
         Starts the thread that establishes serial connection and begins communication.
         """
-        with self._serial_lock:
+        with self._serial_read_lock, self._serial_write_lock:
             
             # Disconnect if currently connected.
             if self._serial:
@@ -828,7 +829,7 @@ class BaseArduinoNode():
         
         # Delete serial connection.
         self.print('Closing serial connection...')
-        with self._serial_lock:
+        with self._serial_read_lock, self._serial_write_lock:
             self._serial.close()
             self._serial = None
         self.print('Deleting garbage...')

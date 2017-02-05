@@ -96,10 +96,11 @@ class PowerController: public Sensor{
             external_power_sensor.update();
 
             if(_power_state == POWERCONTROLLER_STANDBY){
+            	// Default state. Power button is not being used.
             
-                if(status_light_auto){
-                    status_light.on();
-                }
+                //if(status_light_auto){
+                //    status_light.on();
+                //}
             
                 // When button's pressed, begin shutdown procedure.
                 if(is_pressed){
@@ -108,6 +109,7 @@ class PowerController: public Sensor{
                 }
             
             }else if(_power_state == POWERCONTROLLER_WAITING){
+            	// Power button has been pressed, and we're waiting to see how long it's being held down.
             
                 if(is_pressed){
                     // When button is held down for less than 5 seconds...
@@ -124,6 +126,8 @@ class PowerController: public Sensor{
                 }
             
             }else if(_power_state == POWERCONTROLLER_READY){
+            	// Power button has been held down long enough to cause a hard power off,
+            	// so signal the shutdown is ready and wait for the button to be released.
         
                 // Signal ready to shutdown.
                 status_light.off();
@@ -134,6 +138,7 @@ class PowerController: public Sensor{
                 }
             
             }else if(_power_state == POWERCONTROLLER_SHUTDOWN){
+            	// Button released, finalizing hard power off.
         
                 // Shutdown.
                 shutdown();
