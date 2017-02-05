@@ -110,7 +110,9 @@ void loop(){
     Packet packet = ser.read();
     if(packet.is_valid() && (packet.get_id() == ID_HASH || packet.get_hash_sum() == expected_hash_sum)){
     	
-    	if(packet.get_id() != ID_HASH){
+    	// Broadcast serial status by toggling the status button LED for every packet,
+    	// as long as the power controller isn't using it.
+    	if(packet.get_id() != ID_HASH && power_controller.is_idle()){
     		power_controller.status_light.toggle();
     	}
     	

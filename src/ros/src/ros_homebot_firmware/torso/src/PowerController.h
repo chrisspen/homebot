@@ -86,6 +86,11 @@ class PowerController: public Sensor{
             _sleeptime_start = millis();
         }
         */
+
+        bool is_idle(){
+        	return _power_state == POWERCONTROLLER_STANDBY;
+        }
+
         virtual void update(){
             status_button.update();
             bool is_pressed = status_button.is_pressed();
