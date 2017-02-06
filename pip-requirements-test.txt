@@ -1,2 +1,5 @@
 mkdocs
 mkdocs-bootstrap
+tox
+pylint
+cpplint
