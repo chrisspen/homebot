@@ -11,5 +11,5 @@ catkin-pkg==0.2.10
 
 # Needed by system_node.py
 scipy==0.18.1
-humanize
+humanize==0.5.1
 numpy
