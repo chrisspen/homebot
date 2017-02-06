@@ -1,5 +1,5 @@
 mkdocs==0.16.1
-mkdocs-bootstrap
+mkdocs-bootstrap==0.1.1
 tox
 pylint
 cpplint
