@@ -1,9 +1,30 @@
 language: python
+
+sudo: required
+
 python:
 -   "3.5"
+
+env:
+- CI_ROS_DISTRO=kinetic CC=gcc CXX=g++
+- CI_ROS_DISTRO=kinetic CC=clang CXX=clang++
+
+before_install:
+- sudo sh -c 'echo "deb http://packages.ros.org/ros-shadow-fixed/ubuntu trusty main" > /etc/apt/sources.list.d/ros-latest.list'
+- wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
+- sudo apt-get update
+- sudo apt-get install python-rosdep -y
+- sudo rosdep init
+- rosdep update
+
 install:
--   pip install tox pylint cpplint
+- mkdir -p ~/catkin_ws/src
+- cd ~/catkin_ws
+- ln -s $TRAVIS_BUILD_DIR src
+- rosdep install --from-paths src --ignore-src --rosdistro=$CI_ROS_DISTRO -y
+- pip install -r pip-requirements-test.txt
+
 script:
--   ./pep8.sh
--   ./checkcpp.sh
--   tox
+- ./pep8.sh
+- ./checkcpp.sh
+- tox
