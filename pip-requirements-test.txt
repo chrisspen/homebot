@@ -1,4 +1,4 @@
-mkdocs
+mkdocs==0.16.1
 mkdocs-bootstrap
 tox
 pylint
