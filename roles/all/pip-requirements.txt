@@ -1,4 +1,4 @@
-burlap
+burlap==0.9.2
 
 # Allows us to create GTK3 applications.
 pgi
