@@ -1,5 +1,8 @@
 language: python
 
+#TODO: update to xenial once Travis-Ci supports it.
+dist: trusty
+
 sudo: required
 
 python:
