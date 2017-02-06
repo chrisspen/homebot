@@ -524,7 +524,7 @@ class BaseArduinoNode():
         resp_cls = getattr(srvs, name + 'Response')
         return resp_cls()
     
-    def _write_packet(self, packet, delay=0.01, max_retries=5):
+    def _write_packet(self, packet, delay=0.01, max_retries=5): #0.01 works, but slow, 0.001 doesn't work, 0.005 slowly breaks down
         """
         Sends the main packet, prefixed with a checksum packet.
         
@@ -549,6 +549,7 @@ class BaseArduinoNode():
                 try:
                     self._serial.write(s)
                     self._serial.flush()
+#                     print('out_waiting:', self._serial.out_waiting)
                     break
                 except serial.SerialTimeoutException as e:
                     self.print('Error writing hash:', e)
@@ -566,6 +567,7 @@ class BaseArduinoNode():
                 try:
                     self._serial.write(s)
                     self._serial.flush()
+#                     print('out_waiting:', self._serial.out_waiting)
                     break
                 except serial.SerialTimeoutException as e:
                     self.print('Error writing packet:', e)
@@ -600,7 +602,7 @@ class BaseArduinoNode():
                     sent_time = time.time()
                     self._write_packet(packet)
                     t0 = time.time() - sent_time
-                    self.print('Sent secs:', t0, ' self.write_time:', self.write_time)
+#                     self.print('Sent secs:', t0, ' self.write_time:', self.write_time)
                     
                     if not self.running:
                         ack_success = True
@@ -641,11 +643,10 @@ class BaseArduinoNode():
         """
         with self._serial_read_lock:
             data = (self._serial.readline() or '').strip()
-            #self._serial.reset_input_buffer()
+#             self._serial.reset_input_buffer()
         
         if data:
-#            self.print('read raw data:', data)
-            
+            self.print('read raw data:', data)
             if data[0] == c.ID_HASH:
                 # Check for new hash.
                 try:

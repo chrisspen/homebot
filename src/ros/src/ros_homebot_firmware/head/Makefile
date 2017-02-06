@@ -11,8 +11,7 @@ AVRDUDE = $(ARDUINO_DIR)/hardware/tools/avr/bin/avrdude
 # The board name used by Avrdude for the Leonardo.
 AVRDUDE_PART = atmega32u4
 AVRDUDE_PORT = /dev/ttyACM1
-# Should match main.ino and ros_homebot_python/nodes/head_node.py
-# 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, or 115200
+# Don't change. Not dependent on the baudrate used in the sketch.
 AVRDUDE_BAUDRATE = 115200
 
 # Should be located in src.

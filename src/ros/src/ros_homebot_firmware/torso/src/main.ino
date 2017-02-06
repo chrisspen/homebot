@@ -47,8 +47,8 @@ AccelGyroSensor ag_sensor = AccelGyroSensor();
 
 MotionController motion_controller;
 
-//SerialPort ser = SerialPort(57600); // must match ano.ini
-SerialPort ser = SerialPort(115200); // must match ano.ini
+SerialPort ser = SerialPort(57600); // must match ano.ini
+//SerialPort ser = SerialPort(115200); // must match ano.ini
 
 PowerController power_controller = PowerController(POWER_OFF_PIN, ser);
 
@@ -98,23 +98,41 @@ unsigned long expected_hash_sum = 1;
 // since last polling.
 bool force_sensors = false;
 
+// If true, indicates we've identified ourselves to the host and we've received a recent ping.
+// If false, indicates we've never identified or haven't received a recent ping.
+// When we're not identified, we won't transmit anything on serial except identity and pings.
+bool identified = false;
+
+unsigned long last_identity = millis();
+
 unsigned long last_output = millis();
 
+unsigned long last_blink = millis();
+
 int movement_error_code = 0;
+
+unsigned long packet_count = 0;
 
 void loop(){
     
     // If true, response with an OK to the incoming packet.
     bool ack = false;
     
+	/*if(millis() - last_blink >= 1000 && power_controller.is_idle()){
+		last_blink = millis();
+		power_controller.status_light.toggle();
+	}*/
+    
     Packet packet = ser.read();
     if(packet.is_valid() && (packet.get_id() == ID_HASH || packet.get_hash_sum() == expected_hash_sum)){
+    	
+    	packet_count += 1;
     	
     	// Broadcast serial status by toggling the status button LED for every packet,
     	// as long as the power controller isn't using it.
     	if(packet.get_id() != ID_HASH && power_controller.is_idle()){
     		power_controller.status_light.toggle();
-    	}
+    	} 
     	
         switch(packet.get_id()){
         
@@ -125,11 +143,14 @@ void loop(){
             case ID_IDENTIFY:
                 // Identify ourselves to the host.
                 ser.write(String(ID_IDENTIFY)+String(' ')+String(TORSO));
+                identified = true;
+                last_identity = millis();
                 break;
                 
             case ID_PING:
                 // Respond to a ping request.
                 last_ping = millis();
+                last_identity = millis();
                 total_pings += 1;
                 halted = false;
                 ser.write(String(ID_PONG)+String(' ')+String(total_pings));
@@ -270,9 +291,15 @@ void loop(){
             ser.write(String(packet.get_id())+String(' ')+String(OK));
         }
     }
+    
+    // Check to see if we've lost contact with the host.
+    if(identified && last_identity + PING_TIMEOUT_MS < millis()){
+    	identified = false;
+    }
 
     // Push sensor updates to host.
-    if(!halted){
+    if(!halted && identified && total_pings > 5){
+    	
         for(int i=0; i<3; i++){
             bumper[i].send_pending(ser, force_sensors);
             edge[i].send_pending(ser, force_sensors);
@@ -281,25 +308,36 @@ void loop(){
             }
         }
         
-        //arduino_temperature_sensor.send_pending(ser, force_sensors);
         power_controller.status_button.send_pending(ser, force_sensors);
         power_controller.battery_voltage_sensor.send_pending(ser, force_sensors);
         power_controller.external_power_sensor.send_pending(ser, force_sensors);
-        
-        ser.write(ag_sensor.get_reading_packet_accelerometer(force_sensors));
-        ser.write(ag_sensor.get_reading_packet_gyroscope(force_sensors));
-        ser.write(ag_sensor.get_reading_packet_euler(force_sensors));
-        ser.write(ag_sensor.get_reading_packet_magnetometer(force_sensors));
-        ser.write(ag_sensor.get_reading_packet_calibration(force_sensors));
+      
+        if(ag_sensor.connected && 0){
+        	//TODO:these cause the serial port to crash?
+        	
+        	if(ag_sensor.is_acc_calibrated())
+			ser.write(ag_sensor.get_reading_packet_accelerometer(force_sensors));
+        	
+        	if(ag_sensor.is_gyr_calibrated())
+			ser.write(ag_sensor.get_reading_packet_gyroscope(force_sensors));
+        	
+        	if(ag_sensor.is_gyr_calibrated())
+			ser.write(ag_sensor.get_reading_packet_euler(force_sensors));
+        	
+        	if(ag_sensor.is_mag_calibrated())
+			ser.write(ag_sensor.get_reading_packet_magnetometer(force_sensors));
+        	
+			ser.write(ag_sensor.get_reading_packet_calibration(force_sensors));
+        }
     
-//        if(millis() - last_output > 1000){
-            if(motion_controller.get_and_clear_changed()){
-                ser.write(motion_controller.get_a_encoder_packet());
-                ser.write(motion_controller.get_b_encoder_packet());
-                ser.write(motion_controller.get_eflag_packet());
-            }
+		if(motion_controller.get_and_clear_changed()){
+			ser.write(motion_controller.get_a_encoder_packet());
+			ser.write(motion_controller.get_b_encoder_packet());
+			ser.write(motion_controller.get_eflag_packet());
+		}
+
+	    force_sensors = false;	
     }
-    force_sensors = false;
     
     // Emergency shutdown if we've lost contact with host.
     if(!halted && total_pings > 10 && last_ping + PING_TIMEOUT_MS < millis()){
@@ -325,7 +363,6 @@ void loop(){
         movement_error_code = movement_error_code || (bumper[i].has_contact() && MOVEMENT_ERROR_BUMPER);
         movement_error_code = movement_error_code || (edge[i].has_contact() && MOVEMENT_ERROR_EDGE);
     }
-    //arduino_temperature_sensor.update();
     power_controller.update();
     motion_controller.update();
     
@@ -335,7 +372,7 @@ void loop(){
         // Determine if error conditions dictate we must perform an emergency shutoff of the motors.
         if(motion_controller.is_checking_movement_error()){
 
-        	movement_error_code = movement_error_code || (ag_sensor.is_euler_ready() && (ag_sensor.get_absolute_tilt_y() >= MOVEMENT_MAX_TILT || ag_sensor.get_absolute_tilt_z() >= MOVEMENT_MAX_TILT) && MOVEMENT_ERROR_TILT);
+        	movement_error_code = movement_error_code || (ag_sensor.is_gyr_calibrated() && (ag_sensor.get_absolute_tilt_y() >= MOVEMENT_MAX_TILT || ag_sensor.get_absolute_tilt_z() >= MOVEMENT_MAX_TILT) && MOVEMENT_ERROR_TILT);
         	
         	movement_error_code = movement_error_code || (motion_controller.is_encoder_stalled() && MOVEMENT_ERROR_ENCODER);
         	
@@ -348,6 +385,8 @@ void loop(){
             motion_controller.end_movement(MOVEMENT_ERROR_NONE);
         }
     }
-    ser.write(motion_controller.get_movement_packet());
+    if(identified){
+    	ser.write(motion_controller.get_movement_packet());
+    }
 
 }

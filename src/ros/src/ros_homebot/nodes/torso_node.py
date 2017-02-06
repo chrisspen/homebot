@@ -303,6 +303,6 @@ class TorsoNode(BaseArduinoNode):
            
 if __name__ == '__main__':
     #speed = 38400
-    #speed = 57600
-    speed = 115200
+    speed = 57600
+#     speed = 115200
     TorsoNode(speed=speed)

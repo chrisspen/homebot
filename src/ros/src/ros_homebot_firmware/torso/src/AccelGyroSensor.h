@@ -168,7 +168,19 @@ class AccelGyroSensor: public Sensor{
 			}
 		}
 
-        bool is_euler_ready(){
+        bool is_sys_calibrated(){
+        	return sys_calib.get_latest();
+        }
+
+        bool is_acc_calibrated(){
+        	return acc_calib.get_latest();
+        }
+
+        bool is_mag_calibrated(){
+        	return mag_calib.get_latest();
+        }
+
+        bool is_gyr_calibrated(){
         	return gyr_calib.get_latest();
         }
 
