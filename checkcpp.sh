@@ -1,2 +1,2 @@
 #!/bin/bash
-cpplint --recursive src/ros/src/ros_homebot_base
+cpplint --recursive --exclude=*build --extensions=c,cc,h,hpp,c++,h++,cu,cpp,hxx,cxx,cuh,ino src/ros/src/ros_homebot_base

@@ -26,7 +26,7 @@
 serial::Serial ser;
 
 void write_callback(const std_msgs::String::ConstPtr& msg) {
-    ROS_INFO_STREAM("Writing to serial port" << msg->data);
+    ROS_INFO_STREAM("Writing to serial port: " << msg->data);
     ser.write(msg->data);
 }
 
@@ -39,13 +39,13 @@ int main(int argc, char** argv) {
 
     try {
         ser.setPort("/dev/ttyACM0");
-        ser.setBaudrate(9600);
+        ser.setBaudrate(57600);
         serial::Timeout to = serial::Timeout::simpleTimeout(1000);
         ser.setTimeout(to);
         ser.open();
     }
     catch (serial::IOException& e) {
-        ROS_ERROR_STREAM("Unable to open port ");
+        ROS_ERROR_STREAM("Unable to open port");
         return -1;
     }
 
@@ -69,4 +69,3 @@ int main(int argc, char** argv) {
         loop_rate.sleep();
     }
 }
-
