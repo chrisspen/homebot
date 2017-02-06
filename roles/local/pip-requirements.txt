@@ -1,2 +1,2 @@
 # Needed by imu_visualizer.py.
-vispy
+vispy==0.4.0
