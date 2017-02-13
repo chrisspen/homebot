@@ -9,6 +9,8 @@ __pycache__/
 # Distribution / packaging
 .build/
 .build_ano/
+build-uno/
+build-mega-atmega2560/
 develop-eggs/
 dist/
 eggs/

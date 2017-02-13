@@ -45,7 +45,7 @@ In one run:
 
     rostopic echo /read
 
-And in another call:
+And in [another call](http://wiki.ros.org/rostopic#rostopic_pub):
 
     rostopic pub --once /write std_msgs/String hello
 

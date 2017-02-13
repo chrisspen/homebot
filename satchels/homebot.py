@@ -157,6 +157,8 @@ class HomebotSatchel(ServiceSatchel):
             #TODO:re-enable once package supports kinetic?
 #             'ros-%s-robot-upstart' % self.genv.ros_version_name,
 
+            'arduino-mk',
+
             # Needed by teleop and raspicam.
             'ros-%s-image-view' % self.genv.ros_version_name,
             'ros-%s-xacro' % self.genv.ros_version_name,
