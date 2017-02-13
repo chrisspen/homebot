@@ -6,11 +6,11 @@ dist: trusty
 sudo: required
 
 python:
--   "3.5"
+-   "2.7"
 
-env:
-- CI_ROS_DISTRO=kinetic CC=gcc CXX=g++
-- CI_ROS_DISTRO=kinetic CC=clang CXX=clang++
+#env:
+#- CI_ROS_DISTRO=kinetic CC=gcc CXX=g++
+#- CI_ROS_DISTRO=kinetic CC=clang CXX=clang++
 
 #before_install:
 #- sudo sh -c 'echo "deb http://packages.ros.org/ros-shadow-fixed/ubuntu trusty main" > /etc/apt/sources.list.d/ros-latest.list'
