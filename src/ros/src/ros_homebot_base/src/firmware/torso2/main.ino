@@ -43,6 +43,8 @@ bool halt = false;
 // since last polling.
 bool force_sensors = false;
 
+bool last_connected = false;
+
 ros::NodeHandle nh;
 
 std_msgs::Int16 int16_msg;
@@ -92,8 +94,17 @@ BatteryVoltageSensor battery_voltage_sensor = BatteryVoltageSensor(
 );
 
 BooleanSensor external_power_sensors[2] = {
+    // EP1
+    // The pin measuring immediately after the external connector but before the reed switch.
+    // Reads high when the external power plug is connected and external power is present.
     BooleanSensor(EXTERNAL_POWER_SENSE_1_PIN),
+    // EP2
+    // The pin measuring behind the reed switch.
+    // Reads high when the external power plug is connected, regardless of whether or not
+    // external power is present.
+    // This lets the robot know if it's connected to a dead recharge station.
     BooleanSensor(EXTERNAL_POWER_SENSE_2_PIN)
+    // We're only fully docked and charging when both EP1 and EP2 are high.
 };
 
 BooleanSensor edge_sensors[3] = {
@@ -238,6 +249,11 @@ void setup() {
 
 void loop() {
 
+    // If we just became disconnected from the host, then immediately halt all motors.
+    if (last_connected != nh.connected() && !nh.connected()) {
+        motion_controller.stop();
+    }
+
     battery_voltage_sensor.update();
     if (battery_voltage_sensor.get_and_clear_changed() || force_sensors) {
         float_msg.data = battery_voltage_sensor.get_voltage();
@@ -305,4 +321,7 @@ void loop() {
 
     nh.spinOnce();
     delay(1);
+
+    last_connected = nh.connected();
+
 }

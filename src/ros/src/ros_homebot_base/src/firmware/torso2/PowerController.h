@@ -2,12 +2,11 @@
 #include "Arduino.h"
 #include "ID.h"
 
-#include "StatusButtonSensor.h"
 #include "StatusLightController.h"
 #include "BatteryVoltageSensor.h"
-#include "ExternalPowerSensor.h"
+//#include "ExternalPowerSensor.h"
 #include "ChangeTracker.h"
-#include "SerialPort.h"
+//#include "SerialPort.h"
 #include "Sensor.h"
 
 #define POWERCONTROLLER_STANDBY 0
@@ -47,23 +46,23 @@ class PowerController: public Sensor{
     public:
 
         // NOTE: Re-located here because avr-gcc crashed when this object was passed in via reference, known bug.
-        StatusButtonSensor status_button = StatusButtonSensor(SIGNAL_BUTTON_PIN);
+//        StatusButtonSensor status_button = StatusButtonSensor(SIGNAL_BUTTON_PIN);
         
         StatusLightController status_light = StatusLightController(STATUS_LED_PIN);
 
-        BatteryVoltageSensor battery_voltage_sensor = BatteryVoltageSensor(
-            // The battery consists of 3 * 4.2V lipo cells.
-            12.6,
-            2000000, // ohms
-            1000000, // ohms
-            BATTERY_VOLTAGE_PIN,
-            // dead_ratio, The battery is considered dead when 80% discharged.
-            0.8,
-            // voltage_offset, 10.9 measured by the Arduino's ADC is really 11.9 as measured by a good multimeter.
-            2
-        );
+//        BatteryVoltageSensor battery_voltage_sensor = BatteryVoltageSensor(
+//            // The battery consists of 3 * 4.2V lipo cells.
+//            12.6,
+//            2000000, // ohms
+//            1000000, // ohms
+//            BATTERY_VOLTAGE_PIN,
+//            // dead_ratio, The battery is considered dead when 80% discharged.
+//            0.8,
+//            // voltage_offset, 10.9 measured by the Arduino's ADC is really 11.9 as measured by a good multimeter.
+//            2
+//        );
 
-        ExternalPowerSensor external_power_sensor = ExternalPowerSensor(EXTERNAL_POWER_SENSE_1_PIN, EXTERNAL_POWER_SENSE_2_PIN);
+//        ExternalPowerSensor external_power_sensor = ExternalPowerSensor(EXTERNAL_POWER_SENSE_1_PIN, EXTERNAL_POWER_SENSE_2_PIN);
 
         int status_light_auto = true;
         
