@@ -12,9 +12,9 @@ import gc
 from Queue import Queue
 from functools import partial
 from collections import defaultdict
+import termios
 
 import serial
-import termios
 
 import rospy
 from std_srvs.srv import Empty, EmptyResponse
