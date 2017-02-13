@@ -11,6 +11,7 @@ __pycache__/
 .build_ano/
 build-uno/
 build-mega-atmega2560/
+build-uno_pro/
 develop-eggs/
 dist/
 eggs/
