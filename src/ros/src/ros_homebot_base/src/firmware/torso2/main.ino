@@ -23,6 +23,7 @@
 #include "MotionController.h"
 #include "UltrasonicSensor.h"
 #include "AccelGyroSensor.h"
+#include "PowerController.h"
 
 //#define PING_TIMEOUT_MS 10000
 
@@ -51,31 +52,6 @@ std_msgs::Int16 int16_msg;
 std_msgs::Byte byte_msg;
 std_msgs::Bool bool_msg;
 std_msgs::Float32 float_msg;
-
-// 252 bytes, 75% => 88%
-//float vec2[2];
-//std_msgs::Float32MultiArray vec2_msg;
-
-//float float_vec3[3];
-//std_msgs::Float32MultiArray float_vec3_msg; // 252 bytes
-
-//int int_vec3[3];
-//std_msgs::Int8MultiArray int_vec3_msg;
-
-//std_msgs::Float32 float_msg; // 68 bytes
-
-//float vec3[3];
-//std_msgs::Float64MultiArray vec3_msg;
-//vec3_msg.data_length = 3;
-
-//String str_buffer;
-//std_msgs::String str_msg; // 64 bytes
-
-// Each publisher instance consumes 18 bytes of SRAM, so let's not make too many of these.
-// This will report the edge, bumper and power button boolean sensors.
-//ros::Publisher boolean_sensor_publisher = ros::Publisher("booleans", &byte_msg);
-
-//ros::Publisher battery_voltage_publisher("battery/voltage", &float_msg);
 
 /*
  * Begin sensor definitions.
@@ -106,6 +82,8 @@ BooleanSensor external_power_sensors[2] = {
     BooleanSensor(EXTERNAL_POWER_SENSE_2_PIN)
     // We're only fully docked and charging when both EP1 and EP2 are high.
 };
+
+PowerController power_controller = PowerController();
 
 BooleanSensor edge_sensors[3] = {
     BooleanSensor(EDGE_L_PIN),
@@ -167,7 +145,10 @@ ros::Publisher motor_a_encoder_publisher = ros::Publisher("motor/encoder/a", &in
 ros::Publisher motor_b_encoder_publisher = ros::Publisher("motor/encoder/b", &int16_msg);
 ros::Publisher motor_error_publisher = ros::Publisher("motor/error", &byte_msg);
 
-//ros::Publisher imu_calibration_publisher("imu/calibration", &byte_msg);
+ros::Publisher imu_calibration_sys_publisher = ros::Publisher("imu/calibration/sys", &int16_msg);
+ros::Publisher imu_calibration_gyr_publisher = ros::Publisher("imu/calibration/gyr", &int16_msg);
+ros::Publisher imu_calibration_acc_publisher = ros::Publisher("imu/calibration/acc", &int16_msg);
+ros::Publisher imu_calibration_mag_publisher = ros::Publisher("imu/calibration/mag", &int16_msg);
 
 /*
  * End publisher definitions.
@@ -243,7 +224,7 @@ void setup() {
     motion_controller.init();
     motion_controller.stop();
 
-    //ag_sensor.init();
+    ag_sensor.init();
 
 }
 
@@ -254,12 +235,14 @@ void loop() {
         motion_controller.stop();
     }
 
+    // Battery sensor.
     battery_voltage_sensor.update();
     if (battery_voltage_sensor.get_and_clear_changed() || force_sensors) {
         float_msg.data = battery_voltage_sensor.get_voltage();
         battery_voltage_publisher.publish(&float_msg);
     }
 
+    // External power sensors.
     for (int i = 0; i < 2; i++) {
         external_power_sensors[i].update();
         if (external_power_sensors[i].get_and_clear_changed() || force_sensors) {
@@ -268,6 +251,7 @@ void loop() {
         }
     }
 
+    // Edge, bumper and ultrasonic sensors.
     for (int i = 0; i < 3; i++) {
         edge_sensors[i].update();
         if (edge_sensors[i].get_and_clear_changed() || force_sensors) {
@@ -289,33 +273,42 @@ void loop() {
         }
     }
 
-    if (motion_controller.get_and_clear_changed() || force_sensors) {
+    // Motion controller.
+    motion_controller.update();
+    if (motion_controller.a_encoder.get_and_clear_changed() || force_sensors) {
         int16_msg.data = motion_controller.a_encoder.get();
         motor_a_encoder_publisher.publish(&int16_msg);
-
+    }
+    if (motion_controller.b_encoder.get_and_clear_changed() || force_sensors) {
         int16_msg.data = motion_controller.b_encoder.get();
         motor_b_encoder_publisher.publish(&int16_msg);
-
-        int16_msg.data = motion_controller.eflag.get();
-        motor_error_publisher.publish(&int16_msg);
+    }
+    if (motion_controller.eflag.get_and_clear_changed() || force_sensors) {
+        byte_msg.data = motion_controller.eflag.get();
+        motor_error_publisher.publish(&byte_msg);
     }
 
-//    if (ag_sensor.get_and_clear_changed_calibration() || force_sensors) {
-//        //TODO:these cause the serial port to crash?
-////        if(ag_sensor.is_gyr_calibrated() && ag_sensor.get_and_clear_changed_euler()){
-////            //ser.write(ag_sensor.get_reading_packet_euler(force_sensors));
-////            float64_array_msg.data.resize(3);
-////            float64_array_msg.data[0] = ag_sensor.ex.get_latest();
-////            float64_array_msg.data[1] = ag_sensor.ey.get_latest();
-////            float64_array_msg.data[2] = ag_sensor.ez.get_latest();
-////        }
-////        if(ag_sensor.is_mag_calibrated())
-////        ser.write(ag_sensor.get_reading_packet_magnetometer(force_sensors));
-////        ser.write(ag_sensor.get_reading_packet_calibration(force_sensors));
-//    }
+    // IMU sensor.
+    ag_sensor.update();
+    if (ag_sensor.sys_calib.get_and_clear_changed() || force_sensors) {
+        int16_msg.data = ag_sensor.sys_calib.get();
+        imu_calibration_sys_publisher.publish(&int16_msg);
+    }
+    if (ag_sensor.gyr_calib.get_and_clear_changed() || force_sensors) {
+        int16_msg.data = ag_sensor.gyr_calib.get();
+        imu_calibration_gyr_publisher.publish(&int16_msg);
+    }
+    if (ag_sensor.acc_calib.get_and_clear_changed() || force_sensors) {
+        int16_msg.data = ag_sensor.acc_calib.get();
+        imu_calibration_acc_publisher.publish(&int16_msg);
+    }
+    if (ag_sensor.mag_calib.get_and_clear_changed() || force_sensors) {
+        int16_msg.data = ag_sensor.mag_calib.get();
+        imu_calibration_mag_publisher.publish(&int16_msg);
+    }
 
-    motion_controller.update();
-    //power_controller.update();
+    // Power button shutoff controller.
+    power_controller.update();
 
     force_sensors = false;
 

@@ -90,6 +90,20 @@ class AccelGyroSensor: public Sensor{
         }
 
         virtual void update(){
+            if(!connected.get_latest()) return false;
+
+            uint8_t _sys, _gyr, _acc, _mag = 0;
+            bno.getCalibration(&_sys, &_gyr, &_acc, &_mag);
+            sys_calib.set(_sys);
+            gyr_calib.set(_gyr);
+            acc_calib.set(_acc);
+            mag_calib.set(_mag);
+
+            imu::Vector<3> vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+            ex.set(vector.x());
+            ey.set(vector.y());
+            ez.set(vector.z());
+
         }
         
         virtual bool get_and_clear_changed(){
@@ -97,11 +111,11 @@ class AccelGyroSensor: public Sensor{
         }
         
         bool get_and_clear_changed_euler(){
-            if(!connected.get_latest()) return false;
-            imu::Vector<3> vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-            ex.set(vector.x());
-            ey.set(vector.y());
-            ez.set(vector.z());
+//            if(!connected.get_latest()) return false;
+//            imu::Vector<3> vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+//            ex.set(vector.x());
+//            ey.set(vector.y());
+//            ez.set(vector.z());
             return ex.get_and_clear_changed() || ey.get_and_clear_changed() || ez.get_and_clear_changed();
         }
 
@@ -189,35 +203,36 @@ class AccelGyroSensor: public Sensor{
         	return gyr_calib.get_latest();
         }
 
-        bool get_and_clear_changed_calibration(){
-            if(!connected.get_latest()) return false;
-            uint8_t _sys, _gyr, _acc, _mag = 0;
-            bno.getCalibration(&_sys, &_gyr, &_acc, &_mag);
-            sys_calib.set(_sys);
-            gyr_calib.set(_gyr);
-            acc_calib.set(_acc);
-            mag_calib.set(_mag);
-            return connected.get_and_clear_changed() || sys_calib.get_and_clear_changed() || gyr_calib.get_and_clear_changed() || acc_calib.get_and_clear_changed() || mag_calib.get_and_clear_changed();
-        }
 
-        String get_reading_packet_calibration(bool force){
-        	if(!connected.get_latest()) return String("");
-			uint8_t _sys, _gyr, _acc, _mag = 0;
-			bno.getCalibration(&_sys, &_gyr, &_acc, &_mag);
-			sys_calib.set(_sys);
-			gyr_calib.set(_gyr);
-			acc_calib.set(_acc);
-			mag_calib.set(_mag);
-			if(force || sys_calib.get_and_clear_changed() || gyr_calib.get_and_clear_changed() || acc_calib.get_and_clear_changed() || mag_calib.get_and_clear_changed()){
-				return String(ID_GET_VALUE)+String(' ')+
-					String(ID_IMU_CALIBRATION)+String(' ')+
-					String(_sys)+String(' ')+
-					String(_gyr)+String(' ')+
-					String(_acc)+String(' ')+
-					String(_mag);
-			}else{
-				return String("");
-			}
-		}
+//        bool get_and_clear_changed_calibration(){
+//            if(!connected.get_latest()) return false;
+//            uint8_t _sys, _gyr, _acc, _mag = 0;
+//            bno.getCalibration(&_sys, &_gyr, &_acc, &_mag);
+//            sys_calib.set(_sys);
+//            gyr_calib.set(_gyr);
+//            acc_calib.set(_acc);
+//            mag_calib.set(_mag);
+//            return connected.get_and_clear_changed() || sys_calib.get_and_clear_changed() || gyr_calib.get_and_clear_changed() || acc_calib.get_and_clear_changed() || mag_calib.get_and_clear_changed();
+//        }
+
+//        String get_reading_packet_calibration(bool force){
+//        	if(!connected.get_latest()) return String("");
+//			uint8_t _sys, _gyr, _acc, _mag = 0;
+//			bno.getCalibration(&_sys, &_gyr, &_acc, &_mag);
+//			sys_calib.set(_sys);
+//			gyr_calib.set(_gyr);
+//			acc_calib.set(_acc);
+//			mag_calib.set(_mag);
+//			if(force || sys_calib.get_and_clear_changed() || gyr_calib.get_and_clear_changed() || acc_calib.get_and_clear_changed() || mag_calib.get_and_clear_changed()){
+//				return String(ID_GET_VALUE)+String(' ')+
+//					String(ID_IMU_CALIBRATION)+String(' ')+
+//					String(_sys)+String(' ')+
+//					String(_gyr)+String(' ')+
+//					String(_acc)+String(' ')+
+//					String(_mag);
+//			}else{
+//				return String("");
+//			}
+//		}
 
 };

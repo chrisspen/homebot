@@ -3,6 +3,8 @@ Arduino Uno Pro
 
 http://www.hobbytronics.co.uk/arduino-uno-pro
 
+https://github.com/maniacbug/mighty-1284p
+
 Arduino UNO*Pro - Upgrade
 
 The UNO*Pro is a simple plugin replacement for the existing ATmega328 chip (DIL socket version) and turns your existing UNO (or Duemilanove or Diecimila) into something much closer to a Mega board whilst retaining the UNO form factor and shield compatibility (see below). NOTE: Arduino main board not included.

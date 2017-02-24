@@ -1,3 +1,5 @@
+#ifndef BooleanSensor_h
+#define BooleanSensor_h
 
 #include "Arduino.h"
 
@@ -35,3 +37,5 @@ class BooleanSensor: public Sensor{
         }
         
 };
+
+#endif

@@ -1,3 +1,5 @@
+DEPRECATED: USE ros_homebot_base/src/firmware/torso2 INSTEAD
+
 This is code for the Arduino UNO located in the torso section.
 
 It's primarily responsible for directly controlling the motors, monitoring battery voltage, and any sensors in the torso.

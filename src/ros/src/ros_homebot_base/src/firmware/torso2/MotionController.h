@@ -281,30 +281,24 @@ class MotionController: public Sensor
 
         ChangeTracker<byte> eflag = ChangeTracker<byte>(0);
 
-        ChangeTracker<bool> connected = ChangeTracker<bool>(false);
-
         int aspeed = 0;
 
 		int bspeed = 0;
 
 		unsigned long checks = 0;
+
+		unsigned long _last_connection_attempt = 0;
+
+		int connection_error = 0;
     
         MotionController(){
         }
         
-        bool is_connected(){
-            return connected.get_latest();
-        }
-        
         void connect(){
             Wire.beginTransmission(DEFAULT_COMMOTION_ADDR);
-            int error = Wire.endTransmission();
-            if(!error){
-                connected.set(true);
-            }else{
-            	connected.set(false);
-            }
-            if(is_connected()){
+            int connection_error = Wire.endTransmission();
+            _last_connection_attempt = millis();
+            if(!connection_error){
 				// Normal mode, Rover 5 with mecanum wheels, lowbat = 6V, motor currents =2.5A, no offset, Master address=1;
 				//Serial.println(String(F("set_basic_config()"));Serial.flush();
 				set_basic_config(
@@ -358,7 +352,7 @@ class MotionController: public Sensor
         }
 
         void set(int left_speed, int right_speed){
-            if(!is_connected()){
+            if(!connection_error){
                 return;
             }
 
@@ -426,14 +420,16 @@ class MotionController: public Sensor
         }
 
         virtual void update(){
+            return;
 
-        	// Occassionally, we're unable to connect on startup, so retry.
-        	if(!is_connected()){
-        		connect();
-        	}
+        	// Occassionally, we're unable to connect on startup, so retry every 5 seconds.
+            // This causes the entire board to become unresponsive via serial if commotion is not connected.
+//        	if(connection_error && millis() - _last_connection_attempt >= 5000){
+//        		connect();
+//        	}
 
         	// If we still can't connect, then abort.
-            if(!is_connected()){
+            if(connection_error){
             	eflag.set(COMMOTION_ERROR_DISCONNECT);
                 return;
             }
@@ -484,7 +480,7 @@ class MotionController: public Sensor
         }
         
         void stop(){
-            if(!is_connected()){
+            if(connection_error){
                 return;
             }
             
@@ -498,54 +494,7 @@ class MotionController: public Sensor
         }
 
         virtual bool get_and_clear_changed(){
-        	bool a = a_encoder.get_and_clear_changed();
-        	bool b = b_encoder.get_and_clear_changed();
-        	bool c = eflag.get_and_clear_changed();
-        	return a || b || c;
-        	//return true;
-        }
-
-        String get_a_encoder_packet(){
-        	return
-        		String(ID_GET_VALUE)+String(' ')+
-				String(ID_MOTOR_ENCODER)+String(' ')+
-				String(0)+String(' ')+
-				String(a_encoder.get())
-				//String(acount)
-			;
-        }
-
-        String get_b_encoder_packet(){
-        	return
-        		String(ID_GET_VALUE)+String(' ')+
-				String(ID_MOTOR_ENCODER)+String(' ')+
-				String(1)+String(' ')+
-				String(b_encoder.get())
-				//String(bcount)
-			;
-        }
-
-        String get_eflag_packet(){
-        	return
-        		String(ID_GET_VALUE)+String(' ')+
-				String(ID_MOTOR_ERROR)+String(' ')+
-				String(eflag.get())
-			;
-        }
-
-        String get_movement_packet(){
-        	if(_movement_send_done){
-        		_movement_send_done = false;
-        		return String(ID_TWIST_DONE)+String(' ')+String(_movement_error_code);
-        	}else{
-        		return String("");
-        	}
-        }
-
-        String get_acceleration_packet(){
-            return String(ID_GET_VALUE)+String(' ')+
-                String(ID_MOTOR_ACCEL)+String(' ')+
-                String(get_acceleration());
+        	return false;
         }
 
 };
