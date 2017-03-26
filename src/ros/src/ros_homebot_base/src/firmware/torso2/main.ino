@@ -159,11 +159,11 @@ ros::Publisher imu_calibration_mag_publisher = ros::Publisher("imu/calibration/m
  * End publisher definitions.
  */
 
-void toggle_led(){
+void toggle_led() {
     digitalWrite(STATUS_LED_PIN, HIGH-digitalRead(STATUS_LED_PIN));   // blink the led
 }
 
-void stop_motors(){
+void stop_motors() {
     nh.loginfo("Motors halted!");
     //motion_controller.stop();
     motion_controller.set(0, 0);
@@ -207,12 +207,12 @@ void on_cmd_vel(const geometry_msgs::Twist& msg) {
 ros::Subscriber<geometry_msgs::Twist> cmd_vel_sub("cmd_vel", &on_cmd_vel);
 
 // rostopic pub --once /torso_arduino/motor/speed std_msgs/Int16MultiArray "{layout:{dim:[], data_offset: 0}, data:[64, 64]}"
-void on_motor_speed(const std_msgs::Int16MultiArray& msg){
+void on_motor_speed(const std_msgs::Int16MultiArray& msg) {
     nh.loginfo("Setting motor speed...");
     toggle_led();
-    if(motion_controller.connection_error){
+    if (motion_controller.connection_error) {
         nh.loginfo("Unable to set motor speed due to connection error.");
-    }else{
+    } else {
         //set_motor_speeds(0, 0, msg.data[0], msg.data[1]);
         motion_controller.set(msg.data[0], msg.data[1]);
         nh.loginfo("Motor speed set.");
@@ -229,7 +229,6 @@ ros::Subscriber<std_msgs::Int16MultiArray> motor_speed_sub("motor/speed", &on_mo
 //                );
 //                ack = true;
 //                break;
-//                
 //            case ID_MOTOR_ACCEL:
 //                motion_controller.set_acceleration(packet.get_arg(0).toInt());
 //                ack = true;
