@@ -25,6 +25,7 @@
 #include "UltrasonicSensor.h"
 #include "AccelGyroSensor.h"
 #include "PowerController.h"
+#include "ArduinoTemperatureSensor.h"
 
 //#define PING_TIMEOUT_MS 10000
 
@@ -87,6 +88,8 @@ BooleanSensor external_power_sensors[2] = {
     BooleanSensor(EXTERNAL_POWER_SENSE_2_PIN)
     // We're only fully docked and charging when both EP1 and EP2 are high.
 };
+
+ArduinoTemperatureSensor arduino_temperature_sensor = ArduinoTemperatureSensor();
 
 PowerController power_controller = PowerController();
 
@@ -154,6 +157,8 @@ ros::Publisher imu_calibration_sys_publisher = ros::Publisher("imu/calibration/s
 ros::Publisher imu_calibration_gyr_publisher = ros::Publisher("imu/calibration/gyr", &int16_msg);
 ros::Publisher imu_calibration_acc_publisher = ros::Publisher("imu/calibration/acc", &int16_msg);
 ros::Publisher imu_calibration_mag_publisher = ros::Publisher("imu/calibration/mag", &int16_msg);
+
+ros::Publisher arduino_temperature_publisher = ros::Publisher("temperature", &float_msg);
 
 /*
  * End publisher definitions.
@@ -281,6 +286,7 @@ void setup() {
     nh.advertise(imu_calibration_gyr_publisher);
     nh.advertise(imu_calibration_acc_publisher);
     nh.advertise(imu_calibration_mag_publisher);
+    nh.advertise(arduino_temperature_publisher);
 
     // Join I2C bus as Master with address #1
     Wire.begin(1);
@@ -339,6 +345,12 @@ void loop() {
             }
             delay(ultrasonics_spacing);
         }
+    }
+
+    // Temperature.
+    if (arduino_temperature_sensor.get_and_clear_changed() || force_sensors) {
+        float_msg.data = arduino_temperature_sensor.temperature.get();
+        arduino_temperature_publisher.publish(&float_msg);
     }
 
     // Motion controller.
