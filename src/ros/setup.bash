@@ -16,3 +16,6 @@ if [ -f "$_CURRENT_DIR/../overlay/devel/setup.bash" ]; then
     source $_CURRENT_DIR/../overlay/devel/setup.bash --extend
 fi
 source $_CURRENT_DIR/devel/setup.sh --extend
+
+PATH=$PATH:src/ros_homebot_python/src/ros_homebot_python/bin
+export PATH

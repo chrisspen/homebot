@@ -1,8 +1,8 @@
 <!--
 roslaunch ros_homebot_base serial_torso.launch
 
-rostopic pub toggle_led std_msgs/Empty -once
-rostopic pub force_sensors std_msgs/Empty -once
+rostopic pub /torso_arduino/toggle_led std_msgs/Empty -once
+rostopic pub /torso_arduino/force_sensors std_msgs/Empty -once
 
 rostopic echo 
 -->
@@ -10,6 +10,7 @@ rostopic echo
     <group ns="torso_arduino">
         <node pkg="rosserial_python" type="serial_node.py" name="serial_node" output="screen">
             <param name="~port" value="/dev/ttyACM0" />
+            <!--<param name="~port" value="$(list_arduinos.py torso)" />-->
             <!--<param name="~baud" value="57600" />-->
             <param name="~baud" value="115200" />
         </node>

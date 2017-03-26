@@ -39,7 +39,18 @@ if __name__ == '__main__':
     
     import argparse
 
-    parser = argparse.ArgumentParser(description='Lists Arduinos connected on USB ports.')
+    parser = argparse.ArgumentParser(description='''Lists Arduinos connected on USB ports.
+
+Examples:
+    
+    List all devices and their USB port:
+    
+        list_arduinos.py
+    
+    List the USB port for a specific device:
+    
+        list_arduinos.py torso
+''', formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('target', nargs='*',
         help='The device name to look for.')
     parser.add_argument('--verbose', action='store_true', default=False)

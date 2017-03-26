@@ -21,13 +21,13 @@
 
 #define REQUESTFOR_SIZE 9
 
-#define COMMOTION_ERROR_DISCONNECT    B01000000 // arduino can't connect via I2C
-#define COMMOTION_ERROR_SHUTDOWN      B00100000 // error flag bit 6 indicates power shut down due to low battery voltage
-#define COMMOTION_ERROR_LOWBAT        B00010000 // bit 5 indicates power dipping below batlow voltage
-#define COMMOTION_ERROR_M4_MAXCURRENT B00001000 // bit 3 indicates M4 has exceeded current limit
-#define COMMOTION_ERROR_M3_MAXCURRENT B00000100 // bit 2 indicates M3 has exceeded current limit
-#define COMMOTION_ERROR_M2_MAXCURRENT B00000010 // bit 1 indicates M2 has exceeded current limit
-#define COMMOTION_ERROR_M1_MAXCURRENT B00000001 // bit 0 indicates M1 has exceeded current limit
+#define COMMOTION_ERROR_DISCONNECT    B01000000 // 64 = arduino can't connect via I2C
+#define COMMOTION_ERROR_SHUTDOWN      B00100000 // 32 = error flag bit 6 indicates power shut down due to low battery voltage
+#define COMMOTION_ERROR_LOWBAT        B00010000 // 16 = bit 5 indicates power dipping below batlow voltage
+#define COMMOTION_ERROR_M4_MAXCURRENT B00001000 // 8 = bit 3 indicates M4 has exceeded current limit
+#define COMMOTION_ERROR_M3_MAXCURRENT B00000100 // 4 = bit 2 indicates M3 has exceeded current limit
+#define COMMOTION_ERROR_M2_MAXCURRENT B00000010 // 2 = bit 1 indicates M2 has exceeded current limit
+#define COMMOTION_ERROR_M1_MAXCURRENT B00000001 // 1 = bit 0 indicates M1 has exceeded current limit
 
 #define FULL_SPEED      255
 #define HALF_SPEED      128
@@ -289,14 +289,14 @@ class MotionController: public Sensor
 
 		unsigned long _last_connection_attempt = 0;
 
-		int connection_error = 0;
+		int connection_error = -1;
     
         MotionController(){
         }
         
         void connect(){
             Wire.beginTransmission(DEFAULT_COMMOTION_ADDR);
-            int connection_error = Wire.endTransmission();
+            connection_error = Wire.endTransmission();
             _last_connection_attempt = millis();
             if(!connection_error){
 				// Normal mode, Rover 5 with mecanum wheels, lowbat = 6V, motor currents =2.5A, no offset, Master address=1;
@@ -351,15 +351,17 @@ class MotionController: public Sensor
             _movement_encoder_changed = false;
         }
 
-        void set(int left_speed, int right_speed){
-            if(!connection_error){
-                return;
+        bool set(int left_speed, int right_speed){
+            if(connection_error){
+                return false;
             }
 
             _motor_left.set_speed(left_speed);
             _motor_right.set_speed(right_speed);
             //NA NA left right
             set_motor_speeds(0, 0, _motor_left.get_speed(), _motor_right.get_speed());
+
+            return true;
         }
 
     	void set_movement(float linear, float angular, float seconds, int force){
@@ -374,6 +376,15 @@ class MotionController: public Sensor
     		float left_speed_out = (linear - angular*TORSO_TREAD_WIDTH_METERS/2) * VELOCITY_TO_SPEED;
     		float right_speed_out = (linear + angular*TORSO_TREAD_WIDTH_METERS/2) * VELOCITY_TO_SPEED;
     		set(left_speed_out, right_speed_out);
+    	}
+
+    	// http://answers.ros.org/question/11482/whats-the-best-way-to-use-ros-to-control-motors-on-a-simple-robot/
+    	// linear is in meter/sec, angular is in rad/sec
+    	void set_cmd_vel(float linear, float angular){
+    	    reset_movement();
+            float left_speed_out = (linear - angular*TORSO_TREAD_WIDTH_METERS/2) * VELOCITY_TO_SPEED;
+            float right_speed_out = (linear + angular*TORSO_TREAD_WIDTH_METERS/2) * VELOCITY_TO_SPEED;
+            set(left_speed_out, right_speed_out);
     	}
 
     	bool is_executing_movement(){
@@ -420,7 +431,6 @@ class MotionController: public Sensor
         }
 
         virtual void update(){
-            return;
 
         	// Occassionally, we're unable to connect on startup, so retry every 5 seconds.
             // This causes the entire board to become unresponsive via serial if commotion is not connected.
