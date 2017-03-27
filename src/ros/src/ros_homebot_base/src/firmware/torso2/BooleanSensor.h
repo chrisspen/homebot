@@ -22,7 +22,20 @@ class BooleanSensor: public Sensor{
             _pin = pin;
             pinMode(_pin, INPUT);
         }
+
+        BooleanSensor(const int &pin, const bool pullup){
+            _pin = pin;
+            set_pullup(pullup);
+        }
         
+        void set_pullup(bool onoff){
+            if (onoff) {
+                pinMode(_pin, INPUT_PULLUP);
+            } else {
+                pinMode(_pin, INPUT);
+            }
+        }
+
         virtual void update(){
             // Read the analog pin and update the moving average.
             value.set(digitalRead(_pin));

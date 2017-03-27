@@ -59,6 +59,9 @@ std_msgs::Byte byte_msg;
 std_msgs::Bool bool_msg;
 std_msgs::Float32 float_msg;
 
+#define MAX_OUT_CHARS 255
+char buffer[MAX_OUT_CHARS + 1];  //buffer used to format a line (+1 is for trailing 0)
+
 /*
  * Begin sensor definitions.
  */
@@ -89,7 +92,7 @@ BooleanSensor external_power_sensors[2] = {
     // We're only fully docked and charging when both EP1 and EP2 are high.
 };
 
-ArduinoTemperatureSensor arduino_temperature_sensor = ArduinoTemperatureSensor();
+//ArduinoTemperatureSensor arduino_temperature_sensor = ArduinoTemperatureSensor();
 
 PowerController power_controller = PowerController();
 
@@ -111,7 +114,7 @@ UltrasonicSensor ultrasonic_sensors[3] = {
     UltrasonicSensor(SONIC_R_PIN)
 };
 
-BooleanSensor power_button_sensor = BooleanSensor(SIGNAL_BUTTON_PIN);
+BooleanSensor power_button_sensor = BooleanSensor(SIGNAL_BUTTON_PIN, true);
 
 /*
  * End sensor definitions.
@@ -135,11 +138,12 @@ ros::Publisher edge_publishers[3] = {
     ros::Publisher("edge/2", &bool_msg)
 };
 
-ros::Publisher bumper_publishers[3] = {
-    ros::Publisher("bumper/0", &bool_msg),
-    ros::Publisher("bumper/1", &bool_msg),
-    ros::Publisher("bumper/2", &bool_msg)
-};
+//TODO:enable once physical switches are improved, otherwise this is worthless
+//ros::Publisher bumper_publishers[3] = {
+//    ros::Publisher("bumper/0", &bool_msg),
+//    ros::Publisher("bumper/1", &bool_msg),
+//    ros::Publisher("bumper/2", &bool_msg)
+//};
 
 ros::Publisher ultrasonic_publishers[3] = {
     ros::Publisher("ultrasonic/0", &int16_msg),
@@ -153,12 +157,29 @@ ros::Publisher motor_a_encoder_publisher = ros::Publisher("motor/encoder/a", &in
 ros::Publisher motor_b_encoder_publisher = ros::Publisher("motor/encoder/b", &int16_msg);
 ros::Publisher motor_error_publisher = ros::Publisher("motor/error", &byte_msg);
 
+// https://learn.adafruit.com/adafruit-bno055-absolute-orientation-sensor/device-calibration
+// Directly from the bno.getCalibration(), 0=not calibrated, 3=fully calibrated
+// The reason is that system cal '0' in NDOF mode means that the device has not yet found the 'north pole',
+// and orientation values will be off  The heading will jump to an absolute value once the BNO finds magnetic north
+// (the system calibration status jumps to 1 or higher).
 ros::Publisher imu_calibration_sys_publisher = ros::Publisher("imu/calibration/sys", &int16_msg);
+// To calibrate, the device must be standing still in any position.
 ros::Publisher imu_calibration_gyr_publisher = ros::Publisher("imu/calibration/gyr", &int16_msg);
+// This seems to take forever to calibrate, no matter how long you wait or move the sensor.
+// The BNO055 must be placed in 6 standing positions for +X, -X, +Y, -Y, +Z and -Z.
+// This is the most onerous sensor to calibrate, but the best solution to generate the calibration data
+// is to find a block of wood or similar object, and place the sensor on each of the 6 'faces' of the block,
+// which will help to maintain sensor alignment during the calibration process.
+// You should still be able to get reasonable quality data from the BNO055, however, even if the accelerometer
+// isn't entirely or perfectly calibrated.
+// This also isn't necessary for the sys output to read 3, or fully calibrated.
 ros::Publisher imu_calibration_acc_publisher = ros::Publisher("imu/calibration/acc", &int16_msg);
+// To calibrate, the sensor must be moved in a 'figure 8' motion ideally, or at least some minimal movement.
+// Note, mag will remain at 0 until it's moved a little, then it will switch to 1 and then 2, and then after a few more seconds, fully to 3.
+// The lesson here is that simply waiting for the IMU to fully calibrate won't work. The robot needs to move itself around a little.
 ros::Publisher imu_calibration_mag_publisher = ros::Publisher("imu/calibration/mag", &int16_msg);
 
-ros::Publisher arduino_temperature_publisher = ros::Publisher("temperature", &float_msg);
+//ros::Publisher arduino_temperature_publisher = ros::Publisher("temperature", &float_msg);
 
 /*
  * End publisher definitions.
@@ -270,9 +291,9 @@ void setup() {
     for (int i = 0; i < 3; i++) {
         nh.advertise(edge_publishers[i]);
     }
-    for (int i = 0; i < 3; i++) {
-        nh.advertise(bumper_publishers[i]);
-    }
+//    for (int i = 0; i < 3; i++) {
+//        nh.advertise(bumper_publishers[i]);
+//    }
     for (int i = 0; i < 3; i++) {
         nh.advertise(ultrasonic_publishers[i]);
     }
@@ -286,7 +307,7 @@ void setup() {
     nh.advertise(imu_calibration_gyr_publisher);
     nh.advertise(imu_calibration_acc_publisher);
     nh.advertise(imu_calibration_mag_publisher);
-    nh.advertise(arduino_temperature_publisher);
+//    nh.advertise(arduino_temperature_publisher);
 
     // Join I2C bus as Master with address #1
     Wire.begin(1);
@@ -332,11 +353,11 @@ void loop() {
             bool_msg.data = edge_sensors[i].value.get();
             edge_publishers[i].publish(&bool_msg);
         }
-        bumper_sensors[i].update();
-        if (bumper_sensors[i].get_and_clear_changed() || force_sensors) {
-            bool_msg.data = bumper_sensors[i].value.get();
-            bumper_publishers[i].publish(&bool_msg);
-        }
+//        bumper_sensors[i].update();
+//        if (bumper_sensors[i].get_and_clear_changed() || force_sensors) {
+//            bool_msg.data = bumper_sensors[i].value.get();
+//            bumper_publishers[i].publish(&bool_msg);
+//        }
         if (ultrasonics_enabled) {
             ultrasonic_sensors[i].update();
             if (ultrasonic_sensors[i].get_and_clear_changed() || force_sensors) {
@@ -348,10 +369,11 @@ void loop() {
     }
 
     // Temperature.
-    if (arduino_temperature_sensor.get_and_clear_changed() || force_sensors) {
-        float_msg.data = arduino_temperature_sensor.temperature.get();
-        arduino_temperature_publisher.publish(&float_msg);
-    }
+//    arduino_temperature_sensor.update();
+//    if (arduino_temperature_sensor.get_and_clear_changed() || force_sensors) {
+//        float_msg.data = arduino_temperature_sensor.temperature.get();
+//        arduino_temperature_publisher.publish(&float_msg);
+//    }
 
     // Motion controller.
     motion_controller.update();
@@ -387,8 +409,19 @@ void loop() {
         imu_calibration_mag_publisher.publish(&int16_msg);
     }
 
-    // Power button shutoff controller.
+    // Power button.
+    power_button_sensor.update();
+    if (power_button_sensor.get_and_clear_changed() || force_sensors) {
+        bool_msg.data = power_button_sensor.get_value();
+        power_button_publisher.publish(&bool_msg);
+    }
+
+    // Power shutoff controller.
     power_controller.update();
+    if (power_controller.get_and_clear_changed()) {
+        snprintf(buffer, MAX_OUT_CHARS, "Power controller state changed: %d", power_controller.power_state.get());
+        nh.loginfo(buffer);
+    }
 
     force_sensors = false;
 
