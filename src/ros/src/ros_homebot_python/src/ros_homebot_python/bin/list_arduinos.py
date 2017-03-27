@@ -27,7 +27,7 @@ def list_arduinos(verbose=False, target=None):
             pass
         
         if target:
-            print device or ''
+            sys.stdout.write(device or '')
             return
         else:
             print name, device
