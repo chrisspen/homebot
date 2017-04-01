@@ -322,7 +322,7 @@ void setup() {
     // Turn on power status light.
     pinMode(STATUS_LED_PIN, OUTPUT);
     digitalWrite(STATUS_LED_PIN, true);
-    
+
 //    pinMode(EXTERNAL_POWER_SENSE_1_PIN, INPUT);
 //    pinMode(EXTERNAL_POWER_SENSE_2_PIN, INPUT);
 
@@ -378,7 +378,7 @@ void setup() {
 }
 
 void loop() {
-    
+
 //    if(millis() - last_debug > 1000){
 //        last_debug = millis();
 //        //snprintf(buffer, MAX_OUT_CHARS, "EXTERNAL_POWER_SENSE_1_PIN: %d", analogRead(EXTERNAL_POWER_SENSE_1_PIN));
@@ -429,7 +429,7 @@ void loop() {
             if (ultrasonic_sensors[i].get_and_clear_changed() || force_sensors) {
                 //int16_msg.data = ultrasonic_sensors[i].distance.get();
                 //ultrasonic_publishers[i].publish(&int16_msg);
-                
+
                 // http://docs.ros.org/jade/api/sensor_msgs/html/msg/Range.html
                 // http://wiki.ros.org/rosserial_arduino/Tutorials/Time%20and%20TF
                 range_msg.header.stamp = nh.now();
@@ -502,7 +502,7 @@ void loop() {
         snprintf(buffer, MAX_OUT_CHARS, "Power controller state changed: %d", power_controller.power_state.get());
         nh.loginfo(buffer);
     }
-    
+
     // Battery state change.
     if (batter_changed) {
         batter_changed = false;
