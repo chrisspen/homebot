@@ -3,6 +3,8 @@
  */
 // http://wiki.ros.org/rosserial_arduino/Tutorials/Hello%20World
 #include <ros.h>
+#include <math.h>
+#include <stdint.h>
 #include <std_msgs/Empty.h>
 #include <std_msgs/Bool.h>
 #include <std_msgs/Byte.h>
@@ -14,6 +16,8 @@
 #include <std_msgs/Int16MultiArray.h>
 #include <std_msgs/Int8MultiArray.h>
 #include <std_msgs/String.h>
+#include <sensor_msgs/Range.h>
+#include <sensor_msgs/BatteryState.h>
 #include <geometry_msgs/Twist.h>
 #include <Wire.h>
 
@@ -26,8 +30,13 @@
 #include "AccelGyroSensor.h"
 #include "PowerController.h"
 #include "ArduinoTemperatureSensor.h"
+#include "AnalogSensor.h"
 
 //#define PING_TIMEOUT_MS 10000
+
+char base_link[] = "/base_link";
+const char * const ultrasonic_links[] = { "/base_link/ultrasonic0", "/base_link/ultrasonic1", "/base_link/ultrasonic2" };
+char odom[] = "/odom";
 
 AccelGyroSensor ag_sensor = AccelGyroSensor();
 
@@ -58,9 +67,15 @@ std_msgs::Int16 int16_msg;
 std_msgs::Byte byte_msg;
 std_msgs::Bool bool_msg;
 std_msgs::Float32 float_msg;
+sensor_msgs::Range range_msg;
+sensor_msgs::BatteryState battery_msg;
 
 #define MAX_OUT_CHARS 255
 char buffer[MAX_OUT_CHARS + 1];  //buffer used to format a line (+1 is for trailing 0)
+
+bool batter_changed = false;
+
+unsigned long last_debug = 0;
 
 /*
  * Begin sensor definitions.
@@ -78,17 +93,17 @@ BatteryVoltageSensor battery_voltage_sensor = BatteryVoltageSensor(
     2
 );
 
-BooleanSensor external_power_sensors[2] = {
+AnalogSensor external_power_sensors[2] = {
     // EP1
     // The pin measuring immediately after the external connector but before the reed switch.
     // Reads high when the external power plug is connected and external power is present.
-    BooleanSensor(EXTERNAL_POWER_SENSE_1_PIN),
+    AnalogSensor(EXTERNAL_POWER_SENSE_1_PIN),
     // EP2
     // The pin measuring behind the reed switch.
     // Reads high when the external power plug is connected, regardless of whether or not
     // external power is present.
     // This lets the robot know if it's connected to a dead recharge station.
-    BooleanSensor(EXTERNAL_POWER_SENSE_2_PIN)
+    AnalogSensor(EXTERNAL_POWER_SENSE_2_PIN)
     // We're only fully docked and charging when both EP1 and EP2 are high.
 };
 
@@ -124,12 +139,15 @@ BooleanSensor power_button_sensor = BooleanSensor(SIGNAL_BUTTON_PIN, true);
  * Begin publisher definitions.
  */
 
-ros::Publisher battery_voltage_publisher = ros::Publisher("power/voltage", &float_msg);
-ros::Publisher battery_charge_publisher = ros::Publisher("power/charge", &float_msg);
+//ros::Publisher battery_voltage_publisher = ros::Publisher("power/voltage", &float_msg);
+//ros::Publisher battery_charge_publisher = ros::Publisher("power/charge", &float_msg);
+
+// rostopic echo /torso_arduino/battery
+ros::Publisher battery_state_publisher = ros::Publisher("battery", &battery_msg);
 
 ros::Publisher external_power_publishers[2] = {
-    ros::Publisher("power/external/0", &bool_msg),
-    ros::Publisher("power/external/1", &bool_msg)
+    ros::Publisher("power/external/0", &bool_msg), // external power voltage present
+    ros::Publisher("power/external/1", &bool_msg) // external power magnet present
 };
 
 ros::Publisher edge_publishers[3] = {
@@ -146,9 +164,12 @@ ros::Publisher edge_publishers[3] = {
 //};
 
 ros::Publisher ultrasonic_publishers[3] = {
-    ros::Publisher("ultrasonic/0", &int16_msg),
-    ros::Publisher("ultrasonic/1", &int16_msg),
-    ros::Publisher("ultrasonic/2", &int16_msg)
+//    ros::Publisher("ultrasonic/0", &int16_msg),
+//    ros::Publisher("ultrasonic/1", &int16_msg),
+//    ros::Publisher("ultrasonic/2", &int16_msg)
+    ros::Publisher("ultrasonic/0", &range_msg),
+    ros::Publisher("ultrasonic/1", &range_msg),
+    ros::Publisher("ultrasonic/2", &range_msg)
 };
 
 ros::Publisher power_button_publisher = ros::Publisher("power/button", &bool_msg);
@@ -185,6 +206,31 @@ ros::Publisher imu_calibration_mag_publisher = ros::Publisher("imu/calibration/m
  * End publisher definitions.
  */
 
+uint8_t get_battery_supply_status() {
+    if (external_power_sensors[0].get_bool() && external_power_sensors[1].get_bool()) {
+        // If the external power connection is present and reading voltage, then we're either charging or fully charged.
+        if (battery_voltage_sensor.get_charge_ratio_int() >= 95) {
+            return sensor_msgs::BatteryState::POWER_SUPPLY_STATUS_FULL;
+        } else {
+            return sensor_msgs::BatteryState::POWER_SUPPLY_STATUS_CHARGING;
+        }
+    } else if (battery_voltage_sensor.get_charge_ratio_int() <= 1 && !external_power_sensors[1].get_bool()) {
+        // If the external power connector is reading not present but we're also reading near-zero battery voltage,
+        // but we're still computing, then that means we're on external power and the battery has been physically removed.
+        return sensor_msgs::BatteryState::POWER_SUPPLY_STATUS_NOT_CHARGING;
+    } else {
+        // Otherwise, we're on battery power and discharging.
+        return sensor_msgs::BatteryState::POWER_SUPPLY_STATUS_DISCHARGING;
+    }
+}
+
+bool is_battery_present() {
+    if (get_battery_supply_status() == sensor_msgs::BatteryState::POWER_SUPPLY_STATUS_NOT_CHARGING) {
+        return false;
+    }
+    return true;
+}
+
 void toggle_led() {
     digitalWrite(STATUS_LED_PIN, HIGH-digitalRead(STATUS_LED_PIN));   // blink the led
 }
@@ -200,9 +246,14 @@ void stop_motors() {
  * Begin subscribers.
  */
 
-// rostopic pub /ultrasonics/enabled std_msgs/Bool 1
-// rostopic pub /ultrasonics/enabled std_msgs/Bool 0
+// rostopic pub --once /torso_arduino/ultrasonics/enabled std_msgs/Bool 1
+// rostopic pub --once /torso_arduino/ultrasonics/enabled std_msgs/Bool 0
 void on_ultrasonics_enabled(const std_msgs::Bool& msg) {
+    if (msg.data) {
+        nh.loginfo("Ultrasonics enabled.");
+    } else {
+        nh.loginfo("Ultrasonics disabled.");
+    }
     ultrasonics_enabled = msg.data;
 }
 ros::Subscriber<std_msgs::Bool> ultrasonics_enabled_sub("ultrasonics/enabled", &on_ultrasonics_enabled);
@@ -271,6 +322,9 @@ void setup() {
     // Turn on power status light.
     pinMode(STATUS_LED_PIN, OUTPUT);
     digitalWrite(STATUS_LED_PIN, true);
+    
+//    pinMode(EXTERNAL_POWER_SENSE_1_PIN, INPUT);
+//    pinMode(EXTERNAL_POWER_SENSE_2_PIN, INPUT);
 
     //nh.getHardware()->setBaud(57600);
     nh.getHardware()->setBaud(115200); // loses connection?
@@ -285,8 +339,9 @@ void setup() {
     nh.subscribe(cmd_vel_sub);
 
     // Register publishers.
-    nh.advertise(battery_voltage_publisher);
-    nh.advertise(battery_charge_publisher);
+    //nh.advertise(battery_voltage_publisher);
+    //nh.advertise(battery_charge_publisher);
+    nh.advertise(battery_state_publisher);
     nh.advertise(power_button_publisher);
     for (int i = 0; i < 3; i++) {
         nh.advertise(edge_publishers[i]);
@@ -323,6 +378,16 @@ void setup() {
 }
 
 void loop() {
+    
+//    if(millis() - last_debug > 1000){
+//        last_debug = millis();
+//        //snprintf(buffer, MAX_OUT_CHARS, "EXTERNAL_POWER_SENSE_1_PIN: %d", analogRead(EXTERNAL_POWER_SENSE_1_PIN));
+//        snprintf(buffer, MAX_OUT_CHARS, "external voltage present? (EP1): %d", external_power_sensors[0].get_bool());
+//        nh.loginfo(buffer);
+//        //snprintf(buffer, MAX_OUT_CHARS, "EXTERNAL_POWER_SENSE_2_PIN: %d", analogRead(EXTERNAL_POWER_SENSE_2_PIN));
+//        snprintf(buffer, MAX_OUT_CHARS, "external power plug attached? (EP2): %d", external_power_sensors[1].get_bool());
+//        nh.loginfo(buffer);
+//    }
 
     // If we just became disconnected from the host, then immediately halt all motors.
     if (last_connected != nh.connected() && !nh.connected()) {
@@ -333,15 +398,16 @@ void loop() {
     // Battery sensor.
     battery_voltage_sensor.update();
     if (battery_voltage_sensor.get_and_clear_changed() || force_sensors) {
-        float_msg.data = battery_voltage_sensor.get_voltage();
-        battery_voltage_publisher.publish(&float_msg);
+//        float_msg.data = battery_voltage_sensor.get_voltage();
+//        battery_voltage_publisher.publish(&float_msg);
+        batter_changed = true;
     }
 
     // External power sensors.
     for (int i = 0; i < 2; i++) {
         external_power_sensors[i].update();
         if (external_power_sensors[i].get_and_clear_changed() || force_sensors) {
-            bool_msg.data = external_power_sensors[i].value.get();
+            bool_msg.data = external_power_sensors[i].get_bool();
             external_power_publishers[i].publish(&bool_msg);
         }
     }
@@ -361,8 +427,22 @@ void loop() {
         if (ultrasonics_enabled) {
             ultrasonic_sensors[i].update();
             if (ultrasonic_sensors[i].get_and_clear_changed() || force_sensors) {
-                int16_msg.data = ultrasonic_sensors[i].distance.get();
-                ultrasonic_publishers[i].publish(&int16_msg);
+                //int16_msg.data = ultrasonic_sensors[i].distance.get();
+                //ultrasonic_publishers[i].publish(&int16_msg);
+                
+                // http://docs.ros.org/jade/api/sensor_msgs/html/msg/Range.html
+                // http://wiki.ros.org/rosserial_arduino/Tutorials/Time%20and%20TF
+                range_msg.header.stamp = nh.now();
+                //snprintf(buffer, MAX_OUT_CHARS, "/base_link/ultrasonic%d", i);
+                //range_msg.header.frame_id = buffer;
+                range_msg.header.frame_id = ultrasonic_links[i];
+                range_msg.radiation_type = sensor_msgs::Range::ULTRASOUND;
+                range_msg.field_of_view = 0.523599; // 30 degrees
+                range_msg.min_range = 0.03; // meters
+                range_msg.max_range = 4; // meters
+                range_msg.range = ultrasonic_sensors[i].distance.get()/100.0; // meters
+
+                ultrasonic_publishers[i].publish(&range_msg);
             }
             delay(ultrasonics_spacing);
         }
@@ -421,6 +501,28 @@ void loop() {
     if (power_controller.get_and_clear_changed()) {
         snprintf(buffer, MAX_OUT_CHARS, "Power controller state changed: %d", power_controller.power_state.get());
         nh.loginfo(buffer);
+    }
+    
+    // Battery state change.
+    if (batter_changed) {
+        batter_changed = false;
+        // http://docs.ros.org/kinetic/api/sensor_msgs/html/msg/BatteryState.html
+        battery_msg.header.stamp = nh.now();
+        battery_msg.header.frame_id = base_link;
+        battery_msg.voltage = battery_voltage_sensor.get_voltage();         // Voltage in Volts (Mandatory)
+        //battery_msg.current = sqrt (-1); //NaN;          // Negative when discharging (A)  (If unmeasured NaN)
+        //battery_msg.charge           // Current charge in Ah  (If unmeasured NaN)
+        //battery_msg.capacity         // Capacity in Ah (last full capacity)  (If unmeasured NaN)
+        battery_msg.design_capacity = 3; // Capacity in Ah (design capacity)  (If unmeasured NaN)
+        battery_msg.percentage = battery_voltage_sensor.get_charge_ratio();       // Charge percentage on 0 to 1 range  (If unmeasured NaN)
+        battery_msg.power_supply_status = get_battery_supply_status();
+        battery_msg.power_supply_health = sensor_msgs::BatteryState::POWER_SUPPLY_HEALTH_UNKNOWN;
+        battery_msg.power_supply_technology = sensor_msgs::BatteryState::POWER_SUPPLY_TECHNOLOGY_LIPO;
+        battery_msg.present = is_battery_present();
+        //battery_msg.cell_voltage   // An array of individual cell voltages for each cell in the pack
+        //battery_msg.location          // The location into which the battery is inserted. (slot number or plug)
+        //battery_msg.serial_number     // The best approximation of the battery serial number
+        battery_state_publisher.publish(&battery_msg);
     }
 
     force_sensors = false;

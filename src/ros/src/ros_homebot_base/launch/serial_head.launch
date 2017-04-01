@@ -1,0 +1,18 @@
+<!--
+roslaunch ros_homebot_base serial_head.launch
+
+rostopic pub /head_arduino/toggle_led std_msgs/Empty -once
+rostopic pub /head_arduino/force_sensors std_msgs/Empty -once
+
+rostopic echo 
+-->
+<launch>
+    <group ns="head_arduino">
+        <node pkg="rosserial_python" type="serial_node.py" name="serial_node" output="screen">
+            <!--<param name="~port" value="/dev/ttyACM0" />-->
+            <param name="~port" command="list_arduinos.py head" />
+            <!--<param name="~baud" value="57600" />-->
+            <param name="~baud" value="115200" />
+        </node>
+    </group>
+</launch>

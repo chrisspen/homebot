@@ -1,0 +1,30 @@
+Seeed Ultrasonic Sensor SEN136B5B
+
+http://wiki.seeed.cc/Ultra_Sonic_range_measurement_module/
+
+Features:
+    
+    Detecting range: 3cm-4m 
+
+    Best in 30 degree angle 
+
+    Electronic brick compatible interface 
+
+    5VDC power supply 
+
+    Breadboard friendly
+
+    Dual transducer 
+
+    Arduino library ready
+
+Specifications
+    
+    Supply voltage  5V
+    Global Current Consumption  15 mA
+    Ultrasonic Frequency    40k Hz
+    Maximal Range   400 cm
+    Minimal Range   3 cm
+    Resolution  1 cm
+    Trigger Pulse Width     10 μs
+    Outline Dimension   43x20x15 mm

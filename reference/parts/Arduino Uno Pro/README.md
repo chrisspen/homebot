@@ -32,6 +32,8 @@ What has changed
     Some of the PWM pins have changed. PWM is no longer available on D5, D6 and D11. These PWM outputs have moved to D8, D12 and D13
     Analog inputs A4 and A5 are no longer on the same pins as the I2C pins. They are now available on the extra 12 way header
 
+NOTE: The analog-to-digital (ADC) pins seem to behave a little differently. Using digitalRead() on these pins, a higher than usual reference voltage is used, resulting in even 4V being interpreted as a logical 0. If you want to get normal behavior, you'll need to use analogRead() and then convert that 0-1024 scale to 0-1.
+
 Installation
 ------------
 

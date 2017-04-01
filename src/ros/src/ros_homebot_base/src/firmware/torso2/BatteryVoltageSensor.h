@@ -100,11 +100,13 @@ class BatteryVoltageSensor: public Sensor{
         float get_charge_ratio(){
             // Calculates the ratio representing the amount of charge before the battery level
             // reaches the dead ratio.
+            // 0 to 1 range
             float bv_ratio = get_voltage()/_full_voltage;
             return (bv_ratio - _dead_ratio)/(1 - _dead_ratio);
         }
         
         int get_charge_ratio_int(){
+            // 0 to 100 range
             return (int)round(get_charge_ratio()*100);
         }
 
