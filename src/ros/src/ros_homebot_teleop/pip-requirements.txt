@@ -1,4 +1,4 @@
-Django==1.10.5
+Django==1.10.7
 #gevent-socketio==0.3.6
 #-e git+https://github.com/abourget/gevent-socketio.git#egg=gevent_socketio-dev
 -e git://github.com/chrisspen/gevent-socketio.git#egg=gevent-socketio
