@@ -5,6 +5,9 @@
 #include <ros.h>
 #include <math.h>
 #include <stdint.h>
+#include <tf/tf.h>
+#include <tf/transform_broadcaster.h>
+#include <geometry_msgs/Quaternion.h>
 #include <std_msgs/Empty.h>
 #include <std_msgs/Bool.h>
 #include <std_msgs/Byte.h>
@@ -18,7 +21,9 @@
 #include <std_msgs/String.h>
 #include <sensor_msgs/Range.h>
 #include <sensor_msgs/BatteryState.h>
+#include <sensor_msgs/Imu.h>
 #include <geometry_msgs/Twist.h>
+#include <nav_msgs/Odometry.h>
 #include <Wire.h>
 
 #include "ArduinoPinout.h"
@@ -31,16 +36,25 @@
 #include "PowerController.h"
 #include "ArduinoTemperatureSensor.h"
 #include "AnalogSensor.h"
+#include "OdometryTracker.h"
 
 //#define PING_TIMEOUT_MS 10000
 
 char base_link[] = "/base_link";
 const char * const ultrasonic_links[] = { "/base_link/ultrasonic0", "/base_link/ultrasonic1", "/base_link/ultrasonic2" };
-char odom[] = "/odom";
+char odom_link[] = "/odom";
 
 AccelGyroSensor ag_sensor = AccelGyroSensor();
 
 MotionController motion_controller;
+
+OdometryTracker odometry_tracker = OdometryTracker();
+
+geometry_msgs::TransformStamped ts;
+tf::TransformBroadcaster tf_broadcaster;
+//tf::Transform transform;
+//tf::TransformBroadcaster br;
+//tf::Transform transform;
 
 // If true, ultrasonic sensors will be read and reported.
 bool ultrasonics_enabled = false;
@@ -69,6 +83,9 @@ std_msgs::Bool bool_msg;
 std_msgs::Float32 float_msg;
 sensor_msgs::Range range_msg;
 sensor_msgs::BatteryState battery_msg;
+sensor_msgs::Imu imu_msg;
+geometry_msgs::Vector3 vec3_msg;
+nav_msgs::Odometry odom_msg;
 
 #define MAX_OUT_CHARS 255
 char buffer[MAX_OUT_CHARS + 1];  //buffer used to format a line (+1 is for trailing 0)
@@ -200,7 +217,12 @@ ros::Publisher imu_calibration_acc_publisher = ros::Publisher("imu/calibration/a
 // The lesson here is that simply waiting for the IMU to fully calibrate won't work. The robot needs to move itself around a little.
 ros::Publisher imu_calibration_mag_publisher = ros::Publisher("imu/calibration/mag", &int16_msg);
 
-//ros::Publisher arduino_temperature_publisher = ros::Publisher("temperature", &float_msg);
+ros::Publisher imu_publisher = ros::Publisher("imu", &imu_msg);
+//ros::Publisher imu_euler_publisher = ros::Publisher("imu/euler", &vec3_msg);
+//ros::Publisher imu_accel_publisher = ros::Publisher("imu/accel", &vec3_msg);
+
+// rostopic echo /torso_arduino/odom
+ros::Publisher odometry_publisher = ros::Publisher("odom", &odom_msg);
 
 /*
  * End publisher definitions.
@@ -317,6 +339,23 @@ ros::Subscriber<std_msgs::Int16MultiArray> motor_speed_sub("motor/speed", &on_mo
  * End subscribers.
  */
 
+static geometry_msgs::Quaternion createQuaternionFromRPY(double roll, double pitch, double yaw) {
+    // https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles#Source_Code
+    // http://docs.ros.org/api/geometry_msgs/html/msg/Quaternion.html
+    geometry_msgs::Quaternion q;
+    double t0 = cos(yaw * 0.5);
+    double t1 = sin(yaw * 0.5);
+    double t2 = cos(roll * 0.5);
+    double t3 = sin(roll * 0.5);
+    double t4 = cos(pitch * 0.5);
+    double t5 = sin(pitch * 0.5);
+    q.w = t0 * t2 * t4 + t1 * t3 * t5;
+    q.x = t0 * t3 * t4 - t1 * t2 * t5;
+    q.y = t0 * t2 * t5 + t1 * t3 * t4;
+    q.z = t1 * t2 * t4 - t0 * t3 * t5;
+    return q;
+}
+
 void setup() {
 
     // Turn on power status light.
@@ -362,7 +401,10 @@ void setup() {
     nh.advertise(imu_calibration_gyr_publisher);
     nh.advertise(imu_calibration_acc_publisher);
     nh.advertise(imu_calibration_mag_publisher);
-//    nh.advertise(arduino_temperature_publisher);
+    nh.advertise(imu_publisher);
+    nh.advertise(odometry_publisher);
+    //nh.advertise(imu_euler_publisher);
+    //nh.advertise(imu_accel_publisher);
 
     // Join I2C bus as Master with address #1
     Wire.begin(1);
@@ -391,7 +433,7 @@ void loop() {
 
     // If we just became disconnected from the host, then immediately halt all motors.
     if (last_connected != nh.connected() && !nh.connected()) {
-        nh.loginfo("Motors stopped due to disconnect!");
+        //nh.loginfo("Motors stopped due to disconnect!");
         motion_controller.stop();
     }
 
@@ -457,17 +499,52 @@ void loop() {
 
     // Motion controller.
     motion_controller.update();
-    if (motion_controller.a_encoder.get_and_clear_changed() || force_sensors) {
+    if (motion_controller.a_encoder.get_and_clear_changed() || motion_controller.b_encoder.get_and_clear_changed() || force_sensors) {
         int16_msg.data = motion_controller.a_encoder.get_latest();
         motor_a_encoder_publisher.publish(&int16_msg);
+        odometry_tracker.update_left(motion_controller.a_encoder.get_latest());
     }
-    if (motion_controller.b_encoder.get_and_clear_changed() || force_sensors) {
+    if (motion_controller.a_encoder.get_and_clear_changed() || motion_controller.b_encoder.get_and_clear_changed() || force_sensors) {
         int16_msg.data = motion_controller.b_encoder.get_latest();
         motor_b_encoder_publisher.publish(&int16_msg);
+        odometry_tracker.update_right(motion_controller.b_encoder.get_latest());
     }
     if (motion_controller.eflag.get_and_clear_changed() || force_sensors) {
         byte_msg.data = motion_controller.eflag.get_latest();
         motor_error_publisher.publish(&byte_msg);
+    }
+
+    // Odometry
+    if (odometry_tracker.changed && millis() - odometry_tracker.last_report_time >= 1000) {
+        odometry_tracker.changed = false;
+        odometry_tracker.last_report_time = millis();
+        /*
+        // CS 2017.4.9 Disabled becaues this crashes the Arduino and/or overwhelms its serial port.
+        // Publish the odometry message.
+        odom_msg.header.stamp = nh.now();
+        odom_msg.header.frame_id = odom_link;
+        odom_msg.child_frame_id = base_link;
+        odom_msg.pose.pose.position.x = odometry_tracker.x;
+        odom_msg.pose.pose.position.y = odometry_tracker.y;
+        odom_msg.pose.pose.position.z = odometry_tracker.z;
+        odom_msg.pose.pose.orientation = tf::createQuaternionFromYaw(odometry_tracker.th);
+        odom_msg.twist.twist.linear.x = odometry_tracker.vx;
+        odom_msg.twist.twist.linear.y = odometry_tracker.vy;
+        odom_msg.twist.twist.angular.z = odometry_tracker.vth;
+        odometry_publisher.publish(&odom_msg);
+
+        // CS 2017.4.9 Disable because this immediately causes the Arduino to reset and the rosserial node to report:
+        // Serial Port read failure: object of type 'int' has no len()
+        // Publish the tf message.
+        ts.header.stamp = nh.now();
+        ts.header.frame_id = odom_link;
+        ts.child_frame_id = base_link;
+        ts.transform.translation.x = odometry_tracker.x;
+        ts.transform.translation.y = odometry_tracker.y;
+        ts.transform.translation.z = odometry_tracker.z;
+        ts.transform.rotation = tf::createQuaternionFromYaw(odometry_tracker.th);
+        tf_broadcaster.sendTransform(ts);
+        */
     }
 
     // IMU sensor.
@@ -487,6 +564,31 @@ void loop() {
     if (ag_sensor.mag_calib.get_and_clear_changed() || force_sensors) {
         int16_msg.data = ag_sensor.mag_calib.get();
         imu_calibration_mag_publisher.publish(&int16_msg);
+    }
+    if ((ag_sensor.sys_calib.get() && (ag_sensor.get_and_clear_changed_euler() || ag_sensor.get_and_clear_changed_accel())) || force_sensors) {
+        //TODO:fix? IMU message too big, causes Arduino to crash?
+//        nh.loginfo("Sending IMU packet...");
+        // http://docs.ros.org/api/sensor_msgs/html/msg/Imu.html
+        imu_msg.header.stamp = nh.now();
+        imu_msg.header.frame_id = base_link;
+        // Our sensor returns Euler angles in degrees, but ROS requires radians.
+        imu_msg.orientation = createQuaternionFromRPY(ag_sensor.ex.get_latest()*PI/180., ag_sensor.ey.get_latest()*PI/180., ag_sensor.ez.get_latest()*PI/180.);
+        imu_msg.linear_acceleration.x = ag_sensor.ax.get_latest();
+        imu_msg.linear_acceleration.y = ag_sensor.ay.get_latest();
+        imu_msg.linear_acceleration.z = ag_sensor.az.get_latest();
+        imu_publisher.publish(&imu_msg);
+//        nh.loginfo("IMU packet sent.");
+        
+//        vec3_msg.x = ag_sensor.ex.get_latest()*PI/180.;
+//        vec3_msg.y = ag_sensor.ey.get_latest()*PI/180.;
+//        vec3_msg.z = ag_sensor.ez.get_latest()*PI/180.;
+//        imu_euler_publisher.publish(&vec3_msg);
+//
+//        vec3_msg.x = ag_sensor.ax.get_latest();
+//        vec3_msg.y = ag_sensor.ay.get_latest();
+//        vec3_msg.z = ag_sensor.az.get_latest();
+//        imu_accel_publisher.publish(&vec3_msg);
+
     }
 
     // Power button.
