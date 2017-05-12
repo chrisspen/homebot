@@ -59,7 +59,8 @@ docs/_build/
 # PIP install version files.
 /=*
 /site/
-/burlap/
+/burlap
+/.burlap/
 
 .holder
 
@@ -67,3 +68,4 @@ docs/_build/
 /raspbian_lite_latest.zip
 /*.img.xz
 /pip-requirements.txt
+/*.geany

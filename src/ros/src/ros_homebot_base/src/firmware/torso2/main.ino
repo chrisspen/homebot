@@ -578,7 +578,7 @@ void loop() {
         imu_msg.linear_acceleration.z = ag_sensor.az.get_latest();
         imu_publisher.publish(&imu_msg);
 //        nh.loginfo("IMU packet sent.");
-        
+
 //        vec3_msg.x = ag_sensor.ex.get_latest()*PI/180.;
 //        vec3_msg.y = ag_sensor.ey.get_latest()*PI/180.;
 //        vec3_msg.z = ag_sensor.ez.get_latest()*PI/180.;
