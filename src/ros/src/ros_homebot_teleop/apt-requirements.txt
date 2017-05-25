@@ -1,2 +1,2 @@
-python-dev
+python-dev==0.1.0
 libevent-dev
