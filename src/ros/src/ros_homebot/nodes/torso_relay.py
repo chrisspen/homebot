@@ -13,11 +13,11 @@ import rospy
 # import tf2_ros
 #http://docs.ros.org/api/sensor_msgs/html/msg/Imu.html
 #from sensor_msgs.msg import Imu
-from std_msgs.msg import Header, String, UInt16MultiArray
+from std_msgs.msg import String, UInt16MultiArray
 #from std_srvs.srv import Empty, EmptyResponse
-from nav_msgs.msg import Odometry
+#from nav_msgs.msg import Odometry
 #from geometry_msgs.msg import Quaternion, Point
-from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
+from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus#, KeyValue
 
 #from ros_homebot_python import constants as c
 #from ros_homebot_python.node import BaseArduinoNode
