@@ -429,7 +429,8 @@ void setup() {
     //dia_array.status[0].values_length = DIAGNOSTIC_STATUS_LENGTH;
 
     // http://answers.ros.org/question/10988/use-multiarray-in-rosserial/
-    uint16ma_msg.data = (uint16_t *)malloc(sizeof(uint16_t)*11);
+    //uint16ma_msg.data = (uint16_t *)malloc(sizeof(uint16_t)*11);
+    uint16ma_msg.data = reinterpret_cast<uint16_t *>(malloc(sizeof(uint16_t)*11));
     uint16ma_msg.data_length = 11;
 
     // Turn on power status light.
@@ -656,12 +657,12 @@ void loop() {
     if (ag_sensor.sys_calib.get_and_clear_changed() || force_sensors) {
         int16_msg.data = ag_sensor.sys_calib.get();
         imu_calibration_sys_publisher.publish(&int16_msg);
-        
+
         // http://www.cplusplus.com/reference/cstdio/snprintf/
         snprintf(buffer, MAX_OUT_CHARS, "imu_calib.sys:%d", calib_to_status[int16_msg.data]);
         send_diagnostics();
-        
-        if(int16_msg.data == 3){
+
+        if (int16_msg.data == 3) {
             // When the IMU is fully calibrated, save the calibration to the host.
             ag_sensor.bno.getSensorOffsets(imu_calib_struct);
             uint16ma_msg.data[0] = imu_calib_struct.accel_offset_x;
@@ -681,14 +682,14 @@ void loop() {
     if (ag_sensor.gyr_calib.get_and_clear_changed() || force_sensors) {
         int16_msg.data = ag_sensor.gyr_calib.get();
         imu_calibration_gyr_publisher.publish(&int16_msg);
-        
+
         snprintf(buffer, MAX_OUT_CHARS, "imu_calib.gyr:%d", calib_to_status[int16_msg.data]);
         send_diagnostics();
     }
     if (ag_sensor.acc_calib.get_and_clear_changed() || force_sensors) {
         int16_msg.data = ag_sensor.acc_calib.get();
         imu_calibration_acc_publisher.publish(&int16_msg);
-        
+
         //This never seems to calibrate, even after following Adafruit's instructions.
         //TODO:fixme
         snprintf(buffer, MAX_OUT_CHARS, "imu_calib.acc:%d", 0);//calib_to_status[int16_msg.data]);
@@ -697,7 +698,7 @@ void loop() {
     if (ag_sensor.mag_calib.get_and_clear_changed() || force_sensors) {
         int16_msg.data = ag_sensor.mag_calib.get();
         imu_calibration_mag_publisher.publish(&int16_msg);
-        
+
         snprintf(buffer, MAX_OUT_CHARS, "imu_calib.mag:%d", calib_to_status[int16_msg.data]);
         send_diagnostics();
     }
