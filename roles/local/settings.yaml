@@ -9,6 +9,7 @@ project_home: .
 ros_update_bash: false
 
 services:
+-   arduino
 #-   avahi
 #-   rpi
 #-   avahi

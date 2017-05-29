@@ -27,20 +27,24 @@ class ChangeTracker{
         
         unsigned long _last_change_time = 0;
         
-        unsigned long _last_save_time = 0;
+        //unsigned long _last_save_time = 0;
         
-        // minimum time between changes in milliseconds
-        unsigned long _rate_limit = 0;
+        // The most often we'll report a change, in milliseconds.
+        unsigned long _min_rate_limit = 0;
+        
+        // The least often we'll report a change, in milliseconds.
+        unsigned long _max_rate_limit = 0;
         
     public:
     
-        ChangeTracker(T v, unsigned long debounce=0, unsigned long rate_limit=0){
+        ChangeTracker(T v, unsigned long debounce=0, unsigned long min_rate_limit=0, unsigned long max_rate_limit=0){
             _next_el = v;
             _el = v;
             _debounce = debounce;
             _last_change_time = millis();
-            _rate_limit = rate_limit;
-            _last_save_time = millis();
+            _min_rate_limit = min_rate_limit;
+            _max_rate_limit = max_rate_limit;
+            //_last_save_time = millis();
         }
         
         void update(){
@@ -95,18 +99,22 @@ class ChangeTracker{
         }
         
         bool get_and_clear_changed(){
-              
-            if(_rate_limit){
-                if(_last_save_time + _rate_limit > millis()){
-                    return false;
-                }
-                _last_save_time = millis();
+            if(_min_rate_limit && millis() - _last_change_time < _min_rate_limit){
+                // If we've recently reported a change, throttle our reports by doing nothing.
+                return false;
+            }else if(_max_rate_limit && millis() - _last_change_time >= _max_rate_limit){
+                // Force a change to be detected.
+                _el = _next_el;
+                _changed = false;
+                _last_change_time = millis();
+                return true;
+            }else{
+                // Report normal change in discrete value.
+                update();
+                bool c = _changed;
+                _changed = false;
+                return c;
             }
-            
-            update();
-            bool c = _changed;
-            _changed = false;
-            return c;
         }
 
 };

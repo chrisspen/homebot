@@ -2,6 +2,7 @@
  * Copyright 2017 Chris Spencer
  */
 // http://wiki.ros.org/rosserial_arduino/Tutorials/Hello%20World
+//#include "Arduino.h"
 #include <ros.h>
 #include <math.h>
 #include <stdint.h>
@@ -18,12 +19,16 @@
 #include <std_msgs/Int32MultiArray.h>
 #include <std_msgs/Int16MultiArray.h>
 #include <std_msgs/Int8MultiArray.h>
+#include <std_msgs/UInt16MultiArray.h>
 #include <std_msgs/String.h>
 #include <sensor_msgs/Range.h>
 #include <sensor_msgs/BatteryState.h>
 #include <sensor_msgs/Imu.h>
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
+//#include <diagnostic_msgs/DiagnosticArray.h>
+#include <diagnostic_msgs/DiagnosticStatus.h>
+//#include <diagnostic_msgs/KeyValue.h>
 #include <Wire.h>
 
 #include "ArduinoPinout.h"
@@ -40,9 +45,19 @@
 
 //#define PING_TIMEOUT_MS 10000
 
+#define DIAGNOSTIC_STATUS_LENGTH 1
+
 char base_link[] = "/base_link";
 const char * const ultrasonic_links[] = { "/base_link/ultrasonic0", "/base_link/ultrasonic1", "/base_link/ultrasonic2" };
 char odom_link[] = "/odom";
+
+// Convert the BNO055's calibration code [0-3] to a diagnostics status.
+int calib_to_status[] = {
+    diagnostic_msgs::DiagnosticStatus::ERROR, //2, raw 0=uncalibrated
+    diagnostic_msgs::DiagnosticStatus::WARN,  //1, raw 1=partial
+    diagnostic_msgs::DiagnosticStatus::WARN,  //1, raw 2=almost
+    diagnostic_msgs::DiagnosticStatus::OK     //0, raw 3=completely calibrated
+};
 
 AccelGyroSensor ag_sensor = AccelGyroSensor();
 
@@ -77,15 +92,23 @@ bool last_connected = false;
 // http://wiki.ros.org/rosserial/Overview/Logging
 ros::NodeHandle nh;
 
+//http://wiki.ros.org/std_msgs
+//http://wiki.ros.org/common_msgs
 std_msgs::Int16 int16_msg;
 std_msgs::Byte byte_msg;
 std_msgs::Bool bool_msg;
 std_msgs::Float32 float_msg;
+std_msgs::String string_msg;
+std_msgs::UInt16MultiArray uint16ma_msg;
 sensor_msgs::Range range_msg;
 sensor_msgs::BatteryState battery_msg;
 sensor_msgs::Imu imu_msg;
 geometry_msgs::Vector3 vec3_msg;
 nav_msgs::Odometry odom_msg;
+
+// Array representation of adafruit_bno055_offsets_t.
+//uint16_t imu_calibration_array[11] = {0};
+adafruit_bno055_offsets_t imu_calib_struct;
 
 #define MAX_OUT_CHARS 255
 char buffer[MAX_OUT_CHARS + 1];  //buffer used to format a line (+1 is for trailing 0)
@@ -93,6 +116,10 @@ char buffer[MAX_OUT_CHARS + 1];  //buffer used to format a line (+1 is for trail
 bool batter_changed = false;
 
 unsigned long last_debug = 0;
+
+//diagnostic_msgs::DiagnosticArray dia_array;
+//diagnostic_msgs::DiagnosticStatus robot_status;
+//diagnostic_msgs::KeyValue status_keyvalue;
 
 /*
  * Begin sensor definitions.
@@ -159,6 +186,9 @@ BooleanSensor power_button_sensor = BooleanSensor(SIGNAL_BUTTON_PIN, true);
 //ros::Publisher battery_voltage_publisher = ros::Publisher("power/voltage", &float_msg);
 //ros::Publisher battery_charge_publisher = ros::Publisher("power/charge", &float_msg);
 
+//ros::Publisher diagnostics_publisher = ros::Publisher("diagnostics", &dia_array);
+//nh.advertise<diagnostic_msgs::DiagnosticArray>("/diagnostics", 1);
+
 // rostopic echo /torso_arduino/battery
 ros::Publisher battery_state_publisher = ros::Publisher("battery", &battery_msg);
 
@@ -201,8 +231,10 @@ ros::Publisher motor_error_publisher = ros::Publisher("motor/error", &byte_msg);
 // and orientation values will be off  The heading will jump to an absolute value once the BNO finds magnetic north
 // (the system calibration status jumps to 1 or higher).
 ros::Publisher imu_calibration_sys_publisher = ros::Publisher("imu/calibration/sys", &int16_msg);
+
 // To calibrate, the device must be standing still in any position.
 ros::Publisher imu_calibration_gyr_publisher = ros::Publisher("imu/calibration/gyr", &int16_msg);
+
 // This seems to take forever to calibrate, no matter how long you wait or move the sensor.
 // The BNO055 must be placed in 6 standing positions for +X, -X, +Y, -Y, +Z and -Z.
 // This is the most onerous sensor to calibrate, but the best solution to generate the calibration data
@@ -212,10 +244,15 @@ ros::Publisher imu_calibration_gyr_publisher = ros::Publisher("imu/calibration/g
 // isn't entirely or perfectly calibrated.
 // This also isn't necessary for the sys output to read 3, or fully calibrated.
 ros::Publisher imu_calibration_acc_publisher = ros::Publisher("imu/calibration/acc", &int16_msg);
+
 // To calibrate, the sensor must be moved in a 'figure 8' motion ideally, or at least some minimal movement.
 // Note, mag will remain at 0 until it's moved a little, then it will switch to 1 and then 2, and then after a few more seconds, fully to 3.
 // The lesson here is that simply waiting for the IMU to fully calibrate won't work. The robot needs to move itself around a little.
 ros::Publisher imu_calibration_mag_publisher = ros::Publisher("imu/calibration/mag", &int16_msg);
+
+// When the bno's sys calibration flag reads 3, or fully calibrated, this publishes the 11 ints
+// representing the calibration value to store in an adafruit_bno055_offsets_t.
+ros::Publisher imu_calibration_save_publisher = ros::Publisher("imu/calibration/save", &uint16ma_msg);
 
 ros::Publisher imu_publisher = ros::Publisher("imu", &imu_msg);
 //ros::Publisher imu_euler_publisher = ros::Publisher("imu/euler", &vec3_msg);
@@ -223,6 +260,8 @@ ros::Publisher imu_publisher = ros::Publisher("imu", &imu_msg);
 
 // rostopic echo /torso_arduino/odom
 ros::Publisher odometry_publisher = ros::Publisher("odom", &odom_msg);
+
+ros::Publisher diagnostics_publisher = ros::Publisher("diagnostics_relay", &string_msg);
 
 /*
  * End publisher definitions.
@@ -319,6 +358,27 @@ void on_motor_speed(const std_msgs::Int16MultiArray& msg) {
 }
 ros::Subscriber<std_msgs::Int16MultiArray> motor_speed_sub("motor/speed", &on_motor_speed);
 
+// rostopic pub --once /torso_arduino/imu/calibration/load std_msgs/UInt16MultiArray
+// "{layout:{dim:[], data_offset: 0}, data:[0, 0, 0, 65534, 65534, 0, 65438, 65370, 268, 1000, 750]}"
+void on_imu_calibration_load(const std_msgs::UInt16MultiArray& msg) {
+    nh.loginfo("Loading IMU calibration...");
+    adafruit_bno055_offsets_t newCalib;
+    newCalib.accel_offset_x = msg.data[0];
+    newCalib.accel_offset_y = msg.data[1];
+    newCalib.accel_offset_z = msg.data[2];
+    newCalib.gyro_offset_x = msg.data[3];
+    newCalib.gyro_offset_y = msg.data[4];
+    newCalib.gyro_offset_z = msg.data[5];
+    newCalib.mag_offset_x = msg.data[6];
+    newCalib.mag_offset_y = msg.data[7];
+    newCalib.mag_offset_z = msg.data[8];
+    newCalib.accel_radius = msg.data[9];
+    newCalib.mag_radius = msg.data[10];
+    ag_sensor.bno.setSensorOffsets(newCalib);
+    nh.loginfo("IMU calibration loaded!");
+}
+ros::Subscriber<std_msgs::UInt16MultiArray> imu_calibration_load_sub("imu/calibration/load", &on_imu_calibration_load);
+
 //            case ID_TWIST:
 //                motion_controller.set_movement(
 //                    stf(packet.get_arg(0)),
@@ -358,6 +418,20 @@ static geometry_msgs::Quaternion createQuaternionFromRPY(double roll, double pit
 
 void setup() {
 
+    // Initialize diagnostic status array.
+    //http://docs.ros.org/diamondback/api/rosserial_arduino/html/classdiagnostic__msgs_1_1DiagnosticArray.html
+    //dia_array.status = (diagnostic_msgs::DiagnosticStatus*)malloc(DIAGNOSTIC_STATUS_LENGTH * sizeof(diagnostic_msgs::DiagnosticStatus));
+    //dia_array.status_length = DIAGNOSTIC_STATUS_LENGTH;
+    //http://docs.ros.org/hydro/api/ric_mc/html/classdiagnostic__msgs_1_1DiagnosticStatus.html
+    //robot_status.values = (diagnostic_msgs::KeyValue*)malloc(DIAGNOSTIC_STATUS_LENGTH * sizeof(diagnostic_msgs::KeyValue));
+    //robot_status.values_length = DIAGNOSTIC_STATUS_LENGTH;
+    //dia_array.status[0].values = (diagnostic_msgs::KeyValue*)malloc(DIAGNOSTIC_STATUS_LENGTH * sizeof(diagnostic_msgs::KeyValue));
+    //dia_array.status[0].values_length = DIAGNOSTIC_STATUS_LENGTH;
+
+    // http://answers.ros.org/question/10988/use-multiarray-in-rosserial/
+    uint16ma_msg.data = (uint16_t *)malloc(sizeof(uint16_t)*11);
+    uint16ma_msg.data_length = 11;
+
     // Turn on power status light.
     pinMode(STATUS_LED_PIN, OUTPUT);
     digitalWrite(STATUS_LED_PIN, true);
@@ -376,6 +450,7 @@ void setup() {
     nh.subscribe(ultrasonics_enabled_sub);
     nh.subscribe(motor_speed_sub);
     nh.subscribe(cmd_vel_sub);
+    nh.subscribe(imu_calibration_load_sub);
 
     // Register publishers.
     //nh.advertise(battery_voltage_publisher);
@@ -401,8 +476,10 @@ void setup() {
     nh.advertise(imu_calibration_gyr_publisher);
     nh.advertise(imu_calibration_acc_publisher);
     nh.advertise(imu_calibration_mag_publisher);
+    nh.advertise(imu_calibration_save_publisher);
     nh.advertise(imu_publisher);
     nh.advertise(odometry_publisher);
+    nh.advertise(diagnostics_publisher);
     //nh.advertise(imu_euler_publisher);
     //nh.advertise(imu_accel_publisher);
 
@@ -419,7 +496,34 @@ void setup() {
 
 }
 
+void send_diagnostics() {
+    // Assumes you called `snprintf(buffer, MAX_OUT_CHARS, "key:value");` first
+    string_msg.data = buffer;
+    diagnostics_publisher.publish(&string_msg);
+}
+
 void loop() {
+
+    //robot_status.name = "Robot";
+    //robot_status.level = diagnostic_msgs::DiagnosticStatus::OK;
+    //robot_status.message = "Everything seem to be ok.";
+    //status_keyvalue.key = "A";
+    //status_keyvalue.value = "B";
+    //robot_status.values[0] = status_keyvalue;
+    //robot_status.values.push_back(emergency);
+    //robot_status.values->push_back(emergency);
+    //dia_array.status.push_back(robot_status);
+    //dia_array.status->push_back(robot_status);
+    //dia_array.status[0] = robot_status;
+    //dia_array.status[0].name = "R";
+    //dia_array.status[0].level = diagnostic_msgs::DiagnosticStatus::OK;
+    //dia_array.status[0].message = "E";
+    //dia_array.status[0].values[0].key = "A";
+    //dia_array.status[0].values[0].value = "B";
+    //diagnostics_publisher.publish(&dia_array);
+    //snprintf(buffer, MAX_OUT_CHARS, "hello");
+    //string_msg.data = buffer;
+    //diagnostics_publisher.publish(&string_msg);
 
 //    if(millis() - last_debug > 1000){
 //        last_debug = millis();
@@ -552,18 +656,50 @@ void loop() {
     if (ag_sensor.sys_calib.get_and_clear_changed() || force_sensors) {
         int16_msg.data = ag_sensor.sys_calib.get();
         imu_calibration_sys_publisher.publish(&int16_msg);
+        
+        // http://www.cplusplus.com/reference/cstdio/snprintf/
+        snprintf(buffer, MAX_OUT_CHARS, "imu_calib.sys:%d", calib_to_status[int16_msg.data]);
+        send_diagnostics();
+        
+        if(int16_msg.data == 3){
+            // When the IMU is fully calibrated, save the calibration to the host.
+            ag_sensor.bno.getSensorOffsets(imu_calib_struct);
+            uint16ma_msg.data[0] = imu_calib_struct.accel_offset_x;
+            uint16ma_msg.data[1] = imu_calib_struct.accel_offset_y;
+            uint16ma_msg.data[2] = imu_calib_struct.accel_offset_z;
+            uint16ma_msg.data[3] = imu_calib_struct.gyro_offset_x;
+            uint16ma_msg.data[4] = imu_calib_struct.gyro_offset_y;
+            uint16ma_msg.data[5] = imu_calib_struct.gyro_offset_z;
+            uint16ma_msg.data[6] = imu_calib_struct.mag_offset_x;
+            uint16ma_msg.data[7] = imu_calib_struct.mag_offset_y;
+            uint16ma_msg.data[8] = imu_calib_struct.mag_offset_z;
+            uint16ma_msg.data[9] = imu_calib_struct.accel_radius;
+            uint16ma_msg.data[10] = imu_calib_struct.mag_radius;
+            imu_calibration_save_publisher.publish(&uint16ma_msg);
+        }
     }
     if (ag_sensor.gyr_calib.get_and_clear_changed() || force_sensors) {
         int16_msg.data = ag_sensor.gyr_calib.get();
         imu_calibration_gyr_publisher.publish(&int16_msg);
+        
+        snprintf(buffer, MAX_OUT_CHARS, "imu_calib.gyr:%d", calib_to_status[int16_msg.data]);
+        send_diagnostics();
     }
     if (ag_sensor.acc_calib.get_and_clear_changed() || force_sensors) {
         int16_msg.data = ag_sensor.acc_calib.get();
         imu_calibration_acc_publisher.publish(&int16_msg);
+        
+        //This never seems to calibrate, even after following Adafruit's instructions.
+        //TODO:fixme
+        snprintf(buffer, MAX_OUT_CHARS, "imu_calib.acc:%d", 0);//calib_to_status[int16_msg.data]);
+        send_diagnostics();
     }
     if (ag_sensor.mag_calib.get_and_clear_changed() || force_sensors) {
         int16_msg.data = ag_sensor.mag_calib.get();
         imu_calibration_mag_publisher.publish(&int16_msg);
+        
+        snprintf(buffer, MAX_OUT_CHARS, "imu_calib.mag:%d", calib_to_status[int16_msg.data]);
+        send_diagnostics();
     }
     if ((ag_sensor.sys_calib.get() && (ag_sensor.get_and_clear_changed_euler() || ag_sensor.get_and_clear_changed_accel())) || force_sensors) {
         //TODO:fix? IMU message too big, causes Arduino to crash?

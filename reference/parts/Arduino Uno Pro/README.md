@@ -84,6 +84,7 @@ uno_pro.build.core=arduino
 uno_pro.build.variant=uno_pro
 
 ##############################################################
+
 Programming the new UNO*Pro
 
 Programming your upgraded UNO*Pro board is just the same as before using the normal Arduino IDE software. The only difference is that you need to select Arduino UNO*Pro rather than Arduino Uno from the Boards menu.

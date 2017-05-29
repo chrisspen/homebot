@@ -25,32 +25,38 @@ analyzers:
 #        timeout: 5.0
 #        find_and_remove_prefix: tilt_hokuyo_node
 #        num_items: 3
-      imu:
+#      imu:
+#        type: GenericAnalyzer
+#        path: IMU
+#        timeout: 5.0
+#        find_and_remove_prefix: imu_node
+#        num_items: 3
+      imu_calibration:
         type: GenericAnalyzer
-        path: IMU
-        timeout: 5.0
-        find_and_remove_prefix: imu_node
-        num_items: 3
-  computers:
-    type: AnalyzerGroup
-    path: Computers
-    analyzers:
-        rpi:
-            type: GenericAnalyzer
-            path: Raspberry Pi 3
-            contains:
-            -   'CPU Usage'
-            -   'CPU Temperature'
-            -   'CPU Speed'
-            -   'Disk Usage'
-            -   'Memory Usage'
-        controllers:
-            type: GenericAnalyzer
-            path: Controllers
-            timeout: 5.0
-            contains:
-            -   'Head Arduino'
-            -   'Torso Arduino'
+        path: IMU Calibration
+        timeout: 120.0
+        contains:
+        -   imu_calib
+#  computers:
+#    type: AnalyzerGroup
+#    path: Computers
+#    analyzers:
+#        rpi:
+#            type: GenericAnalyzer
+#            path: Raspberry Pi 3
+#            contains:
+#            -   'CPU Usage'
+#            -   'CPU Temperature'
+#            -   'CPU Speed'
+#            -   'Disk Usage'
+#            -   'Memory Usage'
+#        controllers:
+#            type: GenericAnalyzer
+#            path: Controllers
+#            timeout: 5.0
+#            contains:
+#            -   'Head Arduino'
+#            -   'Torso Arduino'
 #  joints:
 #    type: GenericAnalyzer
 #    path: Joints

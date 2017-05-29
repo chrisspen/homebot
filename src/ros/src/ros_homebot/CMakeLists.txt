@@ -6,6 +6,8 @@ find_package(catkin REQUIRED COMPONENTS
     actionlib_msgs
     message_generation
     std_msgs
+    roscpp
+    serial
 )
 
 add_action_files(
@@ -25,8 +27,14 @@ generate_messages(
 )
 
 catkin_package(
-  CATKIN_DEPENDS actionlib_msgs
+  CATKIN_DEPENDS actionlib_msgs serial std_msgs
 )
+
+include_directories(${catkin_INCLUDE_DIRS})
+
+add_executable(serial_echo_node src/serial_echo_node.cpp)
+
+target_link_libraries(serial_echo_node ${catkin_LIBRARIES})
 
 install(DIRECTORY config
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}

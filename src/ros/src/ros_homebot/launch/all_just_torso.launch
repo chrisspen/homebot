@@ -1,0 +1,8 @@
+<!-- Runs all components assuming the head is detached. -->
+<launch>
+    <include file="$(find ros_homebot)/launch/robot_state_publisher.launch" />
+    <include file="$(find ros_homebot)/launch/diagnostics_aggregator.launch" />
+    <include file="$(find ros_homebot)/launch/diagnostics_viewer.launch" />
+    <include file="$(find ros_homebot)/launch/serial_torso.launch" />
+    <node name="torso_relay" pkg="ros_homebot" type="torso_relay.py" output="screen"></node>
+</launch>

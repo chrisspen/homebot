@@ -23,38 +23,24 @@ class HomebotSatchel(ServiceSatchel):
         
         self.env.daemon_name = 'homebot'
         
-        self.env.autostart_script = 'homebot_autostart_screens'
-        self.env.start_script = 'homebot_start'
-        self.env.restart_script = 'homebot_restart'
-        self.env.stop_script = 'homebot_stop'
-        self.env.status_script = 'homebot_status'
-        self.env.cron_script = 'homebot_crontab'
-        self.env.cron_dir = '/etc/cron.d'
-        
         self.env.service_commands = {
             START:{
                 UBUNTU: 'service %s start' % self.env.daemon_name,
-                RASPBIAN: 'homebot_start.sh',
             },
             STOP:{
                 UBUNTU: 'service %s stop' % self.env.daemon_name,
-                RASPBIAN: 'homebot_stop.sh',
             },
             DISABLE:{
                 UBUNTU: 'chkconfig %s off' % self.env.daemon_name,
-                RASPBIAN: self.uninstall_autostart_cron,
             },
             ENABLE:{
                 UBUNTU: 'chkconfig %s on' % self.env.daemon_name,
-                RASPBIAN: self.install_autostart_cron,
             },
             RESTART:{
                 UBUNTU: 'service %s restart' % self.env.daemon_name,
-                RASPBIAN: 'homebot_restart.sh',
             },
             STATUS:{
                 UBUNTU: 'service %s status' % self.env.daemon_name,
-                RASPBIAN: 'homebot_status.sh',
             },
         }
 
@@ -137,7 +123,6 @@ class HomebotSatchel(ServiceSatchel):
             
             # Speech output.
             'espeak',
-            
             'alsa-utils',
             'mpg321',
             'lame',
@@ -154,8 +139,7 @@ class HomebotSatchel(ServiceSatchel):
             # Needed by tf/robot-state-publisher.
             'libtf2-*',
             
-            #TODO:re-enable once package supports kinetic?
-#             'ros-%s-robot-upstart' % self.genv.ros_version_name,
+            'ros-%s-robot-upstart' % self.genv.ros_version_name,
 
             'arduino-mk',
 
@@ -178,7 +162,6 @@ class HomebotSatchel(ServiceSatchel):
         return {
             UBUNTU: pkgs,
             DEBIAN: pkgs,
-            RASPBIAN: pkgs + ['upstart'],#TODO:remove once robot_upstart supports systemd
         }
     
     @task
@@ -199,14 +182,11 @@ class HomebotSatchel(ServiceSatchel):
         http://docs.ros.org/api/robot_upstart/html/
         """
         force = int(force)
-        print('force:', force)
         r = self.local_renderer
-        #r.sudo('apt-get install ros-indigo-robot-upstart')
         if force or not r.file_exists('/etc/init/homebot.conf'):
             r.sudo('source /usr/local/homebot/src/ros/setup.bash; rosrun robot_upstart install '
                 '--setup {upstart_setup} --job {upstart_name} '
                 '--user {upstart_user} {upstart_launch}')
-             
             r.reboot(wait=300, timeout=60)
      
     @task
@@ -228,88 +208,9 @@ class HomebotSatchel(ServiceSatchel):
         self.start()
     
     @task
-    def install_autostart(self):
-        """
-        Installs cron-based scripts to start ROS when the system boots.
-        """
-        r = self.local_renderer
-        #r.env.log_dir = '/home/{user}/homebot_autostart/logs'.format(**r.genv)
-        r.env.log_dir = '/var/log'
-        r.env.source_path = '/usr/local/homebot/src/ros/setup.bash'
-        r.env.script_dir = self.env.script_dir = '/usr/local/bin'
-        r.run('mkdir -p {log_dir}')
-        
-        r.sudo('touch {log_dir}/{autostart_script}.log')
-        r.sudo('chown {user}:{user} {log_dir}/{autostart_script}.log')
-        r.sudo('touch {log_dir}/{start_script}.log')
-        r.sudo('chown {user}:{user} {log_dir}/{start_script}.log')
-        
-        r.pc('Installing scripts.')
-        r.install_script(
-            local_path='homebot/{autostart_script}.sh',
-            remote_path='{script_dir}/{autostart_script}.sh',
-            extra=r.env)
-        r.install_script(
-            local_path='homebot/{start_script}.sh',
-            remote_path='{script_dir}/{start_script}.sh',
-            extra=r.env)
-        r.install_script(
-            local_path='homebot/{stop_script}.sh',
-            remote_path='{script_dir}/{stop_script}.sh',
-            extra=r.env)
-        r.install_script(
-            local_path='homebot/{status_script}.sh',
-            remote_path='{script_dir}/{status_script}.sh',
-            extra=r.env)
-        r.install_script(
-            local_path='homebot/{restart_script}.sh',
-            remote_path='{script_dir}/{restart_script}.sh',
-            extra=r.env)
-        
-        self.install_autostart_cron()
-    
-    @task
-    def install_autostart_cron(self):
-        r = self.local_renderer
-        r.pc('Installing crontab.')
-        r.install_script(
-            local_path='homebot/{cron_script}',
-            remote_path='{cron_dir}/{cron_script}',
-            extra=r.env)
-        r.sudo('chown root:root /etc/cron.d/homebot_crontab')
-        r.sudo('chmod 600 /etc/cron.d/homebot_crontab')
-        r.sudo('service cron restart')
-        
-    @task
-    def uninstall_autostart_cron(self):
-        r = self.local_renderer
-        r.sudo('rm -f {cron_dir}/{cron_script}')
-    
-    @task
     def delete_logs(self):
         r = self.local_renderer
         r.sudo('rm -Rf /home/pi/.ros/log/*')
-    
-#     @task
-#     def install_bcm2835(self):
-#         # Needed for the Raspberry Pi to access IMU over I2C
-#         r = self.local_renderer
-#         r.run('cd /tmp; wget http://www.airspayce.com/mikem/bcm2835/bcm2835-1.50.tar.gz;
-#             tar zxvf bcm2835-1.50.tar.gz')
-#         r.run('cd bcm2835-1.50; ./configure')
-#         r.run('cd bcm2835-1.50; time make')
-#         r.sudo('cd bcm2835-1.50; make check')
-#         r.sudo('cd bcm2835-1.50; make install')
-#     
-#     @task
-#     def install_i2cdevlib(self):
-#         # Needed for the Raspberry Pi to access IMU over I2C
-#         r = self.local_renderer
-#         #TODO:switch back to https://github.com/jrowberg/i2cdevlib/ when pull
-#             request 258 accepted
-#         #https://github.com/jrowberg/i2cdevlib/pull/258
-#         r.sudo('cd /usr/share/arduino/libraries; '
-#             'sudo git clone https://github.com/chrisspen/i2cdevlib.git')
     
     @task
     def init_teleop(self):
@@ -425,7 +326,7 @@ class HomebotSatchel(ServiceSatchel):
         # Initialize project home.
         r.sudo('mkdir -p {project_dir}; chown {user}:{group} {project_dir}')
 
-    @task
+    @task(precursors=['packager', 'user', 'ros', 'rpi', 'ntp', 'ntpclient'])
     def configure(self):
         
         r = self.local_renderer
@@ -457,10 +358,6 @@ class HomebotSatchel(ServiceSatchel):
         
         self.init_teleop()
         
-        #self.install_upstart()#Removed since package does not support kinetic
-        self.install_autostart()
-        
-    configure.is_deployer = True
-    configure.deploy_before = ['packager', 'user', 'ros', 'rpi', 'ntp', 'ntpclient']
+        self.install_upstart()
 
 homebot = HomebotSatchel()
