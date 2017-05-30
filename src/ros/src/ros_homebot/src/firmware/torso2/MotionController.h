@@ -21,9 +21,10 @@
 
 #define REQUESTFOR_SIZE 9
 
-#define COMMOTION_ERROR_DISCONNECT    B01000000 // 64 = arduino can't connect via I2C
-#define COMMOTION_ERROR_SHUTDOWN      B00100000 // 32 = error flag bit 6 indicates power shut down due to low battery voltage
-#define COMMOTION_ERROR_LOWBAT        B00010000 // 16 = bit 5 indicates power dipping below batlow voltage
+// See ComMotion_Shield_V2_3.ino, Motors.ino, Commands.h to see where these are used.
+#define COMMOTION_ERROR_DISCONNECT    B01000000 // 64 = arduino can't connect via I2C (unused by ComMotion, but we use it to indicate I2C error)
+#define COMMOTION_ERROR_SHUTDOWN      B00100000 // 32 = error flag bit 6 indicates power shut down due to low battery voltage (unused)
+#define COMMOTION_ERROR_LOWBAT        B00010000 // 16 = bit 5 indicates power dipping below batlow voltage (unused)
 #define COMMOTION_ERROR_M4_MAXCURRENT B00001000 // 8 = bit 3 indicates M4 has exceeded current limit
 #define COMMOTION_ERROR_M3_MAXCURRENT B00000100 // 4 = bit 2 indicates M3 has exceeded current limit
 #define COMMOTION_ERROR_M2_MAXCURRENT B00000010 // 2 = bit 1 indicates M2 has exceeded current limit
@@ -51,16 +52,16 @@
 // ComMotion variables
 
 byte read_byte(){
-	while(Wire.available() < 1){}
-	return Wire.read();
+    while(Wire.available() < 1){}
+    return Wire.read();
 }
 /*
 uint16_t receive_wire_uint16(){
 
-	uint16_t rxnum = 0;
+    uint16_t rxnum = 0;
 
     // Read low byte into rxnum
-	rxnum += read_byte();
+    rxnum += read_byte();
 
     // Read high byte into rxnum
     rxnum += read_byte() << 8;
@@ -70,10 +71,10 @@ uint16_t receive_wire_uint16(){
 */
 int16_t receive_wire_int16(){
 
-	int16_t rxnum = 0;
+    int16_t rxnum = 0;
 
     // Read low byte into rxnum
-	rxnum += read_byte();
+    rxnum += read_byte();
 
     // Read high byte into rxnum
     rxnum += read_byte() << 8;
@@ -137,8 +138,8 @@ void request_commotion_status(byte mcu, byte req) // value for mcu must be 0 or 
 
 void set_motor_speeds(int m1, int m2, int m3, int m4)
 {
-	// Note, the address shouldn't really matter, since the ComMotion forwards commands from one MCU to the other,
-	// but the motors are connected to M3 and M4, which are controlled by IC2.
+    // Note, the address shouldn't really matter, since the ComMotion forwards commands from one MCU to the other,
+    // but the motors are connected to M3 and M4, which are controlled by IC2.
     Wire.beginTransmission(COMMOTION_ADDR2);                    // Initialize I2C communications with ComMotion shield
     Wire.write(CMD_SET_MOTOR_CONFIG);                                                            // Specify that data packet is motor control data
     Wire.write(highByte(m1));                                                 // -255 to +255  speed for motor 1
@@ -192,7 +193,7 @@ class SpeedController
             // If we haven't reached target before change, then save partial target
             // as a start for the new calculation.
             if(target_speed != current_speed){
-            	current_speed = get_speed();
+                current_speed = get_speed();
             }
 
             target_speed = s;
@@ -201,6 +202,10 @@ class SpeedController
         
         void set_acceleration(unsigned int a){
             acceleration = a;
+        }
+        
+        bool is_on(){
+            return (bool)target_speed;
         }
         
         unsigned int get_acceleration(){
@@ -214,8 +219,8 @@ class SpeedController
             int speed_difference = abs(target_speed - current_speed);
             if(speed_difference){
 
-            	// Calculate the maximum amount of time it should take to accelerate
-            	// to the target speed.
+                // Calculate the maximum amount of time it should take to accelerate
+                // to the target speed.
                 unsigned long time_to_change = float(speed_difference)/float(acceleration)*1000;
 
                 if(time_since_set >= time_to_change){
@@ -225,10 +230,10 @@ class SpeedController
                     ret_speed = current_speed;
                 }else{
                     // Otherwise, calculate the gradual speed change.
-                	// We don't save this change and instead calculate it from the original
-                	// current_speed so as to not introduce rounding errors.
-                	// Once we achieve target speed, we'll save the value, and this function will
-                	// then become a glorified getattr around current_speed.
+                    // We don't save this change and instead calculate it from the original
+                    // current_speed so as to not introduce rounding errors.
+                    // Once we achieve target speed, we'll save the value, and this function will
+                    // then become a glorified getattr around current_speed.
                     int polarity = (target_speed > current_speed) ? +1 : -1;
                     int vel_change = time_since_set * (1/1000.) * acceleration * polarity;
                     if(polarity > 0){
@@ -261,15 +266,15 @@ class MotionController: public Sensor
         unsigned long _last_encoder_check;
 
         // Movement parameters.
-    	float _movement_linear = 0;
-    	float _movement_angular = 0;
-    	float _movement_seconds = 0;
-    	int _movement_force = 0; // 0=stop if error encountered, 1=ignore errors
-    	int _movement_error_code = 0;
-    	bool _movement_encoder_changed = false;
-    	bool _movement_send_done = false;
-    	unsigned long _movement_start_millis = 0;
-    	unsigned int _movement_status = MOVEMENT_COMPLETE;
+        float _movement_linear = 0;
+        float _movement_angular = 0;
+        float _movement_seconds = 0;
+        int _movement_force = 0; // 0=stop if error encountered, 1=ignore errors
+        int _movement_error_code = 0;
+        bool _movement_encoder_changed = false;
+        bool _movement_send_done = false;
+        unsigned long _movement_start_millis = 0;
+        unsigned int _movement_status = MOVEMENT_COMPLETE;
 
     public:
 
@@ -283,13 +288,13 @@ class MotionController: public Sensor
 
         int aspeed = 0;
 
-		int bspeed = 0;
+        int bspeed = 0;
 
-		unsigned long checks = 0;
+        unsigned long checks = 0;
 
-		unsigned long _last_connection_attempt = 0;
+        unsigned long _last_connection_attempt = 0;
 
-		int connection_error = -1;
+        int connection_error = -1;
     
         MotionController(){
         }
@@ -299,36 +304,36 @@ class MotionController: public Sensor
             connection_error = Wire.endTransmission();
             _last_connection_attempt = millis();
             if(!connection_error){
-				// Normal mode, Rover 5 with mecanum wheels, lowbat = 6V, motor currents =2.5A, no offset, Master address=1;
-				//Serial.println(String(F("set_basic_config()"));Serial.flush();
-				set_basic_config(
-					0, //mode, 0=normal
-					CHASSIS_CONFIG_INDIVIDUAL, //chassis, 3=individual
-					60, //lowbat, 0-255    55=5.5V (given 6V battery, 80%=4.8V=dead, 92%=5.5V=low)
-					250, //maxcur1, 0-255   255=2.55A (left)
-					250, //maxcur2, 0-255   255=2.55A (right)
-					250, //maxcur3, 0-255   255=2.55A (unused)
-					250, //maxcur4, 0-255   255=2.55A (unused)
-					0, //i2coffset
-					TORSO_ARDUINO_ADDR //1 //i2cmaster
-				);
+                // Normal mode, Rover 5 with mecanum wheels, lowbat = 6V, motor currents =2.5A, no offset, Master address=1;
+                //Serial.println(String(F("set_basic_config()"));Serial.flush();
+                set_basic_config(
+                    0, //mode, 0=normal
+                    CHASSIS_CONFIG_INDIVIDUAL, //chassis, 3=individual
+                    60, //lowbat, 0-255    55=5.5V (given 6V battery, 80%=4.8V=dead, 92%=5.5V=low)
+                    250, //maxcur1, 0-255   255=2.55A (left)
+                    250, //maxcur2, 0-255   255=2.55A (right)
+                    250, //maxcur3, 0-255   255=2.55A (unused)
+                    250, //maxcur4, 0-255   255=2.55A (unused)
+                    0, //i2coffset
+                    TORSO_ARDUINO_ADDR //1 //i2cmaster
+                );
 
-				// Max motor rpm = 8500rpm, encoder resolution = 2.00 state changes per motor revolution, 10% reserve power, stall at 25uS
-				//Serial.println(String(F("set_encoder_config()")));Serial.flush();
-				set_encoder_config(
-					8500, //maxrpm=maximum rpms
-					200, //encres=encoder resolution
-					//600, //maxrpm=maximum rpms, Pololu Metal Gearmotor 2282
-					//465, //encres=encoder resolution, Pololu Metal Gearmotor 2282
-					10, //reserve=0-50%     reserve power - use when constant speed under variable load is critical
-					25 //maxstall=1-255mS   number of milli-seconds between encoder pulses before stall is assumed  10 for Scamper, 25 for Rover 5
-				);
+                // Max motor rpm = 8500rpm, encoder resolution = 2.00 state changes per motor revolution, 10% reserve power, stall at 25uS
+                //Serial.println(String(F("set_encoder_config()")));Serial.flush();
+                set_encoder_config(
+                    8500, //maxrpm=maximum rpms
+                    200, //encres=encoder resolution
+                    //600, //maxrpm=maximum rpms, Pololu Metal Gearmotor 2282
+                    //465, //encres=encoder resolution, Pololu Metal Gearmotor 2282
+                    10, //reserve=0-50%     reserve power - use when constant speed under variable load is critical
+                    25 //maxstall=1-255mS   number of milli-seconds between encoder pulses before stall is assumed  10 for Scamper, 25 for Rover 5
+                );
             }
         }
 
         void init(){
 
-        	_last_encoder_check = millis();
+            _last_encoder_check = millis();
 
             _motor_left = SpeedController();
             _motor_right = SpeedController();
@@ -363,63 +368,71 @@ class MotionController: public Sensor
 
             return true;
         }
+        
+        bool is_left_on(){
+            return _motor_left.is_on();
+        }
+        
+        bool is_right_on(){
+            return _motor_right.is_on();
+        }
 
-    	void set_movement(float linear, float angular, float seconds, int force){
-    		reset_movement();
-    		_movement_linear = linear; // meter/second
-    		_movement_angular = angular; // radians/second
-    		_movement_seconds = seconds;
-    		_movement_force = force;
-    		_movement_start_millis = millis();
-    		_movement_status = MOVEMENT_ACTIVE;
-    		_movement_send_done = false;
-    		float left_speed_out = (linear - angular*TORSO_TREAD_WIDTH_METERS/2) * VELOCITY_TO_SPEED;
-    		float right_speed_out = (linear + angular*TORSO_TREAD_WIDTH_METERS/2) * VELOCITY_TO_SPEED;
-    		set(left_speed_out, right_speed_out);
-    	}
-
-    	// http://answers.ros.org/question/11482/whats-the-best-way-to-use-ros-to-control-motors-on-a-simple-robot/
-    	// linear is in meter/sec, angular is in rad/sec
-    	void set_cmd_vel(float linear, float angular){
-    	    reset_movement();
+        void set_movement(float linear, float angular, float seconds, int force){
+            reset_movement();
+            _movement_linear = linear; // meter/second
+            _movement_angular = angular; // radians/second
+            _movement_seconds = seconds;
+            _movement_force = force;
+            _movement_start_millis = millis();
+            _movement_status = MOVEMENT_ACTIVE;
+            _movement_send_done = false;
             float left_speed_out = (linear - angular*TORSO_TREAD_WIDTH_METERS/2) * VELOCITY_TO_SPEED;
             float right_speed_out = (linear + angular*TORSO_TREAD_WIDTH_METERS/2) * VELOCITY_TO_SPEED;
             set(left_speed_out, right_speed_out);
-    	}
+        }
 
-    	bool is_executing_movement(){
-    		return MOVEMENT_ACTIVE == _movement_status;
-    	}
+        // http://answers.ros.org/question/11482/whats-the-best-way-to-use-ros-to-control-motors-on-a-simple-robot/
+        // linear is in meter/sec, angular is in rad/sec
+        void set_cmd_vel(float linear, float angular){
+            reset_movement();
+            float left_speed_out = (linear - angular*TORSO_TREAD_WIDTH_METERS/2) * VELOCITY_TO_SPEED;
+            float right_speed_out = (linear + angular*TORSO_TREAD_WIDTH_METERS/2) * VELOCITY_TO_SPEED;
+            set(left_speed_out, right_speed_out);
+        }
 
-    	bool is_checking_movement_error(){
-    		return !_movement_force;
-    	}
+        bool is_executing_movement(){
+            return MOVEMENT_ACTIVE == _movement_status;
+        }
 
-    	bool is_encoder_stalled(){
-    		// Motors/encoders are considered stalled if we should be moving but haven't received an encoder update in 500ms.
-    		return !_movement_encoder_changed && (millis() - _movement_start_millis) > 500;
-    	}
+        bool is_checking_movement_error(){
+            return !_movement_force;
+        }
 
-    	void end_movement(int error_code){
+        bool is_encoder_stalled(){
+            // Motors/encoders are considered stalled if we should be moving but haven't received an encoder update in 500ms.
+            return !_movement_encoder_changed && (millis() - _movement_start_millis) > 500;
+        }
 
-    		reset_movement();
+        void end_movement(int error_code){
+
+            reset_movement();
 
             // Queue a movement completion status report.
             _movement_send_done = true;
             _movement_error_code = error_code;
 
             if(error_code){
-            	// Something bad may have just happened (like we just detected an edge or wall) so stop immediately.
-            	stop();
+                // Something bad may have just happened (like we just detected an edge or wall) so stop immediately.
+                stop();
             }else{
-            	// Movement completed without issue, so stop gradually using deceleration.
+                // Movement completed without issue, so stop gradually using deceleration.
                 set(0, 0);
             }
-    	}
+        }
 
-    	bool has_movement_expired(){
-    		return is_executing_movement() && (millis() - _movement_start_millis)/1000 >= _movement_seconds;
-    	}
+        bool has_movement_expired(){
+            return is_executing_movement() && (millis() - _movement_start_millis)/1000 >= _movement_seconds;
+        }
         
         void set_acceleration(unsigned int a){
             _motor_left.set_acceleration(a);
@@ -432,15 +445,15 @@ class MotionController: public Sensor
 
         virtual void update(){
 
-        	// Occassionally, we're unable to connect on startup, so retry every 5 seconds.
+            // Occassionally, we're unable to connect on startup, so retry every 5 seconds.
             // This causes the entire board to become unresponsive via serial if commotion is not connected.
-//        	if(connection_error && millis() - _last_connection_attempt >= 5000){
-//        		connect();
-//        	}
+//          if(connection_error && millis() - _last_connection_attempt >= 5000){
+//              connect();
+//          }
 
-        	// If we still can't connect, then abort.
+            // If we still can't connect, then abort.
             if(connection_error){
-            	eflag.set(COMMOTION_ERROR_DISCONNECT);
+                eflag.set(COMMOTION_ERROR_DISCONNECT);
                 return;
             }
             
@@ -465,27 +478,28 @@ class MotionController: public Sensor
 
             // Poll encoder state.
             if(!checks || (millis() - _last_encoder_check > COMMOTION_ENCODER_FREQ)){
-				delay(10); // necessary, otherwise set_motor_speed() interferes causing non-deterministic hang
-				//Wire.requestFrom(COMMOTION_ADDR1, 4);
-				Wire.requestFrom(COMMOTION_ADDR2, REQUESTFOR_SIZE);
+                delay(10); // necessary, otherwise set_motor_speed() interferes causing non-deterministic hang
+                //Wire.requestFrom(COMMOTION_ADDR1, 4);
+                Wire.requestFrom(COMMOTION_ADDR2, REQUESTFOR_SIZE);
 
-				a_encoder.set(receive_wire_int16());
-				b_encoder.set(receive_wire_int16());
+                // See I2C_Send() in ComMotion firmware.
+                a_encoder.set(receive_wire_int16());
+                b_encoder.set(receive_wire_int16());
 
-				_movement_encoder_changed |= a_encoder.is_changed();
-				_movement_encoder_changed |= b_encoder.is_changed();
+                _movement_encoder_changed |= a_encoder.is_changed();
+                _movement_encoder_changed |= b_encoder.is_changed();
 
-//				acount = receive_wire_int16();
-//				bcount = receive_wire_int16();
+//              acount = receive_wire_int16();
+//              bcount = receive_wire_int16();
 
-				eflag.set(read_byte());
+                eflag.set(read_byte());
 
-				aspeed = receive_wire_int16();
-				bspeed = receive_wire_int16();
+                aspeed = receive_wire_int16();
+                bspeed = receive_wire_int16();
 
-				_last_encoder_check = millis();
+                _last_encoder_check = millis();
 
-				checks += 1;
+                checks += 1;
             }
         }
         
@@ -504,7 +518,7 @@ class MotionController: public Sensor
         }
 
         virtual bool get_and_clear_changed(){
-        	return false;
+            return false;
         }
 
 };

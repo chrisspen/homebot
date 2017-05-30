@@ -27,6 +27,13 @@ WARN = DiagnosticStatus.WARN # 1
 ERROR = DiagnosticStatus.ERROR # 2
 STALE = DiagnosticStatus.STALE # 3
 
+status_id_to_name = {
+    OK: 'OK',
+    WARN: 'WARN',
+    ERROR: 'ERROR',
+    STALE: 'STALE',
+}
+
 IMU_CALIBRATION_FN = 'imu_calibration.pickle'
 
 # Based on https://goo.gl/mY0th1
@@ -125,7 +132,7 @@ class TorsoRelay:
         So instead, it publishes diagnostic data via a key/value pair formatted in a simple string,
         which we convert to a proper diagnostic message.
         """
-        print('diagnostics.msg:', msg)
+        #print('diagnostics.msg:', msg)
         self.diagnostics_msg_count += 1
         
         if not self.imu_calibration_loaded:
@@ -152,6 +159,11 @@ class TorsoRelay:
         message = ''
         if len(parts) >= 3:
             message = parts[2].strip()
+            if message == '?':
+                message = ''
+        if not message:
+            # If not given, default the message to the name equivalent of the level.
+            message = status_id_to_name.get(level, '')
         
         # Construct and send diagnostics array.
         # http://docs.ros.org/api/diagnostic_msgs/html/msg/DiagnosticStatus.html

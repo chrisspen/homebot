@@ -46,6 +46,7 @@
 //#define PING_TIMEOUT_MS 10000
 
 #define DIAGNOSTIC_STATUS_LENGTH 1
+#define DIAGNOSTIC_REPORT_FREQ_MS 1000
 
 char base_link[] = "/base_link";
 const char * const ultrasonic_links[] = { "/base_link/ultrasonic0", "/base_link/ultrasonic1", "/base_link/ultrasonic2" };
@@ -113,9 +114,15 @@ adafruit_bno055_offsets_t imu_calib_struct;
 #define MAX_OUT_CHARS 255
 char buffer[MAX_OUT_CHARS + 1];  //buffer used to format a line (+1 is for trailing 0)
 
-bool batter_changed = false;
+bool battery_changed = false;
 
 unsigned long last_debug = 0;
+
+bool report_diagnostics = false;
+unsigned long last_diagnostic = 0;
+
+unsigned long a_encoder_last_change = 0;
+unsigned long b_encoder_last_change = 0;
 
 //diagnostic_msgs::DiagnosticArray dia_array;
 //diagnostic_msgs::DiagnosticStatus robot_status;
@@ -161,6 +168,7 @@ BooleanSensor edge_sensors[3] = {
     BooleanSensor(EDGE_R_PIN)
 };
 
+//DEPRECATED
 BooleanSensor bumper_sensors[3] = {
     BooleanSensor(BUMPER_L_PIN),
     BooleanSensor(BUMPER_M_PIN),
@@ -340,14 +348,18 @@ ros::Subscriber<std_msgs::Empty> toggle_led_sub("toggle_led", &on_toggle_led);
 
 // rostopic pub -1 /torso_arduino/cmd_vel geometry_msgs/Twist -- '[2.0, 0.0, 0.0]' '[0.0, 0.0, 1.8]'
 void on_cmd_vel(const geometry_msgs::Twist& msg) {
+    nh.loginfo("Received cmd_vel.");
     motion_controller.set_cmd_vel(msg.linear.x, msg.angular.z);
 }
 ros::Subscriber<geometry_msgs::Twist> cmd_vel_sub("cmd_vel", &on_cmd_vel);
 
 // rostopic pub --once /torso_arduino/motor/speed std_msgs/Int16MultiArray "{layout:{dim:[], data_offset: 0}, data:[64, 64]}"
+// Note, if you get a connection error, that probably means main battery power was not on when you connected to the Arduino,
+// and so the ComMotion didn't initialize properly.
+// Fix this by turning on main battery power and then resetting the Arduino.
 void on_motor_speed(const std_msgs::Int16MultiArray& msg) {
     nh.loginfo("Setting motor speed...");
-    toggle_led();
+    //toggle_led();
     if (motion_controller.connection_error) {
         nh.loginfo("Unable to set motor speed due to connection error.");
     } else {
@@ -433,6 +445,8 @@ void setup() {
     uint16ma_msg.data = reinterpret_cast<uint16_t *>(malloc(sizeof(uint16_t)*11));
     uint16ma_msg.data_length = 11;
 
+    last_diagnostic = millis();
+
     // Turn on power status light.
     pinMode(STATUS_LED_PIN, OUTPUT);
     digitalWrite(STATUS_LED_PIN, true);
@@ -505,6 +519,12 @@ void send_diagnostics() {
 
 void loop() {
 
+    report_diagnostics = false;
+    if (millis() - last_diagnostic >= DIAGNOSTIC_REPORT_FREQ_MS) {
+        last_diagnostic = millis();
+        report_diagnostics = true;
+    }
+
     //robot_status.name = "Robot";
     //robot_status.level = diagnostic_msgs::DiagnosticStatus::OK;
     //robot_status.message = "Everything seem to be ok.";
@@ -547,7 +567,7 @@ void loop() {
     if (battery_voltage_sensor.get_and_clear_changed() || force_sensors) {
 //        float_msg.data = battery_voltage_sensor.get_voltage();
 //        battery_voltage_publisher.publish(&float_msg);
-        batter_changed = true;
+        battery_changed = true;
     }
 
     // External power sensors.
@@ -558,6 +578,18 @@ void loop() {
             external_power_publishers[i].publish(&bool_msg);
         }
     }
+    if (report_diagnostics) {
+        //ros::Publisher("power/external/0", &bool_msg), // external power voltage present=0
+        // OK if external power is unplugged or plugged in and we detect a voltage.
+        snprintf(buffer, MAX_OUT_CHARS, "ep.voltage.present:%d:%d",
+            !(!external_power_sensors[1].get_bool() || (external_power_sensors[1].get_bool() && external_power_sensors[0].get_bool())),
+            external_power_sensors[0].get_bool());
+        send_diagnostics();
+
+        //ros::Publisher("power/external/1", &bool_msg) // external power magnet present=1
+        snprintf(buffer, MAX_OUT_CHARS, "ep.magnet.present:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, external_power_sensors[1].get_bool());
+        send_diagnostics();
+    }
 
     // Edge, bumper and ultrasonic sensors.
     for (int i = 0; i < 3; i++) {
@@ -565,6 +597,10 @@ void loop() {
         if (edge_sensors[i].get_and_clear_changed() || force_sensors) {
             bool_msg.data = edge_sensors[i].value.get();
             edge_publishers[i].publish(&bool_msg);
+        }
+        if (report_diagnostics) {
+            snprintf(buffer, MAX_OUT_CHARS, "edge.%d:%d:%d", i, diagnostic_msgs::DiagnosticStatus::OK, edge_sensors[i].value.get_latest());
+            send_diagnostics();
         }
 //        bumper_sensors[i].update();
 //        if (bumper_sensors[i].get_and_clear_changed() || force_sensors) {
@@ -588,14 +624,25 @@ void loop() {
                 range_msg.min_range = 0.03; // meters
                 range_msg.max_range = 4; // meters
                 range_msg.range = ultrasonic_sensors[i].distance.get()/100.0; // meters
-
                 ultrasonic_publishers[i].publish(&range_msg);
+
+            }
+            if (report_diagnostics) {
+                snprintf(buffer, MAX_OUT_CHARS, "ultrasonic.%d.cm:%d:%d", i,
+                    diagnostic_msgs::DiagnosticStatus::OK, static_cast<int>(ultrasonic_sensors[i].distance.get_latest()));
+                send_diagnostics();
             }
             delay(ultrasonics_spacing);
+        } else {
+            if (report_diagnostics) {
+                snprintf(buffer, MAX_OUT_CHARS, "ultrasonic.%d.cm:%d:disabled", i, diagnostic_msgs::DiagnosticStatus::OK);
+                send_diagnostics();
+            }
         }
     }
 
     // Temperature.
+    // CS 2017.2.1 Disabled because not supported by the chip in the Arduino Uno*Pro.
 //    arduino_temperature_sensor.update();
 //    if (arduino_temperature_sensor.get_and_clear_changed() || force_sensors) {
 //        float_msg.data = arduino_temperature_sensor.temperature.get();
@@ -605,11 +652,13 @@ void loop() {
     // Motion controller.
     motion_controller.update();
     if (motion_controller.a_encoder.get_and_clear_changed() || motion_controller.b_encoder.get_and_clear_changed() || force_sensors) {
+        a_encoder_last_change = millis();
         int16_msg.data = motion_controller.a_encoder.get_latest();
         motor_a_encoder_publisher.publish(&int16_msg);
         odometry_tracker.update_left(motion_controller.a_encoder.get_latest());
     }
     if (motion_controller.a_encoder.get_and_clear_changed() || motion_controller.b_encoder.get_and_clear_changed() || force_sensors) {
+        b_encoder_last_change = millis();
         int16_msg.data = motion_controller.b_encoder.get_latest();
         motor_b_encoder_publisher.publish(&int16_msg);
         odometry_tracker.update_right(motion_controller.b_encoder.get_latest());
@@ -617,6 +666,31 @@ void loop() {
     if (motion_controller.eflag.get_and_clear_changed() || force_sensors) {
         byte_msg.data = motion_controller.eflag.get_latest();
         motor_error_publisher.publish(&byte_msg);
+    }
+    if (report_diagnostics) {
+        snprintf(buffer, MAX_OUT_CHARS, "motor.connection:%d", (motion_controller.eflag.get() & COMMOTION_ERROR_DISCONNECT));
+        send_diagnostics();
+        //snprintf(buffer, MAX_OUT_CHARS, "motor.1.current.limit:%d", (motion_controller.eflag.get() & COMMOTION_ERROR_M1_MAXCURRENT));
+        //send_diagnostics();
+        //snprintf(buffer, MAX_OUT_CHARS, "motor.2.current.limit:%d", (motion_controller.eflag.get() & COMMOTION_ERROR_M2_MAXCURRENT));
+        //send_diagnostics();
+
+        //M3=right
+        snprintf(buffer, MAX_OUT_CHARS, "motor.right.current.limit:%d", (motion_controller.eflag.get() & COMMOTION_ERROR_M3_MAXCURRENT));
+        send_diagnostics();
+        //M4=left
+        snprintf(buffer, MAX_OUT_CHARS, "motor.left.current.limit:%d", (motion_controller.eflag.get() & COMMOTION_ERROR_M4_MAXCURRENT));
+        send_diagnostics();
+
+        // Encoders are OK if motors are off or motors are on and the encoders have registered a change within the last second.
+        snprintf(buffer, MAX_OUT_CHARS, "motor.left.encoder:%d:%d",
+            !(!motion_controller.is_left_on() || (motion_controller.is_left_on() && millis() - a_encoder_last_change < 1000)),
+            motion_controller.a_encoder.get_latest());
+        send_diagnostics();
+        snprintf(buffer, MAX_OUT_CHARS, "motor.right.encoder:%d:%d",
+            !(!motion_controller.is_right_on() || (motion_controller.is_right_on() && millis() - b_encoder_last_change < 1000)),
+            motion_controller.b_encoder.get_latest());
+        send_diagnostics();
     }
 
     // Odometry
@@ -727,12 +801,24 @@ void loop() {
 //        imu_accel_publisher.publish(&vec3_msg);
 
     }
+    if (report_diagnostics) {
+        snprintf(buffer, MAX_OUT_CHARS, "imu.euler.x:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, static_cast<int>(ag_sensor.ex.get_latest()));
+        send_diagnostics();
+        snprintf(buffer, MAX_OUT_CHARS, "imu.euler.y:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, static_cast<int>(ag_sensor.ey.get_latest()));
+        send_diagnostics();
+        snprintf(buffer, MAX_OUT_CHARS, "imu.euler.z:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, static_cast<int>(ag_sensor.ez.get_latest()));
+        send_diagnostics();
+    }
 
     // Power button.
     power_button_sensor.update();
     if (power_button_sensor.get_and_clear_changed() || force_sensors) {
         bool_msg.data = power_button_sensor.get_value();
         power_button_publisher.publish(&bool_msg);
+    }
+    if (report_diagnostics) {
+        snprintf(buffer, MAX_OUT_CHARS, "power_button:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, !power_button_sensor.get_value());
+        send_diagnostics();
     }
 
     // Power shutoff controller.
@@ -743,8 +829,8 @@ void loop() {
     }
 
     // Battery state change.
-    if (batter_changed) {
-        batter_changed = false;
+    if (battery_changed) {
+        battery_changed = false;
         // http://docs.ros.org/kinetic/api/sensor_msgs/html/msg/BatteryState.html
         battery_msg.header.stamp = nh.now();
         battery_msg.header.frame_id = base_link;
@@ -762,6 +848,32 @@ void loop() {
         //battery_msg.location          // The location into which the battery is inserted. (slot number or plug)
         //battery_msg.serial_number     // The best approximation of the battery serial number
         battery_state_publisher.publish(&battery_msg);
+
+        // Report diagnostics.
+        // Note, we can't render floats or doubles with snprintf because the Arduino implementation doesn't support this.
+        // https://stackoverflow.com/a/24031003/247542
+        //snprintf(buffer, MAX_OUT_CHARS, "battery.voltage:%d:%f", diagnostic_msgs::DiagnosticStatus::OK, battery_msg.voltage);
+        snprintf(buffer, MAX_OUT_CHARS, "battery.voltage:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, static_cast<int>(battery_msg.voltage));
+        send_diagnostics();
+
+        if (battery_msg.percentage <= 0.25) {
+            snprintf(buffer, MAX_OUT_CHARS, "battery.percentage:%d:%d",
+                diagnostic_msgs::DiagnosticStatus::ERROR, static_cast<int>(battery_msg.percentage*100));
+        } else if (battery_msg.percentage <= 0.5) {
+            snprintf(buffer, MAX_OUT_CHARS, "battery.percentage:%d:%d",
+                diagnostic_msgs::DiagnosticStatus::WARN, static_cast<int>(battery_msg.percentage*100));
+        } else {
+            snprintf(buffer, MAX_OUT_CHARS, "battery.percentage:%d:%d",
+                diagnostic_msgs::DiagnosticStatus::OK, static_cast<int>(battery_msg.percentage*100));
+        }
+        send_diagnostics();
+
+        if (battery_msg.present) {
+            snprintf(buffer, MAX_OUT_CHARS, "battery.present:%d", diagnostic_msgs::DiagnosticStatus::OK);
+        } else {
+            snprintf(buffer, MAX_OUT_CHARS, "battery.present:%d", diagnostic_msgs::DiagnosticStatus::ERROR);
+        }
+        send_diagnostics();
     }
 
     force_sensors = false;

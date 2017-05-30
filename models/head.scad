@@ -218,6 +218,11 @@ module head_layout(){
             }
         }
         
+        // photointerruptor
+        translate([-50+1,0,3.5])
+        rotate([180,0,0])
+        import("electronics/photointerrupter_OPB940.stl");
+        
         // vertical rotator servo
         translate([-70+20-10+2.75,0,20+50])
         //rotate([0,180,90])
@@ -230,36 +235,39 @@ module head_layout(){
     
         // pan motor mounted downwards
         //translate([0,-.85,0])
-        mirror([0,0,0])
-        rotate([0,0,25])
-        translate([-60,0,30-4.5-2.5-15])
-        rotate([90,0,0]){
+        rotate([0,0,180]){
+            mirror([0,0,0])
+            rotate([0,0,25])
+            translate([-60,0,30-4.5-2.5-15])
+            rotate([90,0,0]){
 
-            translate([0,-u*1.25,0]){
-                
-                color("purple")
-                translate([0,1+2.5,0])
-                make_pololu_motor_163F3F();
+                translate([0,-u*1.25,0]){
+                    
+                    color("purple")
+                    translate([0,1+2.5,0])
+                    make_pololu_motor_163F3F();
+
+                }
+            
+                translate([0,-18,0])
+                rotate([90,0,0])
+                color("red")
+                make_pan_gears2(show_a=0, show_b=1, helpers=0);//small
 
             }
-        
-            translate([0,-18,0])
-            rotate([90,0,0])
-            color("red")
-            make_pan_gears2(show_a=0, show_b=1, helpers=0);//small
+            
+            if(0)
+            translate([-47,20,8])
+            rotate([0,-90,0])
+            make_pololu_drv8838();
 
-        }
-        
-        translate([-47,20,8])
-        rotate([0,-90,0])
-        make_pololu_drv8838();
-
-        color("orange")
-        mirror([0,0,0])
-        translate([-55,-25-.75,5+2.5+.25])
-        rotate([0,0,180]){
-            import("printable/motor_mount_pan_top_20151224.stl");
-            import("printable/motor_mount_pan_bottom_20151224.stl");
+            color("orange")
+            mirror([0,0,0])
+            translate([-55,-25-.75,5+2.5+.25])
+            rotate([0,0,180]){
+                import("printable/motor_mount_pan_top_20151224.stl");
+                import("printable/motor_mount_pan_bottom_20151224.stl");
+            }
         }
         /*
         color("red")
@@ -413,6 +421,7 @@ module head_layout(){
         
         //// END Inner Face
         
+        if(show_head_shell)
         for(i=[0:1])
         rotate([0,0,180*i])
         translate([-45+2.5,0,0])
@@ -431,22 +440,26 @@ module head_layout(){
         */
         
         //*/
+        if(show_head_shell)
         translate([0,0,70])
         rotate([head_vertical_angle_tilt,0,0])
         import("printable/head_shell_top.stl");
         //*/
         
+        if(show_head_shell)
         translate([0,0,70])
         rotate([head_vertical_angle_tilt,0,0])
         //make_head_shell_front();
         import("printable/head_shell_front.stl");
         
+        if(show_head_shell)
         translate([0,0,70])
         rotate([head_vertical_angle_tilt,0,0])
         //make_head_shell_front();
         rotate([0,0,180])
         import("printable/head_shell_back.stl");
         
+        if(show_head_shell)
         translate([0,0,70])
         rotate([head_vertical_angle_tilt,0,0])
         for(i=[0:1])
