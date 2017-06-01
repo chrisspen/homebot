@@ -23,8 +23,8 @@
 */
 
 /* Set the delay between fresh samples */
-//#define BNO055_SAMPLERATE_DELAY_MS 100
-#define BNO055_SAMPLERATE_DELAY_MS 1000
+#define BNO055_SAMPLERATE_DELAY_MS 100
+//#define BNO055_SAMPLERATE_DELAY_MS 1000
 
 //#define BNO055_SAMPLERATE_TIMEOUT_MS 60000 // 1 minute #TODO:revert
 #define BNO055_SAMPLERATE_TIMEOUT_MS 10000 // 10 seconds
@@ -83,6 +83,11 @@ class AccelGyroSensor: public Sensor{
             connected.set(bno.begin());
             if(connected.get_latest()){
                 bno.setExtCrystalUse(true);
+                
+                // Change x to z.
+                // Has no effect.
+                //bno.write8(Adafruit_BNO055::adafruit_bno055_reg_t::BNO055_AXIS_MAP_CONFIG_ADDR, 0x9);
+                //delay(10);
             }
         }
 
@@ -110,15 +115,28 @@ class AccelGyroSensor: public Sensor{
             acc_calib.set(_acc);
             mag_calib.set(_mag);
 
+            // Absolute orientation/Euler angles, in degrees.
             vector = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-            ex.set(vector.x());
-            ey.set(vector.y());
-            ez.set(vector.z());
+            //ex.set(vector.x());
+            //ey.set(vector.y());
+            //ez.set(vector.z());
+            // Remap axis so z points "up", x points "forward", and y points "sideways"
+            ex.set(vector.y());
+            ey.set(vector.z());
+            ez.set(vector.x());
 
+            // Linear acceleration, in meters/second^2.
             vector = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
             ax.set(vector.x());
             ay.set(vector.y());
             az.set(vector.z());
+            
+            // Angular velocity, in degrees/second.
+            // Note, datasheet page 30 allows for selection of units
+            vector = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
+            gx.set(vector.x());
+            gy.set(vector.y());
+            gz.set(vector.z());
 
         }
         
@@ -132,6 +150,10 @@ class AccelGyroSensor: public Sensor{
 
         bool get_and_clear_changed_accel(){
             return ax.get_and_clear_changed() || ay.get_and_clear_changed() || az.get_and_clear_changed();
+        }
+
+        bool get_and_clear_changed_gyro(){
+            return gx.get_and_clear_changed() || gy.get_and_clear_changed() || gz.get_and_clear_changed();
         }
 
 //        String get_reading_packet_accelerometer(bool force){

@@ -262,12 +262,13 @@ ros::Publisher imu_calibration_mag_publisher = ros::Publisher("imu/calibration/m
 // representing the calibration value to store in an adafruit_bno055_offsets_t.
 ros::Publisher imu_calibration_save_publisher = ros::Publisher("imu/calibration/save", &uint16ma_msg);
 
-ros::Publisher imu_publisher = ros::Publisher("imu", &imu_msg);
+//ros::Publisher imu_publisher = ros::Publisher("imu", &imu_msg);
 //ros::Publisher imu_euler_publisher = ros::Publisher("imu/euler", &vec3_msg);
 //ros::Publisher imu_accel_publisher = ros::Publisher("imu/accel", &vec3_msg);
+ros::Publisher imu_publisher = ros::Publisher("imu_relay", &string_msg);
 
 // rostopic echo /torso_arduino/odom
-ros::Publisher odometry_publisher = ros::Publisher("odom", &odom_msg);
+//ros::Publisher odometry_publisher = ros::Publisher("odom", &odom_msg);
 
 ros::Publisher diagnostics_publisher = ros::Publisher("diagnostics_relay", &string_msg);
 
@@ -493,10 +494,8 @@ void setup() {
     nh.advertise(imu_calibration_mag_publisher);
     nh.advertise(imu_calibration_save_publisher);
     nh.advertise(imu_publisher);
-    nh.advertise(odometry_publisher);
+    //nh.advertise(odometry_publisher);
     nh.advertise(diagnostics_publisher);
-    //nh.advertise(imu_euler_publisher);
-    //nh.advertise(imu_accel_publisher);
 
     // Join I2C bus as Master with address #1
     Wire.begin(1);
@@ -509,6 +508,12 @@ void setup() {
 
     ag_sensor.init();
 
+}
+
+long ftol(double v) {
+    // Assumes 3 places of decimal precision.
+    // Assumes the host interpreting this number will first divide by 1000.
+    return static_cast<long>(v*1000);
 }
 
 void send_diagnostics() {
@@ -776,18 +781,20 @@ void loop() {
         snprintf(buffer, MAX_OUT_CHARS, "imu_calib.mag:%d", calib_to_status[int16_msg.data]);
         send_diagnostics();
     }
-    if ((ag_sensor.sys_calib.get() && (ag_sensor.get_and_clear_changed_euler() || ag_sensor.get_and_clear_changed_accel())) || force_sensors) {
+    if (ag_sensor.get_and_clear_changed_euler() || ag_sensor.get_and_clear_changed_accel() || ag_sensor.get_and_clear_changed_gyro() || force_sensors) {
+        // http://docs.ros.org/api/sensor_msgs/html/msg/Imu.html
+
         //TODO:fix? IMU message too big, causes Arduino to crash?
 //        nh.loginfo("Sending IMU packet...");
-        // http://docs.ros.org/api/sensor_msgs/html/msg/Imu.html
-        imu_msg.header.stamp = nh.now();
-        imu_msg.header.frame_id = base_link;
+        //imu_msg.header.stamp = nh.now();
+        //imu_msg.header.frame_id = base_link;
         // Our sensor returns Euler angles in degrees, but ROS requires radians.
-        imu_msg.orientation = createQuaternionFromRPY(ag_sensor.ex.get_latest()*PI/180., ag_sensor.ey.get_latest()*PI/180., ag_sensor.ez.get_latest()*PI/180.);
-        imu_msg.linear_acceleration.x = ag_sensor.ax.get_latest();
-        imu_msg.linear_acceleration.y = ag_sensor.ay.get_latest();
-        imu_msg.linear_acceleration.z = ag_sensor.az.get_latest();
-        imu_publisher.publish(&imu_msg);
+        //imu_msg.orientation = createQuaternionFromRPY(
+            //ag_sensor.ex.get_latest()*PI/180., ag_sensor.ey.get_latest()*PI/180., ag_sensor.ez.get_latest()*PI/180.);
+        //imu_msg.linear_acceleration.x = ag_sensor.ax.get_latest();
+        //imu_msg.linear_acceleration.y = ag_sensor.ay.get_latest();
+        //imu_msg.linear_acceleration.z = ag_sensor.az.get_latest();
+        //imu_publisher.publish(&imu_msg);
 //        nh.loginfo("IMU packet sent.");
 
 //        vec3_msg.x = ag_sensor.ex.get_latest()*PI/180.;
@@ -800,6 +807,27 @@ void loop() {
 //        vec3_msg.z = ag_sensor.az.get_latest();
 //        imu_accel_publisher.publish(&vec3_msg);
 
+        // orientation(euler in radians):angular_velocity(gyro):linear_acceleration(accel in m/s^2)
+        // Note, we send then as triples, because the Uno only has a 64 byte serial buffer, and sending all 9 values would take 80 bytes or more.
+        snprintf(buffer, MAX_OUT_CHARS, "e:%ld:%ld:%ld",
+            // orientation/euler angles in radians
+            ftol(ag_sensor.ex.get_latest()*PI/180.), ftol(ag_sensor.ey.get_latest()*PI/180.), ftol(ag_sensor.ez.get_latest()*PI/180.));
+        string_msg.data = buffer;
+        imu_publisher.publish(&string_msg);
+
+        snprintf(buffer, MAX_OUT_CHARS, "g:%ld:%ld:%ld",
+            // angular velocity in radians/second
+            ftol(ag_sensor.gx.get_latest()*PI/180.), ftol(ag_sensor.gy.get_latest()*PI/180.), ftol(ag_sensor.gz.get_latest()*PI/180.));
+        string_msg.data = buffer;
+        imu_publisher.publish(&string_msg);
+
+        snprintf(buffer, MAX_OUT_CHARS, "a:%ld:%ld:%ld",
+            // linear acceleration in meters/second^2
+            // Note, we flip x and y to correct the axis mapping.
+            ftol(ag_sensor.ay.get_latest()), ftol(ag_sensor.ax.get_latest()), ftol(ag_sensor.az.get_latest()));
+        string_msg.data = buffer;
+        imu_publisher.publish(&string_msg);
+
     }
     if (report_diagnostics) {
         snprintf(buffer, MAX_OUT_CHARS, "imu.euler.x:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, static_cast<int>(ag_sensor.ex.get_latest()));
@@ -808,6 +836,18 @@ void loop() {
         send_diagnostics();
         snprintf(buffer, MAX_OUT_CHARS, "imu.euler.z:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, static_cast<int>(ag_sensor.ez.get_latest()));
         send_diagnostics();
+
+        // Register an error if we've fallen over.
+        if (abs(ag_sensor.ex.get_latest()) >= 25 || abs(ag_sensor.ey.get_latest()) >= 25) {
+            snprintf(buffer, MAX_OUT_CHARS, "imu.upright:%d", diagnostic_msgs::DiagnosticStatus::ERROR);
+            send_diagnostics();
+        } else if (abs(ag_sensor.ex.get_latest()) >= 10 || abs(ag_sensor.ey.get_latest()) >= 10) {
+            snprintf(buffer, MAX_OUT_CHARS, "imu.upright:%d", diagnostic_msgs::DiagnosticStatus::WARN);
+            send_diagnostics();
+        } else {
+            snprintf(buffer, MAX_OUT_CHARS, "imu.upright:%d", diagnostic_msgs::DiagnosticStatus::OK);
+            send_diagnostics();
+        }
     }
 
     // Power button.

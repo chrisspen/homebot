@@ -9,17 +9,18 @@ import cPickle as pickle
 
 #import numpy as np
 import rospy
-#import tf
+import tf
 # import tf2_ros
 #http://docs.ros.org/api/sensor_msgs/html/msg/Imu.html
-#from sensor_msgs.msg import Imu
+from sensor_msgs.msg import Imu
+from std_msgs.msg import Header
 from std_msgs.msg import String, UInt16MultiArray
 #from std_srvs.srv import Empty, EmptyResponse
 #from nav_msgs.msg import Odometry
 #from geometry_msgs.msg import Quaternion, Point
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus#, KeyValue
 
-#from ros_homebot_python import constants as c
+from ros_homebot_python import constants as c
 #from ros_homebot_python.node import BaseArduinoNode
 
 OK = DiagnosticStatus.OK # 0
@@ -56,6 +57,8 @@ class TorsoRelay:
     def __init__(self):
         rospy.init_node('torso_relay')
         
+        self._imu_data = {}
+        
         self._lock = threading.RLock()
         
         self.imu_calibration_loaded = False
@@ -74,9 +77,13 @@ class TorsoRelay:
         
         self.imu_calibration_load_pub = rospy.Publisher('/torso_arduino/imu/calibration/load', UInt16MultiArray, queue_size=1)
 
-        rospy.Subscriber('/torso_arduino/diagnostics_relay', String, self.on_diagnostics)
+        self.imu_pub = rospy.Publisher('imu/data_raw', Imu, queue_size=10)
+
+        rospy.Subscriber('/torso_arduino/diagnostics_relay', String, self.on_diagnostics_relay)
         
         rospy.Subscriber('/torso_arduino/imu/calibration/save', UInt16MultiArray, self.on_imu_calibration_save)
+        
+        rospy.Subscriber('/torso_arduino/imu_relay', String, self.on_imu_relay)
         
         rospy.spin()
     
@@ -126,7 +133,49 @@ class TorsoRelay:
         with open(fn, 'w') as fout:
             pickle.dump(msg, fout)
 
-    def on_diagnostics(self, msg):
+    def on_imu_relay(self, msg):
+        #print('imu_relay.msg:', msg)
+        parts = msg.data.split(':')
+        
+        # Validate type.
+        typ = parts[0]
+        assert typ in 'aeg', 'Invalid typ: %s' % typ
+        
+        # Conver the integers to the original floats.
+        nums = [int(_)/1000. for _ in parts[1:]]
+        for num, axis in zip(nums, 'xyz'):
+            self._imu_data['%s%s' % (typ, axis)] = num
+        print('imu_data:', self._imu_data)
+        
+        # If we've received the final segment, re-publish the complete IMU message.
+        if typ == 'a':
+            imu_msg = Imu()
+            imu_msg.header = Header()
+            imu_msg.header.stamp = rospy.Time.now()
+            imu_msg.header.frame_id = c.BASE_LINK
+            
+            # Our sensor returns Euler angles in degrees, but ROS requires radians.
+            # http://answers.ros.org/question/69754/quaternion-transformations-in-python/
+            roll = self._imu_data['ex']
+            pitch = self._imu_data['ey']
+            yaw = self._imu_data['ez']
+            quaternion = tf.transformations.quaternion_from_euler(roll, pitch, yaw)
+            imu_msg.orientation.x = quaternion[0]
+            imu_msg.orientation.y = quaternion[1]
+            imu_msg.orientation.z = quaternion[2]
+            imu_msg.orientation.w = quaternion[3]
+            
+            imu_msg.angular_velocity.x = self._imu_data['gx']
+            imu_msg.angular_velocity.y = self._imu_data['gy']
+            imu_msg.angular_velocity.z = self._imu_data['gz']
+            
+            imu_msg.linear_acceleration.x = self._imu_data['ax']
+            imu_msg.linear_acceleration.y = self._imu_data['ay']
+            imu_msg.linear_acceleration.z = self._imu_data['az']
+
+            self.imu_pub.publish(imu_msg)
+
+    def on_diagnostics_relay(self, msg):
         """
         The Arduino has limited RAM and an even more limited serial buffer, so it can't send complex ROS structures like DiagnosticArrays.
         So instead, it publishes diagnostic data via a key/value pair formatted in a simple string,
