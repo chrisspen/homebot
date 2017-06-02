@@ -16,9 +16,9 @@ private:
 
 public:
 
-    int x, y, z, th;
+    double x, y, z, th;
 
-    int vx, vy, vz, vth;
+    double vx, vy, vz, vth;
 
     int deltaLeft, deltaRight;
 
@@ -76,10 +76,10 @@ public:
             changed = true;
 
             // compute odometry in a typical way given the velocities of the robot
-            float dt = (millis() - last_update_time)/1000.;
-            float delta_x = (vx * cos(th) - vy * sin(th)) * dt;
-            float delta_y = (vx * sin(th) + vy * cos(th)) * dt;
-            float delta_th = vth * dt;
+            double dt = (millis() - last_update_time)/1000.;
+            double delta_x = (vx * cos(th) - vy * sin(th)) * dt;
+            double delta_y = (vx * sin(th) + vy * cos(th)) * dt;
+            double delta_th = vth * dt;
             x += delta_x;
             y += delta_y;
             th += delta_th;

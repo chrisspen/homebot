@@ -3,6 +3,7 @@ from __future__ import print_function
 #import time
 import traceback
 import os
+import sys
 import threading
 import cPickle as pickle
 #from math import pi, sin, cos
@@ -10,14 +11,14 @@ import cPickle as pickle
 #import numpy as np
 import rospy
 import tf
-# import tf2_ros
+#import tf2_ros
 #http://docs.ros.org/api/sensor_msgs/html/msg/Imu.html
 from sensor_msgs.msg import Imu
 from std_msgs.msg import Header
 from std_msgs.msg import String, UInt16MultiArray
 #from std_srvs.srv import Empty, EmptyResponse
-#from nav_msgs.msg import Odometry
-#from geometry_msgs.msg import Quaternion, Point
+from nav_msgs.msg import Odometry
+from geometry_msgs.msg import Quaternion, Point
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus#, KeyValue
 
 from ros_homebot_python import constants as c
@@ -28,6 +29,9 @@ WARN = DiagnosticStatus.WARN # 1
 ERROR = DiagnosticStatus.ERROR # 2
 STALE = DiagnosticStatus.STALE # 3
 
+V0 = 'v0'
+V1 = 'v1'
+
 status_id_to_name = {
     OK: 'OK',
     WARN: 'WARN',
@@ -37,15 +41,24 @@ status_id_to_name = {
 
 IMU_CALIBRATION_FN = 'imu_calibration.pickle'
 
+def ltof(values):
+    """
+    Converts the special integer-encoded doubles back into Python floats.
+    
+    See the Arduino's equivalent ftol().
+    """
+    assert isinstance(values, (tuple, list))
+    return [int(_)/1000. for _ in values]
+
 # Based on https://goo.gl/mY0th1
 # http://wiki.ros.org/tf2/Tutorials/Writing%20a%20tf2%20broadcaster%20%28Python%29
 # http://wiki.ros.org/navigation/Tutorials/RobotSetup/Odom
 # http://answers.ros.org/question/79851/python-odometry/
 class TorsoRelay:
   
-    #frame_id = '/odom'
+    frame_id = '/odom'
     
-    #child_frame_id = '/base_link'
+    child_frame_id = '/base_link'
     
     diagnostics_prefix = 'Torso Arduino'
     
@@ -65,25 +78,33 @@ class TorsoRelay:
         
         self.diagnostics_msg_count = 0
         
-        #self.odom_pub = rospy.Publisher('/odom', Odometry, queue_size=10)
-        
         # http://wiki.ros.org/tf/Tutorials/Writing%20a%20tf%20broadcaster%20%28Python%29
-        #self.tf_br = tf.TransformBroadcaster()
-        #self.tf_br = tf2_ros.TransformBroadcaster()
+        self.tf_br = tf.TransformBroadcaster()
+        #self.tf2_br = tf2_ros.TransformBroadcaster()
         
         #rospy.Service('~reset_odometry', Empty, self.reset_odometry)
 
+        ## Publishers.
+
         self.diagnostics_pub = rospy.Publisher('/diagnostics', DiagnosticArray, queue_size=10)
+        
+        self.odometry_pub = rospy.Publisher('/odom', Odometry, queue_size=10)
         
         self.imu_calibration_load_pub = rospy.Publisher('/torso_arduino/imu/calibration/load', UInt16MultiArray, queue_size=1)
 
         self.imu_pub = rospy.Publisher('imu/data_raw', Imu, queue_size=10)
+
+        ## Subscribers.
 
         rospy.Subscriber('/torso_arduino/diagnostics_relay', String, self.on_diagnostics_relay)
         
         rospy.Subscriber('/torso_arduino/imu/calibration/save', UInt16MultiArray, self.on_imu_calibration_save)
         
         rospy.Subscriber('/torso_arduino/imu_relay', String, self.on_imu_relay)
+        
+        rospy.Subscriber('/torso_arduino/odometry_relay', String, self.on_odometry_relay)
+        
+        ## Begin IO.
         
         rospy.spin()
     
@@ -142,7 +163,7 @@ class TorsoRelay:
         assert typ in 'aeg', 'Invalid typ: %s' % typ
         
         # Conver the integers to the original floats.
-        nums = [int(_)/1000. for _ in parts[1:]]
+        nums = ltof(parts[1:])
         for num, axis in zip(nums, 'xyz'):
             self._imu_data['%s%s' % (typ, axis)] = num
         print('imu_data:', self._imu_data)
@@ -191,7 +212,7 @@ class TorsoRelay:
         # Extract parts.
         parts = msg.data.split(':')
         if len(parts) < 2:
-            print('Malformed diagnostics message.')
+            print('Malformed diagnostics message.', file=sys.stderr)
             return
         
         # Complete name part.
@@ -221,6 +242,85 @@ class TorsoRelay:
             DiagnosticStatus(name=name, level=level, message=message)
         ]
         self.diagnostics_pub.publish(array)
+
+    def on_odometry_relay(self, msg):
+        
+        print('odometry.msg:', msg)
+        
+        parts = msg.data.split(':')
+        if len(parts) < 5:
+            print('Malformed odometry message.', file=sys.stderr)
+            return
+        
+        # Validate type.
+        typ = parts[0]
+        assert typ in (V0, V1), 'Invalid type: %s' % typ
+        
+        # Validate numbers.
+        nums = ltof(parts[1:])
+        
+        # Save type parts.
+        if typ == V0:
+            # Position.
+            # x,y,z,th
+            self._odometry_v0 = nums
+        else:
+            # Velocity.
+            # vx,vy,vz,vth
+            self._odometry_v1 = nums
+        
+        # Combine and publish a complete odometry message on the receipt of the last part.
+        if typ == V1:
+            current_time = rospy.Time.now()
+            print('self._odometry_v0:', self._odometry_v0)
+            x, y, z, th = self._odometry_v0
+            print('self._odometry_v1:', self._odometry_v1)
+            vx, vy, vz, vth = self._odometry_v1
+
+            # since all odometry is 6DOF we'll need a quaternion created from yaw
+            #geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(th);
+            odom_quat = Quaternion(*tf.transformations.quaternion_from_euler(0, 0, th))
+
+            msg = Odometry()
+            msg.header.stamp = current_time
+            msg.header.frame_id = self.frame_id
+            msg.child_frame_id = self.child_frame_id
+            msg.pose.pose.position = Point(x, y, z)
+            msg.pose.pose.orientation = odom_quat
+            msg.twist.twist.linear.x = vx
+            msg.twist.twist.linear.y = vy
+            msg.twist.twist.angular.z = vth
+        
+            # publish the odometry message
+            self.odometry_pub.publish(msg)
+
+            pos = (
+                msg.pose.pose.position.x,
+                msg.pose.pose.position.y,
+                msg.pose.pose.position.z,
+            )
+            
+            ori = (
+                msg.pose.pose.orientation.x,
+                msg.pose.pose.orientation.y,
+                msg.pose.pose.orientation.z,
+                msg.pose.pose.orientation.w,
+            )
+
+            # first, we'll publish the transform over tf
+            #geometry_msgs::TransformStamped odom_trans;
+#             odom_trans = TransformStamped()
+#             odom_trans.header.stamp = self.current_time
+#             odom_trans.header.frame_id = self.frame_id
+#             odom_trans.child_frame_id = self.child_frame_id
+#             odom_trans.transform.translation.x = self.x
+#             odom_trans.transform.translation.y = self.y
+#             odom_trans.transform.translation.z = self.z
+#             odom_trans.transform.rotation = odom_quat
+        
+            # send the transform
+            self.tf_br.sendTransform(pos, ori, msg.header.stamp, msg.child_frame_id, msg.header.frame_id)
+            #self.tf2_br.sendTransform(odom_trans)
 
 if __name__ == '__main__':
     TorsoRelay()

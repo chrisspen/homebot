@@ -267,8 +267,8 @@ ros::Publisher imu_calibration_save_publisher = ros::Publisher("imu/calibration/
 //ros::Publisher imu_accel_publisher = ros::Publisher("imu/accel", &vec3_msg);
 ros::Publisher imu_publisher = ros::Publisher("imu_relay", &string_msg);
 
-// rostopic echo /torso_arduino/odom
-//ros::Publisher odometry_publisher = ros::Publisher("odom", &odom_msg);
+// rostopic echo /torso_arduino/odometry_relay
+ros::Publisher odometry_publisher = ros::Publisher("odometry_relay", &string_msg);
 
 ros::Publisher diagnostics_publisher = ros::Publisher("diagnostics_relay", &string_msg);
 
@@ -494,7 +494,7 @@ void setup() {
     nh.advertise(imu_calibration_mag_publisher);
     nh.advertise(imu_calibration_save_publisher);
     nh.advertise(imu_publisher);
-    //nh.advertise(odometry_publisher);
+    nh.advertise(odometry_publisher);
     nh.advertise(diagnostics_publisher);
 
     // Join I2C bus as Master with address #1
@@ -702,6 +702,17 @@ void loop() {
     if (odometry_tracker.changed && millis() - odometry_tracker.last_report_time >= 1000) {
         odometry_tracker.changed = false;
         odometry_tracker.last_report_time = millis();
+
+        snprintf(buffer, MAX_OUT_CHARS, "v0:%d:%d:%d:%d",
+            ftol(odometry_tracker.x), ftol(odometry_tracker.y), ftol(odometry_tracker.z), ftol(odometry_tracker.th));
+        string_msg.data = buffer;
+        odometry_publisher.publish(&string_msg);
+
+        snprintf(buffer, MAX_OUT_CHARS, "v1:%d:%d:%d:%d",
+            ftol(odometry_tracker.vx), ftol(odometry_tracker.vy), ftol(odometry_tracker.vz), ftol(odometry_tracker.vth));
+        string_msg.data = buffer;
+        odometry_publisher.publish(&string_msg);
+
         /*
         // CS 2017.4.9 Disabled becaues this crashes the Arduino and/or overwhelms its serial port.
         // Publish the odometry message.
