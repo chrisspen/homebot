@@ -380,6 +380,7 @@ BASE_FOOTPRINT = 'base_footprint'
 BASE_LINK = 'base_link'
 NECK = 'neck'
 HEAD = 'head'
+ODOM = 'odom'
 
 # Joints
 

@@ -56,10 +56,6 @@ def ltof(values):
 # http://answers.ros.org/question/79851/python-odometry/
 class TorsoRelay:
   
-    frame_id = '/odom'
-    
-    child_frame_id = '/base_link'
-    
     diagnostics_prefix = 'Torso Arduino'
     
     cache_dir = '~/.homebot_cache/torso_relay'
@@ -145,7 +141,7 @@ class TorsoRelay:
             self.imu_calibration_loaded = True
 
     def on_imu_calibration_save(self, msg):
-        print('Received imu calibration:', msg)
+        #print('Received imu calibration:', msg)
         if sum(msg.data) == 0:
             print('Ignoring blank calibration.')
             self.load_imu_calibration()
@@ -166,7 +162,7 @@ class TorsoRelay:
         nums = ltof(parts[1:])
         for num, axis in zip(nums, 'xyz'):
             self._imu_data['%s%s' % (typ, axis)] = num
-        print('imu_data:', self._imu_data)
+        #print('imu_data:', self._imu_data)
         
         # If we've received the final segment, re-publish the complete IMU message.
         if typ == 'a':
@@ -272,9 +268,9 @@ class TorsoRelay:
         # Combine and publish a complete odometry message on the receipt of the last part.
         if typ == V1:
             current_time = rospy.Time.now()
-            print('self._odometry_v0:', self._odometry_v0)
+            print('position:', self._odometry_v0)
             x, y, z, th = self._odometry_v0
-            print('self._odometry_v1:', self._odometry_v1)
+            print('velocity:', self._odometry_v1)
             vx, vy, vz, vth = self._odometry_v1
 
             # since all odometry is 6DOF we'll need a quaternion created from yaw
@@ -283,8 +279,8 @@ class TorsoRelay:
 
             msg = Odometry()
             msg.header.stamp = current_time
-            msg.header.frame_id = self.frame_id
-            msg.child_frame_id = self.child_frame_id
+            msg.header.frame_id = c.ODOM
+            msg.child_frame_id = c.BASE_LINK
             msg.pose.pose.position = Point(x, y, z)
             msg.pose.pose.orientation = odom_quat
             msg.twist.twist.linear.x = vx

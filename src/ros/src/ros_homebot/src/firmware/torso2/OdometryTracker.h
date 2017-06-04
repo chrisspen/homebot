@@ -20,11 +20,11 @@ public:
 
     double vx, vy, vz, vth;
 
-    int deltaLeft, deltaRight;
-
     unsigned long last_update_time;
 
     unsigned long last_report_time;
+
+    double v_left, v_right;
 
     bool changed = false;
 
@@ -44,17 +44,16 @@ public:
         vx = 0;
         vy = 0;
         vz = 0;
-        vth = 0;
-        deltaLeft = 0;
-        deltaRight = 0;
+        vth = 0; //rad/sec
         last_update_time = 0;
         last_report_time = 0;
+        v_left = 0;
+        v_right = 0;
     }
 
     void update_left(int count){
         if (!_start_left) {
-            deltaLeft = count - _left_count;
-            vx = deltaLeft * METERS_PER_COUNT;
+            v_left = (count - _left_count) * METERS_PER_COUNT;
             update();
         }
         _start_left = false;
@@ -63,8 +62,7 @@ public:
 
     void update_right(int count){
         if (!_start_right) {
-            deltaRight = count - _right_count;
-            vy = deltaRight * METERS_PER_COUNT;
+            v_right = (count - _right_count) * METERS_PER_COUNT;
             update();
         }
         _start_right = false;
@@ -76,7 +74,15 @@ public:
             changed = true;
 
             // compute odometry in a typical way given the velocities of the robot
+            // http://answers.ros.org/question/231942/computing-odometry-from-two-velocities/?answer=231954#post-id-231954
             double dt = (millis() - last_update_time)/1000.;
+            
+            // Calculate velocities.
+            vx = ( v_right + v_left ) / 2;
+            vy = 0; // we assume no left/right sliding
+            vth = ( v_right - v_left ) / TORSO_TREAD_WIDTH_METERS;
+            
+            // Use velocities to update absolute position and rotation.
             double delta_x = (vx * cos(th) - vy * sin(th)) * dt;
             double delta_y = (vx * sin(th) + vy * cos(th)) * dt;
             double delta_th = vth * dt;

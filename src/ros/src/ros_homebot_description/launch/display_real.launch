@@ -8,7 +8,7 @@ Run using:
 Requires:
 
     sudo apt-get install ros-kinetic-robot-model ros-kinetic-rviz ros-kinetic-rviz-imu-plugin
-    
+
 -->
 <launch>
 

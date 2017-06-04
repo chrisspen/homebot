@@ -1,8 +1,14 @@
 <!--
+Visualizes the robot in an Rviz window.
+
+Run using:
+
+    roslaunch ros_homebot_description display_real.launch
+
 Requires:
 
-    sudo apt-get install ros-kinetic-robot-model
-    
+    sudo apt-get install ros-kinetic-robot-model ros-kinetic-rviz ros-kinetic-rviz-imu-plugin
+
 -->
 <launch>
 

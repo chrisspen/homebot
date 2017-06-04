@@ -1,8 +1,30 @@
-<!-- Runs all components assuming the head is detached. -->
+<!-- Runs all components assuming the head is detached. Used for debugging the torso. -->
 <launch>
-    <include file="$(find ros_homebot)/launch/robot_state_publisher.launch" />
+
+    <!--<arg name="model" default="$(find ros_homebot_description)/urdf/homebot.urdf.xacro"/>-->
+    <arg name="model" default="$(find ros_homebot_description)/urdf/homebot-torso.urdf.xacro"/>
+
+    <!--<include file="$(find ros_homebot)/launch/robot_state_publisher.launch" />-->
+    <param name="robot_description" command="$(find xacro)/xacro --inorder $(arg model)" />
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
+
+    <!-- Used to publish fake joint state messages.
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
+    -->
+
+    <!-- Diagnostics UI and tracking. -->
     <include file="$(find ros_homebot)/launch/diagnostics_aggregator.launch" />
     <include file="$(find ros_homebot)/launch/diagnostics_viewer.launch" />
+
+    <!-- Torso IO managers. -->
     <include file="$(find ros_homebot)/launch/serial_torso.launch" />
     <node name="torso_relay" pkg="ros_homebot" type="torso_relay.py" output="screen"></node>
+
+    <!-- Visualization. -->
+    <arg name="gui" default="true" />
+    <arg name="rvizconfig" default="$(find ros_homebot_description)/rviz/urdf.rviz" />
+    <param name="robot_description" command="$(find xacro)/xacro --inorder $(arg model)" />
+    <param name="use_gui" value="$(arg gui)"/>    
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />
+
 </launch>

@@ -87,7 +87,7 @@ bool force_sensors = false;
 
 // Records when we last received a message from rosserial on the host.
 // This is used to detect a lost connection to the host and perform emergency shutdown of the motors.
-bool last_connected = false;
+bool connected = false;
 
 // http://wiki.ros.org/roscpp/Overview/Logging
 // http://wiki.ros.org/rosserial/Overview/Logging
@@ -411,7 +411,7 @@ ros::Subscriber<std_msgs::UInt16MultiArray> imu_calibration_load_sub("imu/calibr
 /*
  * End subscribers.
  */
-
+/*
 static geometry_msgs::Quaternion createQuaternionFromRPY(double roll, double pitch, double yaw) {
     // https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles#Source_Code
     // http://docs.ros.org/api/geometry_msgs/html/msg/Quaternion.html
@@ -428,6 +428,7 @@ static geometry_msgs::Quaternion createQuaternionFromRPY(double roll, double pit
     q.z = t1 * t2 * t4 - t0 * t3 * t5;
     return q;
 }
+*/
 
 void setup() {
 
@@ -450,7 +451,8 @@ void setup() {
 
     // Turn on power status light.
     pinMode(STATUS_LED_PIN, OUTPUT);
-    digitalWrite(STATUS_LED_PIN, true);
+    //digitalWrite(STATUS_LED_PIN, true);
+    digitalWrite(STATUS_LED_PIN, 0);
 
 //    pinMode(EXTERNAL_POWER_SENSE_1_PIN, INPUT);
 //    pinMode(EXTERNAL_POWER_SENSE_2_PIN, INPUT);
@@ -561,17 +563,21 @@ void loop() {
 //        nh.loginfo(buffer);
 //    }
 
-    // If we just became disconnected from the host, then immediately halt all motors.
-    if (last_connected != nh.connected() && !nh.connected()) {
-        //nh.loginfo("Motors stopped due to disconnect!");
+    // Track connection status with host.
+    if (nh.connected()) {
+        digitalWrite(STATUS_LED_PIN, 1);
+        connected = true;
+    } else if (connected) {
+        // If we just became disconnected from the host, then immediately halt all motors as a safety precaution.
+        digitalWrite(STATUS_LED_PIN, 0);
         motion_controller.stop();
+        delay(50);
+        connected = false;
     }
 
     // Battery sensor.
     battery_voltage_sensor.update();
     if (battery_voltage_sensor.get_and_clear_changed() || force_sensors) {
-//        float_msg.data = battery_voltage_sensor.get_voltage();
-//        battery_voltage_publisher.publish(&float_msg);
         battery_changed = true;
     }
 
@@ -584,14 +590,12 @@ void loop() {
         }
     }
     if (report_diagnostics) {
-        //ros::Publisher("power/external/0", &bool_msg), // external power voltage present=0
         // OK if external power is unplugged or plugged in and we detect a voltage.
         snprintf(buffer, MAX_OUT_CHARS, "ep.voltage.present:%d:%d",
             !(!external_power_sensors[1].get_bool() || (external_power_sensors[1].get_bool() && external_power_sensors[0].get_bool())),
             external_power_sensors[0].get_bool());
         send_diagnostics();
 
-        //ros::Publisher("power/external/1", &bool_msg) // external power magnet present=1
         snprintf(buffer, MAX_OUT_CHARS, "ep.magnet.present:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, external_power_sensors[1].get_bool());
         send_diagnostics();
     }
@@ -607,6 +611,7 @@ void loop() {
             snprintf(buffer, MAX_OUT_CHARS, "edge.%d:%d:%d", i, diagnostic_msgs::DiagnosticStatus::OK, edge_sensors[i].value.get_latest());
             send_diagnostics();
         }
+        // CS 2017.6.3 Disabled because these have a poor mechanical design, are unreliable, and are largely unnecessary with the presence of ultrasonics.
 //        bumper_sensors[i].update();
 //        if (bumper_sensors[i].get_and_clear_changed() || force_sensors) {
 //            bool_msg.data = bumper_sensors[i].value.get();
@@ -615,9 +620,6 @@ void loop() {
         if (ultrasonics_enabled) {
             ultrasonic_sensors[i].update();
             if (ultrasonic_sensors[i].get_and_clear_changed() || force_sensors) {
-                //int16_msg.data = ultrasonic_sensors[i].distance.get();
-                //ultrasonic_publishers[i].publish(&int16_msg);
-
                 // http://docs.ros.org/jade/api/sensor_msgs/html/msg/Range.html
                 // http://wiki.ros.org/rosserial_arduino/Tutorials/Time%20and%20TF
                 range_msg.header.stamp = nh.now();
@@ -630,7 +632,6 @@ void loop() {
                 range_msg.max_range = 4; // meters
                 range_msg.range = ultrasonic_sensors[i].distance.get()/100.0; // meters
                 ultrasonic_publishers[i].publish(&range_msg);
-
             }
             if (report_diagnostics) {
                 snprintf(buffer, MAX_OUT_CHARS, "ultrasonic.%d.cm:%d:%d", i,
@@ -648,6 +649,8 @@ void loop() {
 
     // Temperature.
     // CS 2017.2.1 Disabled because not supported by the chip in the Arduino Uno*Pro.
+    // If necessary, we could replace this with the temperature output from the IMU.
+    // However, there's also a temp sensor in the head Leonardo, so this isn't strictly needed.
 //    arduino_temperature_sensor.update();
 //    if (arduino_temperature_sensor.get_and_clear_changed() || force_sensors) {
 //        float_msg.data = arduino_temperature_sensor.temperature.get();
@@ -675,6 +678,8 @@ void loop() {
     if (report_diagnostics) {
         snprintf(buffer, MAX_OUT_CHARS, "motor.connection:%d", (motion_controller.eflag.get() & COMMOTION_ERROR_DISCONNECT));
         send_diagnostics();
+
+        // CS 2017.6.3 The first two motor ports are unused, so we don't care about their current readings.
         //snprintf(buffer, MAX_OUT_CHARS, "motor.1.current.limit:%d", (motion_controller.eflag.get() & COMMOTION_ERROR_M1_MAXCURRENT));
         //send_diagnostics();
         //snprintf(buffer, MAX_OUT_CHARS, "motor.2.current.limit:%d", (motion_controller.eflag.get() & COMMOTION_ERROR_M2_MAXCURRENT));
@@ -703,12 +708,29 @@ void loop() {
         odometry_tracker.changed = false;
         odometry_tracker.last_report_time = millis();
 
-        snprintf(buffer, MAX_OUT_CHARS, "v0:%d:%d:%d:%d",
+        //nh.loginfo("odometry_tracker.th:");//+String(odometry_tracker.th));
+        //dtostrf(value, (decimalPlaces + 2), decimalPlaces, buf)
+        //snprintf(buffer, MAX_OUT_CHARS, "Power controller state changed: %d", power_controller.power_state.get());
+        //nh.loginfo(buffer);
+
+        //strcpy(buffer, "odometry_tracker.th: ");
+        //dtostrf(odometry_tracker.th, 2+6, 6, &buffer[strlen(buffer)]);
+        //nh.loginfo(buffer);
+
+        strcpy(buffer, "v_left: ");
+        dtostrf(odometry_tracker.v_left, 2+6, 6, &buffer[strlen(buffer)]);
+        nh.loginfo(buffer);
+
+        strcpy(buffer, "v_right: ");
+        dtostrf(odometry_tracker.v_right, 2+6, 6, &buffer[strlen(buffer)]);
+        nh.loginfo(buffer);
+
+        snprintf(buffer, MAX_OUT_CHARS, "v0:%ld:%ld:%ld:%ld",
             ftol(odometry_tracker.x), ftol(odometry_tracker.y), ftol(odometry_tracker.z), ftol(odometry_tracker.th));
         string_msg.data = buffer;
         odometry_publisher.publish(&string_msg);
 
-        snprintf(buffer, MAX_OUT_CHARS, "v1:%d:%d:%d:%d",
+        snprintf(buffer, MAX_OUT_CHARS, "v1:%ld:%ld:%ld:%ld",
             ftol(odometry_tracker.vx), ftol(odometry_tracker.vy), ftol(odometry_tracker.vz), ftol(odometry_tracker.vth));
         string_msg.data = buffer;
         odometry_publisher.publish(&string_msg);
@@ -931,7 +953,5 @@ void loop() {
 
     nh.spinOnce();
     delay(1);
-
-    last_connected = nh.connected();
 
 }
