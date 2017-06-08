@@ -1,1 +1,11 @@
 https://www.digikey.com/product-detail/en/tt-electronics-optek-technology/OPB941W51Z/365-1234-ND/1007365
+
+Wiring (for a GVS sensor plug):
+
+    Connect green (gnd) and black (cathode) wires together, this will be the common ground.
+    
+    Add a resistor of 330 in series with red (anode). This limits the current through the IR emitter.
+    
+    Connect white (vcc) to the anode resistor (red). This will be +5V.
+    
+    Leave blue (out) as is. This will be signal out, going to a digital pin on the Arduino, configured to use a 20k pullup resistor.

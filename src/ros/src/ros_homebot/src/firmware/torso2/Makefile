@@ -5,6 +5,7 @@
 BOARD_TAG    = uno_pro
 MONITOR_PORT = /dev/ttyACM0
 AVRDUDE_OPTS = -v
+# Note, you must copy these to USER_LIB_PATH, TODO:fixme
 ARDUINO_LIBS = ros_lib Wire Adafruit_BNO055
 ARDUINO_SKETCHBOOK = /home/$(USER)/Arduino
 USER_LIB_PATH = /home/$(USER)/Arduino/libraries

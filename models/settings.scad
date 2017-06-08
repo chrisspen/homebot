@@ -37,6 +37,7 @@ show_platform = 0;
 show_head = 1;
 show_head_shell = 0;
 show_head_electronics_bb = 0;
+show_inner_head = 0;
 show_battery = 1;
 show_foot_cube = 0;
 show_torso = 0;

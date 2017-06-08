@@ -23,6 +23,7 @@ use <plates/head_top.scad>;
 use <plates/motor_mount_pan.scad>;
 use <plates/neck.scad>;
 use <plates/rpi_tray.scad>;
+use <plates/neck_sensor_mount.scad>;
 
 module make_head_shell(){
 
@@ -82,6 +83,7 @@ module head_layout(){
         translate([0,0,head_slew_bearing_height]){
             
             //color("red")
+            if(show_inner_head)
             translate([0, 0, 65]){
                 
                 translate([-35+u*0, 0, 0])
@@ -223,6 +225,11 @@ module head_layout(){
         rotate([180,0,0])
         import("electronics/photointerrupter_OPB940.stl");
         
+        //translate([-5,0,0])
+        translate([-50+2.5,0,0])
+        //rotate([180,0,0])
+        neck_sensor_mount();
+        
         // vertical rotator servo
         translate([-70+20-10+2.75,0,20+50])
         //rotate([0,180,90])
@@ -297,17 +304,17 @@ module head_layout(){
         );
         */
         
+        if(0){
+            color("green")
+            translate([0,0,-.4])
+            rotate([0,0,-45])
+            import("printable/qrd1114_mount_a_20151205a.stl");
 
-        color("green")
-        translate([0,0,-.4])
-        rotate([0,0,-45])
-        import("printable/qrd1114_mount_a_20151205a.stl");
-
-        color("green")
-        translate([0,0,-.4])
-        rotate([0,0,45])
-        import("printable/qrd1114_mount_a_20151205a.stl");
-
+            color("green")
+            translate([0,0,-.4])
+            rotate([0,0,45])
+            import("printable/qrd1114_mount_a_20151205a.stl");
+        }
 
         //color("green")
         /*
@@ -338,7 +345,7 @@ module head_layout(){
         import("printable/head_shell_neck_mesh_20160601.stl");
         */
         
-        
+        if(show_head_shell)
         for(i=[0:1])
         rotate([0,0,180*i])
         translate([0,0,70-10+0.5])
@@ -518,6 +525,7 @@ translate([0,0,-15]){
         import("printable/bearings_slew_bearing_inner_bottom_20160214.stl");
     }
 
+    if(0)
     color("gray")
     rotate([0,0,-45])
     translate([0,0,2.5])

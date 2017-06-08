@@ -1,6 +1,7 @@
 filename,wall_thickness,color,infill_percent,platform_adhesion,support_type,obsolete
 arduino_tray_2_20160508.stl,0.8,,,,,0
 ballast_tray_20160414.stl,0.8,,,,,0
+battery_holder_18659_x3.stl,,,,,,0
 battery_tray2_cartridge_bottom_20160522.stl,0.8,,,,,0
 battery_tray2_cartridge_top_20160522.stl,0.8,,,,,0
 battery_tray2_nub_20160522.stl,0.8,,,brim,,0
@@ -66,6 +67,7 @@ motor_pan_driver_mount.stl,0.8,,,,,0
 motor_unimount_2_a0_20160406.stl,0.8,,,,,0
 motor_unimount_2_b0_20160406.stl,0.8,,,,,0
 mpu6050_mount_20160508.stl,0.8,,,,,0
+neck_sensor_mount.stl,,,,,,0
 neck_strut_open.stl,0.8,,,,,0
 neck_strut_servo.stl,0.8,,,,,0
 neck_strut_servo_mount_20150928.stl,0.8,,,,,0

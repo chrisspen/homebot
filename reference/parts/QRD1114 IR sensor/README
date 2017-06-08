@@ -1,0 +1,8 @@
+
+Design 1:
+
+    Pin 1 (IR receiver output) in series with resistor 25700. (white)
+    
+    Pins 2 and 4 connected to ground. (black)
+    
+    Pin 3 (IR emitter +V) in series with resistor 330. (red)

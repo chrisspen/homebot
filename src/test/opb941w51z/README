@@ -1,0 +1,14 @@
+A test for the wiring for hte OPB941 sensor.
+
+This is very similar in concept to the wiring for the QRD1114.
+
+Build by running:
+
+    make
+    make upload
+    make monitor
+
+Function:
+
+    When the slotted sensor is obstructed, the signal will read LOW.
+    When unobstructed (clear), the signal will read HIGH.

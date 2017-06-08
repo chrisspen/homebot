@@ -1,4 +1,4 @@
 description: Wiring of the head's pan reference sensor.
 status: production
 parts:
-    neck_reference_sensor.fzz: The main circuit, essentially just a simple voltage divider.
+    neck_reference_sensor.fzz: The main circuit, essentially just a simple voltage divider. Uses the OPB941W sensor.
