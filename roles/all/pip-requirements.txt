@@ -36,7 +36,7 @@ pint==0.7.2
 #-e git://github.com/chrisspen/laser-range-finder.git#egg=laser_range_finder
 
 # Needed for ROS message generation.
-empy==3.3.2
+empy==3.3.3
 
 defusedxml
 rospkg
