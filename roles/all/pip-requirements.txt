@@ -26,7 +26,7 @@ numpy
 #DEPRECATED: Installed by ROS?
 #wiringpi2==1.1.1
 
-Pillow==2.3.0
+Pillow==4.1.1
 picamera==1.10
 
 pint==0.7.2
