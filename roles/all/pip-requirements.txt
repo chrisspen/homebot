@@ -27,7 +27,7 @@ numpy
 #wiringpi2==1.1.1
 
 Pillow==2.3.0
-picamera==1.10
+picamera==1.13
 
 pint==0.7.2
 
