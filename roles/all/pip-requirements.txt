@@ -39,7 +39,7 @@ pint==0.7.2
 empy==3.3.2
 
 defusedxml
-rospkg
+rospkg==1.1.1
 
 # Teleop
 Django==1.9.2
