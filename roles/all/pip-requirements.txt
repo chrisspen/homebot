@@ -29,7 +29,7 @@ numpy
 Pillow==2.3.0
 picamera==1.10
 
-pint==0.7.2
+pint==0.8.1
 
 # Required by ros_homebot_lrf.
 #laser_range_finder
