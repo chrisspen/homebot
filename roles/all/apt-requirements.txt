@@ -11,7 +11,7 @@ wireless-tools
 rsync
 
 # Debugging helpers.
-htop
+htop==1.0
 curl
 screen
 git
