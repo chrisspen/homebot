@@ -52,7 +52,7 @@ print 'depression_angle:', depression_angle.to('degrees')
 
 if depression_angle > maximum_angle:
     print 'system unbalanced!'
-    
+
 combined_cog = (
     combine_cog(m1=mass, x1=body_cog[0], m2=counterweight, x2=counterweight_coords[0]),
     combine_cog(m1=mass, x1=body_cog[1], m2=counterweight, x2=counterweight_coords[1]),

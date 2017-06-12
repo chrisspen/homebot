@@ -58,7 +58,7 @@ def get_servo_signal_sin2(start, end, speed, t):
 # assert get_servo_signal_sin(start_pos=0, end_pos=180, speed=1, current_time=180) == 180
 # assert get_servo_signal_sin(start_pos=0, end_pos=180, speed=2, current_time=90) == 180
 # assert get_servo_signal_sin(start_pos=0, end_pos=90, speed=1, current_time=90) == 90
-    
+
 #start_pos = 40; end_pos = 10
 # start_pos = 0; end_pos = 180
 # speed = 1
@@ -71,7 +71,7 @@ def scale(x, in_min, in_max, out_min, out_max):
 
 def smootherstep(x, edge0=0., edge1=1.):
     # Scale, bias and saturate x to 0..1 range
-    x = min(max((x - edge0)/(edge1 - edge0), 0.0), 1.0); 
+    x = min(max((x - edge0)/(edge1 - edge0), 0.0), 1.0);
     # Evaluate polynomial
     #return x*x*(3 - 2*x)
     return x*x*x*(x*(x*6 - 15) + 10)
@@ -98,10 +98,9 @@ for t in xrange(0, (abs(start - end)/speed+1)*1000, 1000/resolution):
 # print
 # for t in xrange(10+1):
 #     print servo_signal(t, start=90, end=60, speed=3)
-# 
+#
 # print
 # for t in xrange(30+1):
 #     print servo_signal(t, start=90, end=60, speed=1)
-        
+
 sys.exit()
-    

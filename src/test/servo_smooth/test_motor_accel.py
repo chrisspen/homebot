@@ -18,7 +18,7 @@ def update_speed():
     else:
         new_speed = max(new_speed, target_speed)
     return new_speed
-    
+
 for ms in xrange(0, 3000*2, 100):
     current_time = ms
     _current_speed = update_speed()

@@ -19,7 +19,7 @@ sig = 10000
 sig = .000000001
 
 #Please print out ONLY the final values of the mean
-#and the variance in a list [mu, sig]. 
+#and the variance in a list [mu, sig].
 
 #for measurement, motion in zip(measurements, motion):
 #    mu, sig = update(mu, sig, measurement, measurement_sig)

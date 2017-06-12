@@ -43,7 +43,7 @@ def energy(samples):
 def real_imaginary_freq_domain(samples):
     '''
     Apply fft on the samples and return the real and imaginary
-    parts in separate 
+    parts in separate
     '''
     freq_domain = fft(samples)
     freq_domain_real = [abs(x.real) for x in freq_domain]
@@ -132,7 +132,7 @@ class VAD(object):
                 thirty_frame_mark = True
 
             frame = abs_samples[frame_start:frame_end]
-    
+
             #compute frame energy
             frame_energy = energy(frame)
             freq_domain_real, freq_domain_imag = real_imaginary_freq_domain(frame)
@@ -150,7 +150,7 @@ class VAD(object):
                 min_energy = frame_energy
                 min_dominant_freq = dominant_freq
                 min_sfm = frame_SFM
-    	        
+
             elif not thirty_frame_mark:
                 min_energy = min(min_energy, frame_energy)
                 min_dominant_freq = min(dominant_freq, min_dominant_freq)
@@ -185,14 +185,14 @@ class VAD(object):
         in_file.close()
 
         instances += 1  #a new instance has been processed
-        old_average_intensity = average_intensity   
+        old_average_intensity = average_intensity
         average_intensity = ((old_average_intensity * (instances-1)) + intensity) / float(instances)  #update average intensity
 
         if locateInArray(frame_voiced, [1, 1, 1, 1, 1]) >= 0 and intensity > old_average_intensity:
             return (True, average_intensity)
 
         return (False, average_intensity)
-        
+
 
 def locateInArray(list1, list2):
     x = 0
@@ -212,7 +212,7 @@ def locateInArray(list1, list2):
                 return x
     return -1
 
-    
+
 if __name__ == "__main__":
 
     files = [

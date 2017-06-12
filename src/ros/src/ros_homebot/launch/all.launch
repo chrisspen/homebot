@@ -1,20 +1,20 @@
 <!-- Loads all nodes for the full production system. -->
 <launch>
     <!--<include file="$(find ros_homebot)/launch/head_arduino_debug.launch" />-->
-    <include file="$(find ros_homebot)/launch/head_arduino.launch" />
+    <!--<include file="$(find ros_homebot)/launch/head_arduino.launch" />-->
     <!--<include file="$(find ros_homebot)/launch/torso_arduino_debug.launch" />-->
-    <include file="$(find ros_homebot)/launch/torso_arduino.launch" />
-    <include file="$(find ros_homebot)/launch/teleop.launch" />
-    <include file="$(find ros_homebot)/launch/mjpeg_server.launch" />
-    <include file="$(find ros_homebot)/launch/rpi_gpio.launch" />
-    <include file="$(find ros_homebot)/launch/raspicam_compressed_320.launch" />
-    <include file="$(find ros_homebot)/launch/lrf_compressed_320.launch" />
+    <!--<include file="$(find ros_homebot)/launch/torso_arduino.launch" />-->
+    <!--<include file="$(find ros_homebot)/launch/teleop.launch" />-->
+    <!--<include file="$(find ros_homebot)/launch/mjpeg_server.launch" />-->
+    <!--<include file="$(find ros_homebot)/launch/rpi_gpio.launch" />-->
+    <!--<include file="$(find ros_homebot)/launch/raspicam_compressed_320.launch" />-->
+    <!--<include file="$(find ros_homebot)/launch/lrf_compressed_320.launch" />-->
     <!--<include file="$(find ros_homebot)/launch/power.launch" />-->
-    <include file="$(find ros_homebot)/launch/system.launch" />
-    <include file="$(find ros_homebot)/launch/sound.launch" />
-    <include file="$(find ros_homebot)/launch/robot_state_publisher.launch" />
-    <include file="$(find ros_homebot)/launch/diagnostics_aggregator.launch" />
+    <!--<include file="$(find ros_homebot)/launch/system.launch" />-->
+    <!--<include file="$(find ros_homebot)/launch/sound.launch" />-->
+    <!--<include file="$(find ros_homebot)/launch/robot_state_publisher.launch" />-->
+    <!--<include file="$(find ros_homebot)/launch/diagnostics_aggregator.launch" />-->
     <!--<include file="$(find ros_homebot)/launch/qr_tracker.launch" />-->
-    <include file="$(find ros_homebot)/launch/led_status.launch" />
-    <include file="$(find ros_homebot)/launch/init.launch" />
+    <!--<include file="$(find ros_homebot)/launch/led_status.launch" />-->
+    <!--<include file="$(find ros_homebot)/launch/init.launch" />-->
 </launch>

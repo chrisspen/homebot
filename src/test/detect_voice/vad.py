@@ -9,11 +9,11 @@ def hasHumanVoice(X, threshold, F_sample, Low_cutoff=50, High_cutoff= 300):
         Low_cutoff: float, frequency components below this frequency will not pass the filter (physical frequency in unit of Hz)
         High_cutoff: float, frequency components above this frequency will not pass the filter (physical frequency in unit of Hz)
         F_sample: float, the sampling frequency of the signal (physical frequency in unit of Hz)
-        threshold: Has to be standardized once to say how much power must be there in real vocal signal frequencies.    
-        """        
+        threshold: Has to be standardized once to say how much power must be there in real vocal signal frequencies.
+        """
 
         M = X.size # let M be the length of the time series
-        Spectrum = sf.rfft(X, n=M) 
+        Spectrum = sf.rfft(X, n=M)
         [Low_cutoff, High_cutoff, F_sample] = map(float, [Low_cutoff, High_cutoff, F_sample])
 
         #Convert cutoff frequencies into points on spectrum

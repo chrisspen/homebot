@@ -3,26 +3,27 @@ import os
 from burlap.constants import *
 from burlap import ServiceSatchel
 from burlap.decorators import task
+from burlap.trackers import FilesystemTracker, SettingsTracker
 
 class HomebotSatchel(ServiceSatchel):
 
     name = 'homebot'
 
     def set_defaults(self):
-        
+
         self.env.project_dir = '/usr/local/homebot'
-        
+
         self.env.log_paths = [
             '/var/log/homebot-head.log',
             '/var/log/homebot-torso.log',
         ]
-        
+
         self.env.user = 'ubuntu'
-        
+
         self.env.group = 'ubuntu'
-        
+
         self.env.daemon_name = 'homebot'
-        
+
         self.env.service_commands = {
             START:{
                 UBUNTU: 'service %s start' % self.env.daemon_name,
@@ -45,150 +46,85 @@ class HomebotSatchel(ServiceSatchel):
         }
 
         self.env.upstart_setup = '/usr/local/homebot/src/ros/setup.bash'
-        
+
         self.env.upstart_launch = 'ros_homebot/launch/all.launch'
-        
+
         self.env.upstart_name = self.name
-        
+
         self.env.upstart_user = self.env.user
-        
-        self.env.pip_requirements = [
-            #'Fabric==1.10.2',
-            #'PyYAML==3.11',
-            #'burlap',
-            
-            #DEPRECATED: Installed by ROS?
-            #'wiringpi2==1.1.1',
-            
-            'Pillow==2.3.0',
-            'picamera==1.10',
-            'numpy==1.11.2',
-            
-            'pint==0.7.2',
-            
-            # head_arduino_tester
-            'pyserial==3.0.1',
-            'urwid==1.3.1',
-            
-            # needed by several nodes, including lrf
-            'scipy==0.18.0',
-            
-            # Required by ros_homebot_lrf.
-            #laser_range_finder
-            #-e git://github.com/chrisspen/laser-range-finder.git#egg=laser_range_finder
-            
-            'humanize==0.5.1',
-            
-            # Needed for ROS message generation.
-            'empy==3.3.2',
-            
-            'defusedxml',
-            'rospkg',
-            
-            # Teleop
-            'Django==1.9.2',
-            '-e git://github.com/chrisspen/gevent-socketio.git#egg=gevent-socketio',
+
+    def get_trackers(self):
+        return [
+
+            SettingsTracker(
+                satchel=self,
+                names='project_dir',
+                action=self.init_path),
+
+            SettingsTracker(
+                satchel=self,
+                names='project_dir user group',
+                action=self.init_project),
+
+            SettingsTracker(
+                satchel=self,
+                names='log_paths user group',
+                action=self.init_log),
+
+            SettingsTracker(
+                satchel=self,
+                names='project_dir user group',
+                action=self.init_virtualenv),
+
+            FilesystemTracker(
+                base_dir='roles', extensions='apt-requirements.txt pip-requirements.txt',
+                action=self.update_settings),
+
+            FilesystemTracker(
+                base_dir='src/ros/src', extensions='*.py *.launch *.action *.yaml',
+                action=self.deploy_code),
+
+            FilesystemTracker(
+                base_dir='roles', extensions='apt-requirements.txt pip-requirements.txt',
+                action=self.pip_install),
+
+            SettingsTracker(
+                satchel=self,
+                names='upstart_setup upstart_launch upstart_name upstart_user',
+                action=self.install_upstart),
+
+            #TODO:Rebuild messages.
+
+            #TODO:Rebuild C/C++ ROS nodes.
+            #r.run('cd {project_dir}/src/ros; . ./setup.bash; catkin_make')
         ]
-    
-    @property
-    def packager_system_packages(self):
-        pkgs = [
-        
-            # Python
-            'python-dev',
-            'python-pip',
-            'python-virtualenv',
-            
-            'dphys-swapfile',
-            #'linux-firmware',#not found on raspbian?
-            'openssh-server',
-            'network-manager',
-            'wireless-tools',
-            'rsync',
-            
-            # Debugging helpers.
-            'htop',
-            'curl',
-            'screen',
-            'git',
-            
-            # Needed by numpy/scipy
-            'libatlas-base-dev',
-            'gcc',
-            'gfortran',
-            'g++',
-            'libblas-dev',
-            'liblapack-dev',
-            'gfortran',
-            
-            # Speech output.
-            'espeak',
-            'alsa-utils',
-            'mpg321',
-            'lame',
-            
-            # Needed by cv2.
-            'libgles2-mesa',
-            'libgles2-mesa-dev',
-            
-            # Needed by some packages that are built from source.
-            'python-wstool',
-            'python-rosdep',
-            'ninja-build',
-            
-            # Needed by tf/robot-state-publisher.
-            'libtf2-*',
-            
-            'ros-%s-robot-upstart' % self.genv.ros_version_name,
 
-            'arduino-mk',
-
-            # Needed by teleop and raspicam.
-            'ros-%s-image-view' % self.genv.ros_version_name,
-            'ros-%s-xacro' % self.genv.ros_version_name,
-            'ros-%s-robot-state-publisher' % self.genv.ros_version_name,
-            'ros-%s-rospy' % self.genv.ros_version_name,
-            'ros-%s-compressed-image-transport' % self.genv.ros_version_name,
-#             'libcamera-info-manager0d',
-#             'libcamera-info-manager-dev',
-            'ros-%s-camera-info-manager' % self.genv.ros_version_name,
-            
-            # Needed by homebot_description.
-            'ros-%s-diagnostics' % self.genv.ros_version_name,
-#             'ros-%s-diagnostics-msgs' % self.genv.ros_version_name,
-            'ros-%s-robot-model' % self.genv.ros_version_name,
-
-        ]
-        return {
-            UBUNTU: pkgs,
-            DEBIAN: pkgs,
-        }
-    
     @task
     def reboot(self, *args, **kwargs):
         return super(HomebotSatchel, self).reboot(*args, **kwargs)
-    
+
     @task
     def rebuild_messages(self):
         r = self.local_renderer
         r.run('cd /usr/local/homebot/src/ros; . ./setup.bash; time catkin_make '
             '--pkg ros_homebot_msgs')
-    
+
     @task
     def install_upstart(self, force=0):
         """
         Installs the upstart script for automatically starting your application.
-         
+
         http://docs.ros.org/api/robot_upstart/html/
         """
         force = int(force)
         r = self.local_renderer
         if force or not r.file_exists('/etc/init/homebot.conf'):
-            r.sudo('source /usr/local/homebot/src/ros/setup.bash; rosrun robot_upstart install '
+            r.sudo('source {upstart_setup}; rosrun robot_upstart install '
                 '--setup {upstart_setup} --job {upstart_name} '
                 '--user {upstart_user} {upstart_launch}')
-            r.reboot(wait=300, timeout=60)
-     
+            r.sudo('systemctl daemon-reload && systemctl start {upstart_name}')
+            #r.reboot(wait=300, timeout=60)
+
     @task
     def uninstall_upstart(self):
         r = self.local_renderer
@@ -206,12 +142,13 @@ class HomebotSatchel(ServiceSatchel):
         else:
             r.run('cd {project_dir}/src/ros; . ./setup.bash; time catkin_make')
         self.start()
-    
+
     @task
     def delete_logs(self):
         r = self.local_renderer
         r.sudo('rm -Rf /home/pi/.ros/log/*')
-    
+
+    #DEPRECATED
     @task
     def init_teleop(self):
         r = self.local_renderer
@@ -222,7 +159,7 @@ class HomebotSatchel(ServiceSatchel):
             r.run('. {project_dir}/src/ros/setup.bash; '
                 'cd /usr/local/homebot/src/ros/src/ros_homebot_teleop/src; '
                 './manage.py loaddata homebot_dashboard/fixtures/users.json')
-    
+
     @task
     def build_raspicam(self):
         assert os.path.isdir('src/overlay/src/raspicam_node')
@@ -238,21 +175,28 @@ class HomebotSatchel(ServiceSatchel):
             'src/overlay/src/raspicam_node {user}@{host_string}:{project_dir}/src/overlay/src')
         r.run('cd {project_dir}/src/overlay; . {project_dir}/src/ros/setup.bash; '
             'time catkin_make --pkg raspicam')
-    
+
+    @task
+    def update_settings(self):
+        r = self.local_renderer
+        r.local('mkdir -p src/settings/{ROLE}')
+        r.local('cp roles/all/apt-requirements.txt src/settings/{ROLE}')
+        r.local('cp roles/all/pip-requirements.txt src/settings/{ROLE}')
+
     @task
     def deploy_code(self):
-        
         r = self.local_renderer
-        
+
         if not r.genv.key_filename:
             r.genv.key_filename = self.genv.host_original_key_filename
-        
+
         r.sudo('mkdir -p {project_dir}')
         r.sudo('chown {user}:{user} {project_dir}')
-        
+
         #archive=-rlptgoD (we don't want g=groups or o=owner or D=devices because remote system
         # has different permissions and hardware)
         r.local('rsync --recursive --verbose --perms --times --links --compress --copy-links '
+            '--log-file=./deloy_code.log '
             '--exclude=.build --exclude=build --exclude=devel '
             '--exclude=overlay '
             '--exclude=.build_ano '
@@ -262,7 +206,7 @@ class HomebotSatchel(ServiceSatchel):
             '--exclude=setup_local.bash '
             '--delete --rsh "ssh -t -o StrictHostKeyChecking=no -i {key_filename}" '
             'src {user}@{host_string}:{project_dir}')
-        
+
         #TODO:remove once lib stable
 #         r.local('rsync --recursive --verbose --perms --times --links --compress --copy-links '
 #             '--exclude=.build --exclude=build --exclude=devel '
@@ -273,91 +217,73 @@ class HomebotSatchel(ServiceSatchel):
 #             '--exclude=setup_local.bash '
 #             '--delete --rsh "ssh -t -o StrictHostKeyChecking=no -i {key_filename}" '
 #             '/home/chris/git/i2cdevlib {user}@{host_string}:/usr/share/arduino/libraries/')
-    
+
     @task
     def view_head_log(self):
         r = self.local_renderer
         r.env.log_path = '/var/log/homebot-head.log'
         r.run('tail -f {log_path}')
-    
+
     @task
     def view_torso_log(self):
         r = self.local_renderer
         r.env.log_path = '/var/log/homebot-torso.log'
         r.run('tail -f {log_path}')
-    
-    @task
-    def init_virtualenv(self):
-        r = self.local_renderer
-        if not r.file_exists(r.env.project_dir+'/.env'):
-            #r.sudo('mkdir -p {project_dir}')
-            r.sudo('cd {project_dir}; virtualenv --system-site-packages .env')
-            r.sudo('chown -R {user}:{group} {project_dir}')
-            r.sudo('cd {project_dir}; . .env/bin/activate; pip install -U pip')
-    
-    @task
-    def pip_install(self):
-        r = self.local_renderer
-        r.env.package_list = ' '.join(package for package in r.env.pip_requirements)
-        r.run('{project_dir}/.env/bin/pip install {package_list}')
-    
+
     @task
     def init_path(self):
+        """
+        Add our custom bin folder to our path.
+        """
         r = self.local_renderer
-        
-        # Add our custom bin folder to our path.
         text = 'PATH={project_dir}/src/bin:$PATH'.format(**r.env)
         if not r.file_contains(filename='~/.bash_aliases', text=text):
             r.append(text=text, filename='~/.bash_aliases')
-    
+
+    @task
+    def init_project(self):
+        """
+        Initializes our project's base directory.
+        """
+        r = self.local_renderer
+        r.sudo('mkdir -p {project_dir}; chown {user}:{group} {project_dir}')
+
+    @task
+    def init_virtualenv(self):
+        """
+        Initializes the Python virtual environment.
+        """
+        r = self.local_renderer
+        if not r.file_exists(r.env.project_dir+'/.env'):
+            #r.sudo('mkdir -p {project_dir}; chown {user}:{group} {project_dir}')
+            r.sudo('cd {project_dir}; virtualenv --system-site-packages .env')
+            r.sudo('chown -R {user}:{group} {project_dir}')
+            r.sudo('cd {project_dir}; . .env/bin/activate; pip install -U pip')
+
+    @task
+    def pip_install(self):
+        """
+        Installs all required Python packages into our virtual environment.
+        """
+        r = self.local_renderer
+        if self.genv.is_local:
+            r.env.project_dir = '.'
+        r.run('{project_dir}/.env/bin/pip install -U pip')
+        r.run('{project_dir}/.env/bin/pip install --only-binary numpy,matplotlib,scipy -r {project_dir}/src/settings/{ROLE}/pip-requirements.txt')
+
     @task
     def init_log(self):
+        """
+        Initializes our custom log files.
+        """
         r = self.local_renderer
-        
-        # Initialize our log file.
         for log_path in self.lenv.log_paths:
             r.env.log_path = log_path
             if not r.file_exists(log_path):
                 r.sudo('touch {log_path}; chown {user}:{group} {log_path}')
-    
-    @task
-    def init_project(self):
-        r = self.local_renderer
-        # Initialize project home.
-        r.sudo('mkdir -p {project_dir}; chown {user}:{group} {project_dir}')
 
     @task(precursors=['packager', 'user', 'ros', 'rpi', 'ntp', 'ntpclient'])
     def configure(self):
-        
-        r = self.local_renderer
-        
-        lm = self.last_manifest
-        lm_pip_requirements = lm.get('pip_requirements', [])
-        
-        #Disabled since we moved the IMU to the torso
-#         self.install_bcm2835()
-#         self.install_i2cdevlib()
-        
-        self.init_path()
-        
-        self.init_log()
-        
-        self.init_project()
-        
-        # Initialize Python virtualenv.
-        self.init_virtualenv()
-        
-        # Install all PIP package.
-        if lm_pip_requirements != self.env.pip_requirements:
-            self.pip_install()
-        
-        # Push up all code changes.
-        self.deploy_code()
-        
-        r.run('cd {project_dir}/src/ros; . ./setup.bash; catkin_make')
-        
-        self.init_teleop()
-        
-        self.install_upstart()
+        super(HomebotSatchel, self).configure() # runs tasks triggered by trackers
 
 homebot = HomebotSatchel()

@@ -9,7 +9,7 @@ from .const import *
 
 class App(container.Container):
     """The top-level widget for an application.
-    
+
     Example:
         import pygame
         from pgu import gui
@@ -28,7 +28,7 @@ class App(container.Container):
     # of the full surface.
     screen = None
     # The region of the (full) pygame display that contains the GUI. If set,
-    # this is used when transforming the mouse position from screen 
+    # this is used when transforming the mouse position from screen
     # coordinates into the subsurface coordinates.
     appArea = None
 
@@ -36,31 +36,31 @@ class App(container.Container):
         """Create a new application given the (optional) theme instance."""
         self.set_global_app()
 
-        if theme == None: 
+        if theme == None:
             from .theme import Theme
             theme = Theme()
         self.theme = theme
-        
+
         params['decorate'] = 'app'
         container.Container.__init__(self,**params)
         self._quit = False
         self.widget = None
         self._chsize = False
         self._repaint = False
-        
+
         self.screen = None
         self.container = None
 
     def set_global_app(self):
-        """Registers this app as _the_ global PGU application. You 
+        """Registers this app as _the_ global PGU application. You
         generally shouldn't need to call this function."""
         # Keep a global reference to this application instance so that PGU
         # components can easily find it.
         pguglobals.app = self
-        # For backwards compatibility we keep a reference in the class 
+        # For backwards compatibility we keep a reference in the class
         # itself too.
         App.app = self
-        
+
     def resize(self):
         if self.screen:
             # The user has explicitly specified a screen surface
@@ -76,7 +76,7 @@ class App(container.Container):
             if self.style.width != 0 and self.style.height != 0:
                 # Create a new screen based on the desired app size
                 size = (self.style.width, self.style.height)
-        
+
             else:
                 # Use the size of the top-most widget
                 size = self.widget.rect.size = self.widget.resize()
@@ -87,7 +87,7 @@ class App(container.Container):
         self.style.width,self.style.height = size
         self.rect.size = size
         self.rect.topleft = (0, 0)
-        
+
         self.widget.rect.topleft = (0, 0)
         self.widget.rect.size = self.widget.resize(*size)
 
@@ -106,11 +106,11 @@ class App(container.Container):
         """
 
         self.set_global_app()
-        
-        if (widget): 
+
+        if (widget):
             # Set the top-level widget
             self.widget = widget
-        if (screen): 
+        if (screen):
             if (area):
                 # Take a subsurface of the given screen
                 self.appArea = area
@@ -118,23 +118,23 @@ class App(container.Container):
             else:
                 # Use the entire screen for the app
                 self.screen = screen
-        
-        self.resize()   
-        
-        w = self.widget     
-        
+
+        self.resize()
+
+        w = self.widget
+
         self.widgets = []
         self.widgets.append(w)
         w.container = self
         self.focus(w)
-        
+
         pygame.key.set_repeat(500,30)
-        
+
         self._repaint = True
         self._quit = False
-        
+
         self.send(INIT)
-    
+
     def event(self,ev):
         """Pass an event to the main widget. If you are managing your own
         mainloop, this function should be called periodically when you are
@@ -151,7 +151,7 @@ class App(container.Container):
             for name in ("buttons", "rel", "button"):
                 if (hasattr(ev, name)):
                     args[name] = getattr(ev, name)
-            
+
             ev = pygame.event.Event(ev.type, args)
 
         #NOTE: might want to deal with ACTIVEEVENT in the future.
@@ -165,7 +165,7 @@ class App(container.Container):
                     'pos' : ev.pos})
                 self.send(sub.type,sub)
                 container.Container.event(self,sub)
-    
+
     def loop(self):
         """Performs one iteration of the PGU application loop, which
         processes events and update the pygame display."""
@@ -176,8 +176,8 @@ class App(container.Container):
                 self.event(e)
         rects = self.update(self.screen)
         pygame.display.update(rects)
-        
-        
+
+
     def paint(self,screen=None):
         """Renders the application onto the given pygame surface"""
         if (screen):
@@ -219,10 +219,10 @@ class App(container.Container):
                 r.move_ip(self.appArea.topleft)
 
         return rects
-    
-    def run(self, widget=None, screen=None, delay=10): 
+
+    def run(self, widget=None, screen=None, delay=10):
         """Run an application.
-        
+
         Automatically calls App.init and then forever loops while
         calling App.event and App.update
 
@@ -236,37 +236,37 @@ class App(container.Container):
             self.loop()
             pygame.time.wait(delay)
 
-    def reupdate(self,w=None): 
+    def reupdate(self,w=None):
         pass
 
-    def repaint(self,w=None): 
+    def repaint(self,w=None):
         self._repaint = True
 
-    def repaintall(self): 
+    def repaintall(self):
         self._repaint = True
 
     def chsize(self):
         if (not self._chsize):
             self._chsize = True
             self._repaint = True
-    
-    def quit(self,value=None): 
+
+    def quit(self,value=None):
         self._quit = True
 
     def open(self, w, pos=None):
         """Opens the given PGU window and positions it on the screen"""
         w.container = self
-        
+
         if (w.rect.w == 0 or w.rect.h == 0):
             w.rect.size = w.resize()
-        
-        if (not pos): 
+
+        if (not pos):
             # Auto-center the window
             w.rect.center = self.rect.center
-        else: 
+        else:
             # Show the window in a particular location
             w.rect.topleft = pos
-        
+
         self.windows.append(w)
         self.mywindow = w
         self.focus(w)
@@ -278,19 +278,19 @@ class App(container.Container):
         if self.myfocus is w: self.blur(w)
 
         if w not in self.windows: return #no need to remove it twice! happens.
-        
+
         self.windows.remove(w)
-        
+
         self.mywindow = None
         if self.windows:
             self.mywindow = self.windows[-1]
             self.focus(self.mywindow)
-        
+
         if not self.mywindow:
             self.myfocus = self.widget #HACK: should be done fancier, i think..
             if not self.myhover:
                 self.enter(self.widget)
-         
+
         self.repaintall()
         w.send(CLOSE)
 

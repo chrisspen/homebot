@@ -19,7 +19,7 @@ def subsurface(s,r):
 class ProxySurface:
     """
     A surface-like object which smartly handle out-of-area blitting.
-    
+
     Note that only one of parent and real_surface should be supplied.
 
     Arguments:
@@ -27,7 +27,7 @@ class ProxySurface:
         real_surface -- a pygame Surface object
 
     Attributes:
-        mysubsurface -- a real and valid pygame.Surface object to be used 
+        mysubsurface -- a real and valid pygame.Surface object to be used
             for blitting.
         x, y -- if the proxy surface is to the left or above the parent
         offset -- an option which let you scroll the whole blitted content
@@ -47,18 +47,18 @@ class ProxySurface:
                 real_surface.get_rect().clip(rect))
         rect.topleft = (0, 0)
         self.rect = rect
-        
+
     def blit(self, s, pos, rect=None):
         if rect == None: rect = s.get_rect()
         pos = (pos[0] + self.offset[0] + self.x, pos[1] + self.offset[1] + self.y)
         self.mysubsurface.blit(s, pos, rect)
-        
-    def subsurface(self, rect): 
-        r = pygame.Rect(rect).move(self.offset[0] + self.x, 
+
+    def subsurface(self, rect):
+        r = pygame.Rect(rect).move(self.offset[0] + self.x,
                                    self.offset[1] + self.y)
         return ProxySurface(self, r, self.real_surface)
 
-    def fill(self, color, rect=None): 
+    def fill(self, color, rect=None):
         if rect != None: self.mysubsurface.fill(color, rect)
         else: self.mysubsurface.fill(color)
     def get_rect(self): return self.rect
@@ -66,10 +66,10 @@ class ProxySurface:
     def get_height(self): return self.rect[3]
     def get_abs_offset(): return self.rect[:2]
     def get_abs_parent(): return self.mysubsurface.get_abs_parent()
-    def set_clip(self, rect=None): 
-        if rect == None: 
+    def set_clip(self, rect=None):
+        if rect == None:
             self.mysubsurface.set_clip(self.mysubsurface.get_rect())
-        else: 
+        else:
             rect = [rect[0] + self.offset[0] + self.x, rect[1] + self.offset[0] + self.y, rect[2], rect[3]]
             self.mysubsurface.set_clip(rect)
 
@@ -92,14 +92,14 @@ class xProxySurface:
             self.mysubsurface = real_surface.subsurface(real_surface.get_rect().clip(rect))
         rect[0], rect[1] = 0, 0
         self.rect = rect
-        
+
     def blit(self, s, pos, rect=None):
         if rect == None: rect = s.get_rect()
         pos = (pos[0] + self.offset[0] + self.x, pos[1] + self.offset[1] + self.y)
         self.mysubsurface.blit(s, pos, rect)
-        
+
     def subsurface(self, rect): return ProxySurface(self, pygame.Rect(rect).move(self.offset[0] + self.x, self.offset[1] + self.y),self.real_surface)
-    def fill(self, color, rect=None): 
+    def fill(self, color, rect=None):
         if rect != None: self.mysubsurface.fill(color, rect)
         else: self.mysubsurface.fill(color)
     def get_rect(self): return self.rect
@@ -107,10 +107,10 @@ class xProxySurface:
     def get_height(self): return self.rect[3]
     def get_abs_offset(): return self.rect[:2]
     def get_abs_parent(): return self.mysubsurface.get_abs_parent()
-    def set_clip(self, rect=None): 
-        if rect == None: 
+    def set_clip(self, rect=None):
+        if rect == None:
             self.mysubsurface.set_clip(self.mysubsurface.get_rect())
-        else: 
+        else:
             rect = [rect[0] + self.offset[0] + self.x, rect[1] + self.offset[0] + self.y, rect[2], rect[3]]
             self.mysubsurface.set_clip(rect)
 

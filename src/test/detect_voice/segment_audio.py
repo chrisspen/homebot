@@ -29,7 +29,7 @@ def write_wave(path, audio, sample_rate, stt=False):
         wf.setsampwidth(2)
         wf.setframerate(sample_rate)
         wf.writeframes(audio)
-        
+
     if stt:
         from stt_google import stt_google_wav
         text = stt_google_wav(path)

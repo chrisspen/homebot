@@ -53,9 +53,9 @@ class CamHandler(BaseHTTPRequestHandler):
             self.wfile.write('<img src="http://%s/cam.mjpg"/>' % host)
             self.wfile.write('</body></html>')
             return
-            
+
 class VideoStreamingNode(object):
-    
+
     def __init__(self):
         global node
         node = self
@@ -66,9 +66,9 @@ class VideoStreamingNode(object):
 #                 CompressedImage,
 #                 self.handle_compressedimage)
             rospy.on_shutdown(self.shutdown)
-            
+
             self.port = int(rospy.get_param('~port', 8181))
-            
+
             self.server = HTTPServer(('', self.port), CamHandler)
             print 'Server is listening on port %i.' % self.server.server_port
             while not rospy.is_shutdown():

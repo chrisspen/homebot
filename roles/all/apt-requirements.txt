@@ -1,0 +1,64 @@
+# Python
+python-dev
+python-pip
+python-virtualenv
+
+dphys-swapfile
+#linux-firmware#not found on raspbian?
+openssh-server
+network-manager
+wireless-tools
+rsync
+
+# Debugging helpers.
+htop
+curl
+screen
+git
+
+# Needed by numpy/scipy
+libatlas-base-dev
+gcc
+gfortran
+g++
+libblas-dev
+liblapack-dev
+gfortran
+
+# Speech output.
+espeak
+alsa-utils
+mpg321
+lame
+
+# Needed by cv2.
+libgles2-mesa
+libgles2-mesa-dev
+
+# Needed by some packages that are built from source.
+python-wstool
+python-rosdep
+ninja-build
+
+# Needed by tf/robot-state-publisher.
+libtf2-*
+
+ros-kinetic-robot-upstart
+
+# Needed by Arduino firmware.
+arduino-mk
+
+# Needed by teleop and raspicam.
+ros-kinetic-image-view
+ros-kinetic-xacro
+ros-kinetic-robot-state-publisher
+ros-kinetic-rospy
+ros-kinetic-compressed-image-transport
+#libcamera-info-manager0d
+#libcamera-info-manager-dev
+ros-kinetic-camera-info-manager
+
+# Needed by homebot_description.
+ros-kinetic-diagnostics
+#ros-kinetic-diagnostics-msgs
+ros-kinetic-robot-model

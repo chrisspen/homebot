@@ -13,7 +13,7 @@ class _button(widget.Widget):
     def __init__(self,**params):
         widget.Widget.__init__(self,**params)
         self.state = 0
-    
+
     def event(self,e):
         if e.type == ENTER: self.repaint()
         elif e.type == EXIT: self.repaint()
@@ -23,7 +23,7 @@ class _button(widget.Widget):
             if e.key == K_SPACE or e.key == K_RETURN:
                 self.state = 1
                 self.repaint()
-        elif e.type == MOUSEBUTTONDOWN: 
+        elif e.type == MOUSEBUTTONDOWN:
             self.state = 1
             self.repaint()
         elif e.type == KEYUP:
@@ -31,7 +31,7 @@ class _button(widget.Widget):
                 sub = pygame.event.Event(CLICK,{'pos':(0,0),'button':1})
                 #self.send(sub.type,sub)
                 self._event(sub)
-            
+
             self.state = 0
             self.repaint()
         elif e.type == MOUSEBUTTONUP:
@@ -39,20 +39,20 @@ class _button(widget.Widget):
             self.repaint()
         elif e.type == CLICK:
             self.click()
-        
+
         self.pcls = ""
         if self.state == 0 and self.is_hovering():
             self.pcls = "hover"
         if self.state == 1 and self.is_hovering():
             self.pcls = "down"
-    
-    def click(self): 
+
+    def click(self):
         pass
 
 
 class Button(_button):
     """A button, buttons can be clicked, they are usually used to set up callbacks.
-    
+
     Example:
         w = gui.Button("Click Me")
         w.connect(gui.CLICK, fnc, value)
@@ -61,7 +61,7 @@ class Button(_button):
 
     def __init__(self, value=None, **params):
         """Button constructor, which takes either a string label or widget.
-        
+
         See Widget documentation for additional style parameters.
 
         """
@@ -107,18 +107,18 @@ class Switch(_button):
         params.setdefault('cls','switch')
         _button.__init__(self,**params)
         self.value = value
-        
+
         img = self.style.off
         self.style.width = img.get_width()
         self.style.height = img.get_height()
-    
+
     def paint(self,s):
         #self.pcls = ""
         #if self.container.myhover is self: self.pcls = "hover"
         if self.value: img = self.style.on
         else: img = self.style.off
         s.blit(img,(0,0))
-    
+
     @property
     def value(self):
         return self._value
@@ -130,17 +130,17 @@ class Switch(_button):
         if oldval != val:
             self.send(CHANGE)
             self.repaint()
-    
+
     def click(self):
         self.value = not self.value
 
-class Checkbox(_button):    
+class Checkbox(_button):
     """A type of switch that can be grouped with other checkboxes.
-    
+
     Example:
         # The 'value' parameter indicates which checkboxes are on by default
         g = gui.Group(name='colors',value=['r','b'])
-        
+
         t = gui.Table()
         t.tr()
         t.td(gui.Label('Red'))
@@ -153,14 +153,14 @@ class Checkbox(_button):
         t.td(gui.Checkbox(g,'b'))
 
     """
-    
+
     def __init__(self,group,value=None,**params):
         """Checkbox constructor.
 
         Keyword arguments:
             group -- the Group that this checkbox belongs to
             value -- the initial value (True or False)
-    
+
         See Widget documentation for additional style parameters.
 
         """
@@ -172,19 +172,19 @@ class Checkbox(_button):
         if self.group.value == None:
             self.group.value = []
         self.value = value
-        
+
         img = self.style.off
         self.style.width = img.get_width()
         self.style.height = img.get_height()
-    
+
     def paint(self,s):
         #self.pcls = ""
         #if self.container.myhover is self: self.pcls = "hover"
         if self.value in self.group.value: img = self.style.on
         else: img = self.style.off
-        
+
         s.blit(img,(0,0))
-    
+
     def click(self):
         if self.value in self.group.value:
             self.group.value.remove(self.value)
@@ -195,10 +195,10 @@ class Checkbox(_button):
 class Radio(_button):
     """A type of switch that can be grouped with other radio buttons, except
     that only one radio button can be active at a time.
-    
+
     Example:
         g = gui.Group(name='colors',value='g')
-        
+
         t = gui.Table()
         t.tr()
         t.td(gui.Label('Red'))
@@ -210,12 +210,12 @@ class Radio(_button):
         t.td(gui.Label('Blue'))
         t.td(gui.Radio(g,'b'))
 
-    """    
-    
+    """
+
     def __init__(self,group=None,value=None,**params):
         """Radio constructor.
 
-        Keyword arguments:    
+        Keyword arguments:
             group -- the Group this radio button belongs to
             value -- the initial value (True or False)
 
@@ -225,18 +225,18 @@ class Radio(_button):
         self.group = group
         self.group.add(self)
         self.value = value
-        
+
         img = self.style.off
         self.style.width = img.get_width()
         self.style.height = img.get_height()
-    
+
     def paint(self,s):
         #self.pcls = ""
         #if self.container.myhover is self: self.pcls = "hover"
         if self.group.value == self.value: img = self.style.on
         else: img = self.style.off
         s.blit(img,(0,0))
-    
+
     def click(self):
         self.group.value = self.value
 
@@ -245,7 +245,7 @@ class Tool(_button):
 
     Example:
         g = gui.Group(name='colors',value='g')
-        
+
         t = gui.Table()
         t.tr()
         t.td(gui.Tool(g,'Red','r'))
@@ -259,7 +259,7 @@ class Tool(_button):
     def __init__(self,group,widget=None,value=None,**params): #TODO widget= could conflict with module widget
         """Tool constructor.
 
-        Keyword arguments:    
+        Keyword arguments:
             group -- a gui.Group for the Tool to belong to
             widget -- a widget to appear on the Tool (similar to a Button)
             value -- the value
@@ -270,36 +270,36 @@ class Tool(_button):
         self.group = group
         self.group.add(self)
         self.value = value
-        
+
         if widget:
             self.setwidget(widget)
-        
+
         if self.group.value == self.value: self.pcls = "down"
-    
+
     def setwidget(self,w):
         self.widget = w
-    
+
     def resize(self,width=None,height=None):
         self.widget.rect.w,self.widget.rect.h = self.widget.resize()
         #self.widget._resize()
         #self.rect.w,self.rect.h = self.widget.rect_margin.w,self.widget.rect_margin.h
-        
+
         return self.widget.rect.w,self.widget.rect.h
-    
+
     def event(self,e):
         _button.event(self,e)
         if self.group.value == self.value: self.pcls = "down"
-    
+
     def paint(self,s):
         if self.group.value == self.value: self.pcls = "down"
         self.widget.paint(surface.subsurface(s,self.widget.rect))
-    
+
     def click(self):
         self.group.value = self.value
         for w in self.group.widgets:
             if w != self: w.pcls = ""
 
-            
+
 class Icon(_button):
     """TODO - might be deprecated
     """
@@ -310,7 +310,7 @@ class Icon(_button):
         self.style.width = s.get_width()
         self.style.height = s.get_height()
         self.state = 0
-    
+
     def paint(self,s):
         #self.pcls = ""
         #if self.state == 0 and hasattr(self.container,'myhover') and self.container.myhover is self: self.pcls = "hover"
@@ -321,7 +321,7 @@ class Link(_button):
     """A link, links can be clicked, they are usually used to set up callbacks.
     Basically the same as the button widget, just text only with a different cls.
     Made for convenience.
-    
+
     Example:
         w = gui.Link("Click Me")
         w.connect(gui.CLICK,fnc,value)
@@ -334,7 +334,7 @@ class Link(_button):
         self.value = value
         self.font = self.style.font
         self.style.width, self.style.height = self.font.size(self.value)
-    
+
     def paint(self,s):
         s.blit(self.font.render(self.value, 1, self.style.color),(0,0))
 

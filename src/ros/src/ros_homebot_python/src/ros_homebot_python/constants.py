@@ -162,7 +162,7 @@ ALL_IDS = {
 }
 NAME_TO_IDS = dict((re.sub(r'[^a-z]+', '_', v.lower()), k) for k, v in ALL_IDS.iteritems())
 
-MOVEMENT_ERROR_NONE = 0    
+MOVEMENT_ERROR_NONE = 0
 MOVEMENT_ERROR_EDGE = 1
 MOVEMENT_ERROR_ULTRASONIC = 2
 MOVEMENT_ERROR_TILT = 3
@@ -467,7 +467,7 @@ def write_cpp_headers():
     print('Wrote ID.h.')
 
 if __name__ == '__main__':
-    
+
     write_cpp_headers()
     print('''
 Now run:
@@ -476,24 +476,24 @@ Now run:
     . ./setup.bash
     catkin_make --pkg ros_homebot_msgs
 ''')
-    
+
     t = HEAD_FORMATS_OUT.copy()
     t.update(BOTH_FORMATS_OUT)
     write_ros_messages(t, NAME_HEAD)
-    
+
     t = TORSO_FORMATS_OUT.copy()
     t.update(BOTH_FORMATS_OUT)
     write_ros_messages(t, NAME_TORSO)
-    
+
     t = HEAD_FORMATS_IN.copy()
     t.update(BOTH_FORMATS_IN)
     write_ros_services(t, NAME_HEAD)
-    
+
     t = TORSO_FORMATS_IN.copy()
     t.update(BOTH_FORMATS_IN)
     write_ros_services(t, NAME_TORSO)
-    
+
     os.system('cd ../../../ros_homebot_msgs; python update_makelist.py')
-    
+
     print('Remember to run:\n')
     print('    fab prod homebot.rebuild_messages')

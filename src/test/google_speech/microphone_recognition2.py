@@ -9,7 +9,7 @@ Seems to work ok.
 I tested this on a laptop and I found the amplification setting on my built-in microphone drastically effected results.
 At first, it was set to 100% amplification, which picked up a huge amount of ambient noise, causing a 0% recognition rate.
 The adjust_for_ambient_noise() function doesn't seem work if there's too much noise.
-When I reduced the amplification to about 30%, so that my voice was the only thing causing the sound bar to jump, recognition jumped to around 90%. 
+When I reduced the amplification to about 30%, so that my voice was the only thing causing the sound bar to jump, recognition jumped to around 90%.
 """
 import sys
 import time
@@ -59,23 +59,23 @@ except IOError as e:
 
 do_prompt = True
 while 1:
-    
+
     try:
-        
+
         if do_prompt:
             print("Listening!")
             do_prompt = False
-        
+
         with sr.Microphone(device_index=mic_index) as source:
             audio = r.listen(source, timeout=0.1)
             do_prompt = True
-        
+
         t0 = time.time()
         print 'Recognizing...'
         text = r.recognize_google(audio)
         td = time.time() - t0
         print 'Response seconds:', td
-        
+
         print(text)
     except sr.UnknownValueError:
         # We heard you, but Google couldn't figure out what you said.

@@ -29,11 +29,11 @@
 #include "SoftPWM_timer.h"
 
 #if defined(WIRING)
- #include <Wiring.h>
+    #include <Wiring.h>
 #elif ARDUINO >= 100
- #include <Arduino.h>
+    #include <Arduino.h>
 #else
- #include <WProgram.h>
+    #include <WProgram.h>
 #endif
 
 #if F_CPU
@@ -47,8 +47,7 @@
 volatile uint8_t _isr_softcount = 0xff;
 uint8_t _softpwm_defaultPolarity = SOFTPWM_NORMAL;
 
-typedef struct
-{
+typedef struct {
   // hardware I/O port and pin for this channel
   int8_t pin;
   uint8_t polarity;
@@ -74,28 +73,22 @@ ISR(SOFTPWM_TIMER_INTERRUPT)
   int16_t newvalue;
   int16_t direction;
 
-  if(++_isr_softcount == 0)
-  {
+  if (++_isr_softcount == 0) {
     // set all channels high - let's start again
     // and accept new checkvals
-    for (i = 0; i < SOFTPWM_MAXCHANNELS; i++)
-    {
-      if (_softpwm_channels[i].fadeuprate > 0 || _softpwm_channels[i].fadedownrate > 0)
-      {
+    for (i = 0; i < SOFTPWM_MAXCHANNELS; i++) {
+      if (_softpwm_channels[i].fadeuprate > 0 || _softpwm_channels[i].fadedownrate > 0) {
         // we want to fade to the new value
         direction = _softpwm_channels[i].pwmvalue - _softpwm_channels[i].checkval;
 
         // we will default to jumping to the new value
         newvalue = _softpwm_channels[i].pwmvalue;
 
-        if (direction > 0 && _softpwm_channels[i].fadeuprate > 0)
-        {
+        if (direction > 0 && _softpwm_channels[i].fadeuprate > 0) {
           newvalue = _softpwm_channels[i].checkval + _softpwm_channels[i].fadeuprate;
           if (newvalue > _softpwm_channels[i].pwmvalue)
             newvalue = _softpwm_channels[i].pwmvalue;
-        }
-        else if (direction < 0 && _softpwm_channels[i].fadedownrate > 0)
-        {
+        } else if (direction < 0 && _softpwm_channels[i].fadedownrate > 0) {
           newvalue = _softpwm_channels[i].checkval - _softpwm_channels[i].fadedownrate;
           if (newvalue < _softpwm_channels[i].pwmvalue)
             newvalue = _softpwm_channels[i].pwmvalue;
@@ -107,8 +100,7 @@ ISR(SOFTPWM_TIMER_INTERRUPT)
         _softpwm_channels[i].checkval = _softpwm_channels[i].pwmvalue;
 
       // now set the pin high (if not 0)
-      if (_softpwm_channels[i].checkval > 0)  // don't set if checkval == 0
-      {
+      if (_softpwm_channels[i].checkval > 0) {
         if (_softpwm_channels[i].polarity == SOFTPWM_NORMAL)
           *_softpwm_channels[i].outport |= _softpwm_channels[i].pinmask;
         else
@@ -136,8 +128,7 @@ ISR(SOFTPWM_TIMER_INTERRUPT)
 
 
 
-void SoftPWMBegin(uint8_t defaultPolarity)
-{
+void SoftPWMBegin(uint8_t defaultPolarity) {
   // We can tweak the number of PWM period by changing the prescalar
   // and the OCR - we'll default to ck/8 (CS21 set) and OCR=128.
   // This gives 1024 cycles between interrupts.  And the ISR consumes ~200 cycles, so
@@ -158,8 +149,7 @@ void SoftPWMBegin(uint8_t defaultPolarity)
 
 
 
-  for (i = 0; i < SOFTPWM_MAXCHANNELS; i++)
-  {
+  for (i = 0; i < SOFTPWM_MAXCHANNELS; i++) {
     _softpwm_channels[i].pin = -1;
     _softpwm_channels[i].polarity = SOFTPWM_NORMAL;
     _softpwm_channels[i].outport = 0;
@@ -171,8 +161,7 @@ void SoftPWMBegin(uint8_t defaultPolarity)
 }
 
 
-void SoftPWMSetPolarity(int8_t pin, uint8_t polarity)
-{
+void SoftPWMSetPolarity(int8_t pin, uint8_t polarity) {
   uint8_t i;
 
   if (polarity != SOFTPWM_NORMAL)

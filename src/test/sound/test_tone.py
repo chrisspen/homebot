@@ -53,7 +53,7 @@ def alarmed():
     for i in xrange(5):
         happy()
         sad()
-        
+
 def whine():
     #base_length = 0.05*1000
     i = 0
@@ -73,19 +73,19 @@ chirtle()
 
 print 'real happy'
 real_happy()
- 
+
 print 'sad'
 sad()
- 
+
 print 'real sad'
 real_sad()
- 
+
 print 'whistle'
 whistle()
- 
+
 print 'alarmed'
 alarmed()
- 
+
 print 'whine'
 whine()
 

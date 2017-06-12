@@ -8,11 +8,11 @@ from . import widget
 
 class Input(widget.Widget):
     """A single line text input.
-    
+
     Example:
         w = Input(value="Cuzco the Goat",size=20)
         w = Input("Marbles")
-    
+
     """
 
     _value = None
@@ -38,31 +38,31 @@ class Input(widget.Widget):
         #self.style.width = max(self.style.width,w)
         #self.rect.w=w+self.style.padding_left+self.style.padding_right;
         #self.rect.h=h+self.style.padding_top+self.style.padding_bottom;
-    
+
     def paint(self,s):
         r = pygame.Rect(0,0,self.rect.w,self.rect.h)
-        
+
         cs = 2 #NOTE: should be in a style
-        
+
         w,h = self.font.size(self.value[0:self.pos])
         x = w-self.vpos
         if x < 0: self.vpos -= -x
         if x+cs > s.get_width(): self.vpos += x+cs-s.get_width()
-        
+
         s.blit(self.font.render(self.value, 1, self.style.color),(-self.vpos,0))
-        
+
         if self.container.myfocus is self:
             w,h = self.font.size(self.value[0:self.pos])
             r.x = w-self.vpos
             r.w = cs
             r.h = h
             s.fill(self.style.color,r)
-    
+
     def _setvalue(self,v):
         #self.__dict__['value'] = v
         self._value = v
         self.send(CHANGE)
-    
+
     def event(self,e):
         used = None
         if e.type == KEYDOWN:
@@ -73,7 +73,7 @@ class Input(widget.Widget):
             elif e.key == K_DELETE:
                 if len(self.value) > self.pos:
                     self._setvalue(self.value[:self.pos] + self.value[self.pos+1:])
-            elif e.key == K_HOME: 
+            elif e.key == K_HOME:
                 self.pos = 0
             elif e.key == K_END:
                 self.pos = len(self.value)
@@ -101,19 +101,19 @@ class Input(widget.Widget):
             self.repaint()
         elif e.type == BLUR:
             self.repaint()
-        
+
         self.pcls = ""
         if self.container.myfocus is self: self.pcls = "focus"
-        
+
         return used
-    
+
     @property
     def value(self):
         return self._value
 
     @value.setter
     def value(self, val):
-        if (val == None): 
+        if (val == None):
             val = ""
         val = str(val)
         self.pos = len(val)
@@ -130,24 +130,24 @@ class Password(Input):
     def paint(self,s):
         hidden="*"
         show=len(self.value)*hidden
-        
+
         #print "self.value:",self.value
 
         if self.pos == None: self.pos = len(self.value)
-        
+
         r = pygame.Rect(0,0,self.rect.w,self.rect.h)
-        
+
         cs = 2 #NOTE: should be in a style
-        
+
         w,h = self.font.size(show)
         x = w-self.vpos
         if x < 0: self.vpos -= -x
         if x+cs > s.get_width(): self.vpos += x+cs-s.get_width()
-        
+
         s.blit(self.font.render(show, 1, self.style.color),(-self.vpos,0))
-        
+
         if self.container.myfocus is self:
-            #w,h = self.font.size(self.value[0:self.pos])            
+            #w,h = self.font.size(self.value[0:self.pos])
             w,h = self.font.size(show[0:self.pos])
             r.x = w-self.vpos
             r.w = cs

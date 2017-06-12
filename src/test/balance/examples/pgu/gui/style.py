@@ -5,9 +5,9 @@ from . import pguglobals
 
 class Style:
     """The class used by widget for the widget.style
-    
-    This object is used mainly as a dictionary, accessed via widget.style.attr, 
-    as opposed to widget.style['attr'].  It automatically grabs information 
+
+    This object is used mainly as a dictionary, accessed via widget.style.attr,
+    as opposed to widget.style['attr'].  It automatically grabs information
     from the theme via value = theme.get(widget.cls,widget.pcls,attr)
 
     """

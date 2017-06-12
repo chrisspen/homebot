@@ -3,7 +3,7 @@
 Afterwards run:
 
     time mkdfa sample
-    
+
 """
 import os, sys
 
@@ -39,4 +39,3 @@ for line in lines:
         continue
     work = line.split(' ')[0]
     voca.write(line+'\n')
-    

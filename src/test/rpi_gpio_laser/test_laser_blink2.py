@@ -28,15 +28,15 @@ atexit.register(cleanup)
 delay_sec = 0.1
 
 while 1:
-    
+
     # Turn on laser.
     print 'laser on'
     wiringpi2.digitalWrite(LASER_EN_PIN, 1)
-    
+
     time.sleep(delay_sec)
-    
+
     # Turn off laser.
     print 'laser off'
     wiringpi2.digitalWrite(LASER_EN_PIN, 0)
-    
+
     time.sleep(delay_sec)

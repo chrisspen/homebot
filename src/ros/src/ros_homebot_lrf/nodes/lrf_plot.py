@@ -38,7 +38,7 @@ def draw_half_circle_rounded(image, degrees, thickness=-1, radius=100, angle=0, 
     thickness: -1=fills in shape, > 0 = sets the line
     """
     height, width = image.shape[0:2]
-    
+
     # Ellipse parameters
     #center = (width / 2, height /2)
     center = (width / 2, height)
@@ -53,26 +53,26 @@ def draw_half_circle_rounded(image, degrees, thickness=-1, radius=100, angle=0, 
 
 
 class LRFPlotter():
-    
+
     def __init__(self):
-        
+
         rospy.init_node('homebot_lrf_plotter', log_level=DEFAULT_LOG_LEVEL)
-        
+
         self.lock = RLock()
-        
+
         self.width = int(rospy.get_param("~width", 800))
-        
+
         self.height = int(rospy.get_param("~height", 600))
-        
+
         self.topic = rospy.get_param("~topic", '/homebot_lrf/scan')
-        
+
         # Cleanup when termniating the node
         rospy.on_shutdown(self.shutdown)
-        
+
         rospy.Subscriber(self.topic, LaserScan, self.process_laserscan)
-        
+
         self.distances = None
-         
+
         self.name = 'Laser Range Finder Measurements'
         print('Press escape to exit.')
         cv2.namedWindow(self.name)
@@ -87,7 +87,7 @@ class LRFPlotter():
                 print('Escape key pressed. Exiting.')
                 return
         cv2.destroyAllWindows()
-    
+
     def update_image(self):
         with self.lock:
             if not self.distances:
@@ -113,9 +113,9 @@ class LRFPlotter():
                 fill_color = BLACK
                 line_color = RED
 #             print('pixel_distance:', pixel_distance)
-             
+
             angle = -90-45 + prior_angles
-             
+
             # Fill in.
             draw_half_circle_rounded(
                 image,
@@ -125,7 +125,7 @@ class LRFPlotter():
                 color=fill_color,
                 thickness=-1
             )
-             
+
             # Draw border.
             if line_color:
                 draw_half_circle_rounded(
@@ -136,9 +136,9 @@ class LRFPlotter():
                     color=line_color,
                     thickness=3,
                 )
-             
+
             prior_angles += degrees_per_reading
-            
+
         return image
 
     def process_laserscan(self, msg):
@@ -146,9 +146,9 @@ class LRFPlotter():
         with self.lock:
             # Convert meters to mm.
             self.distances = [_/1000. for _ in msg.ranges]
- 
+
     def shutdown(self):
         rospy.loginfo("Shutting down the node...")
-        
+
 if __name__ == '__main__':
     LRFPlotter()

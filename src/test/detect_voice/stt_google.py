@@ -51,8 +51,8 @@ def audio_int(num_samples=50):
                     input=True,
                     frames_per_buffer=CHUNK)
 
-    values = [math.sqrt(abs(audioop.avg(stream.read(CHUNK), 4))) 
-              for x in range(num_samples)] 
+    values = [math.sqrt(abs(audioop.avg(stream.read(CHUNK), 4)))
+              for x in range(num_samples)]
     values = sorted(values, reverse=True)
     r = sum(values[:int(num_samples * 0.2)]) / int(num_samples * 0.2)
     print " Finished "
@@ -79,13 +79,13 @@ def get_input_device_index(name):
 
 def listen_for_speech(threshold=THRESHOLD, num_phrases=-1, input_device='default', input_file=None, stt=True):
     """
-    Listens to Microphone, extracts phrases from it and sends it to 
-    Google's TTS service and returns response. a "phrase" is sound 
+    Listens to Microphone, extracts phrases from it and sends it to
+    Google's TTS service and returns response. a "phrase" is sound
     surrounded by silence (according to threshold). num_phrases controls
-    how many phrases to process before finishing the listening process 
-    (-1 for infinite). 
+    how many phrases to process before finishing the listening process
+    (-1 for infinite).
     """
-    
+
     input_device_index = get_input_device_index(name=input_device)
 
     #Open stream
@@ -130,7 +130,7 @@ def listen_for_speech(threshold=THRESHOLD, num_phrases=-1, input_device='default
     rel = RATE/CHUNK
     slid_win = deque(maxlen=SILENCE_LIMIT * rel)
     #Prepend audio from 0.5 seconds before noise was detected
-    prev_audio = deque(maxlen=PREV_AUDIO * rel) 
+    prev_audio = deque(maxlen=PREV_AUDIO * rel)
     started = False
     n = num_phrases
     response = []
@@ -162,7 +162,7 @@ def listen_for_speech(threshold=THRESHOLD, num_phrases=-1, input_device='default
             filename = save_speech(list(prev_audio) + audio2send, p)
             # Send file to Google and get response
             if stt:
-                r = stt_google_wav(filename) 
+                r = stt_google_wav(filename)
                 if num_phrases == -1:
                     print "Response", r
                 else:
@@ -174,7 +174,7 @@ def listen_for_speech(threshold=THRESHOLD, num_phrases=-1, input_device='default
             # Reset all
             started = False
             slid_win = deque(maxlen=SILENCE_LIMIT * rel)
-            prev_audio = deque(maxlen=0.5 * rel) 
+            prev_audio = deque(maxlen=0.5 * rel)
             audio2send = []
             n -= 1
             print "Listening ..."
@@ -191,7 +191,7 @@ def listen_for_speech(threshold=THRESHOLD, num_phrases=-1, input_device='default
 
 
 def save_speech(data, p):
-    """ Saves mic data to temporary WAV file. Returns filename of saved 
+    """ Saves mic data to temporary WAV file. Returns filename of saved
         file """
 
     filename = 'output_'+str(int(time.time()))
@@ -209,8 +209,8 @@ def save_speech(data, p):
 #https://github.com/gillesdemey/google-speech-v2
 #Note, only 50 requests per day
 def stt_google_wav(audio_fname):
-    """ Sends audio file (audio_fname) to Google's text to speech 
-        service and returns service's response. We need a FLAC 
+    """ Sends audio file (audio_fname) to Google's text to speech
+        service and returns service's response. We need a FLAC
         converter if audio is not FLAC (check FLAC_CONV). """
 
     print "Sending ", audio_fname
@@ -231,8 +231,8 @@ def stt_google_wav(audio_fname):
     # Headers. A common Chromium (Linux) User-Agent
     #https://gist.github.com/alotaiba/1730160
     #audio/x-flac; rate=16000
-    hrs = {"User-Agent": "Mozilla/5.0 (X11; Linux i686) AppleWebKit/535.7 (KHTML, like Gecko) Chrome/16.0.912.63 Safari/535.7", 
-           'Content-type': 'audio/x-flac; rate=16000'}  
+    hrs = {"User-Agent": "Mozilla/5.0 (X11; Linux i686) AppleWebKit/535.7 (KHTML, like Gecko) Chrome/16.0.912.63 Safari/535.7",
+           'Content-type': 'audio/x-flac; rate=16000'}
 
     req = urllib2.Request(GOOGLE_SPEECH_URL, data=flac_cont, headers=hrs)
     print "Sending request to Google TTS"
@@ -256,7 +256,7 @@ def stt_google_wav(audio_fname):
 
 if(__name__ == '__main__'):
     #listen_for_speech(input_device='HDA Intel PCH: ALC269VB Analog')  # listen to built-in mic.
-    
+
     #TODO:read mp3 directly? https://sourceforge.net/p/lame/mailman/message/11484009/
     listen_for_speech(input_file='sorry_dave.wav')
     #print stt_google_wav('hello.flac')  # translate audio file

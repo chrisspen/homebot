@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-""" 
+"""
 Sample code to use with ServiceClient.pde
 """
 

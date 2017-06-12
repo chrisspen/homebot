@@ -25,7 +25,7 @@ x, y = [], []
 for dy,dx in slices:
     x_center = (dx.start + dx.stop - 1)/2
     x.append(x_center)
-    y_center = (dy.start + dy.stop - 1)/2    
+    y_center = (dy.start + dy.stop - 1)/2
     y.append(y_center)
 
 plt.imshow(data)

@@ -14,14 +14,14 @@ tests = [
 results = []
 
 for fn, expected_text in tests:
-    
+
     AUDIO_FILE = path.join(path.dirname(path.realpath(__file__)), fn)
-    
+
     # use the audio file as the audio source
     r = sr.Recognizer()
     with sr.AudioFile(AUDIO_FILE) as source:
         audio = r.record(source) # read the entire audio file
-    
+
     # recognize speech using Google Speech Recognition
     try:
         # for testing purposes, we're just using the default API key

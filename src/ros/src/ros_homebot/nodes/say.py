@@ -24,7 +24,7 @@ def say():
 
     text = ' '.join(sys.argv[1:])
     print 'asking to say:', text
-    
+
     # Waits until the action server has started up and started
     # listening for goals.
     print 'waiting for server...'
@@ -41,7 +41,7 @@ def say():
     # Waits for the server to finish performing the action.
     print 'waiting for result...'
     client.wait_for_result()
-    
+
     return client.get_result()
 
 if __name__ == '__main__':

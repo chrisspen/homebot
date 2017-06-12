@@ -84,14 +84,14 @@ ros::NodeHandle nh;
 
 //TODO:remove once Arduino IDE upgraded on RPi?
 // Arduino Leonardo & Yun
-//#define digitalPinToInterrupt(p)  ( (p) == 0 ? 2 : ((p) == 1 ? 3 : ((p) == 2 ? 1 : ((p) == 3 ? 0 : ((p) == 7 ? 4 : -1)))) ) 
+//#define digitalPinToInterrupt(p)  ( (p) == 0 ? 2 : ((p) == 1 ? 3 : ((p) == 2 ? 1 : ((p) == 3 ? 0 : ((p) == 7 ? 4 : -1)))) )
 
 //bool report_diagnostics = false;
 //unsigned long last_diagnostic = 0;
 
 //ros::Publisher diagnostics_publisher = ros::Publisher("diagnostics_relay", &string_msg);
 
-void count_pan_changes(){
+void count_pan_changes() {
     /*
     CW  => 11,00,11,00,...
     CCW => 10,01,10,01,...
@@ -103,7 +103,7 @@ void count_pan_changes(){
     pan_controller.update();
 }
 
-void halt_all_activity(){
+void halt_all_activity() {
     pan_controller.set_power(false);
     pan_controller.stop();
     tilt_controller.stop();
@@ -158,9 +158,9 @@ void setup() {
     // Join I2C bus as Master with address #1
     //Wire.begin(1);
     //Wire.setTimeout(1000L);
-    
+
     attachInterrupt(digitalPinToInterrupt(PAN_MOTOR_ENCODER_A), count_pan_changes, CHANGE);
-    
+
     pan_controller.set_power(true);
     tilt_controller.set_power(true);
 

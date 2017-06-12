@@ -28,57 +28,57 @@ STALE = DiagnosticStatus.STALE
 # http://wiki.ros.org/navigation/Tutorials/RobotSetup/Odom
 # http://answers.ros.org/question/79851/python-odometry/
 class WheelTracker(object):
-  
+
     frame_id = '/odom'
-    
+
     child_frame_id = '/base_link'
-    
+
     # Covariance
     #P = np.mat(np.diag([0.0]*3))
-  
+
     def __init__(self):
-        
+
         self._lock = threading.RLock()
-        
+
         self._reset_odometry()
-        
+
         self.odom_pub = rospy.Publisher('/odom', Odometry, queue_size=10)
-        
+
         # http://wiki.ros.org/tf/Tutorials/Writing%20a%20tf%20broadcaster%20%28Python%29
         self.tf_br = tf.TransformBroadcaster()
         #self.tf_br = tf2_ros.TransformBroadcaster()
-        
+
         rospy.Service('~reset_odometry', Empty, self.reset_odometry)
-    
+
     def _reset_odometry(self):
-        
+
         self._PreviousLeftEncoderCounts = None
         self._PreviousRightEncoderCounts = None
-        
+
         self.x = 0.
         self.y = 0.
         self.z = 0.
         self.th = 0.
-        
+
         self.vx = 0.
         self.vy = 0.
         self.vz = 0.
         self.vth = 0.
-        
+
         self.deltaLeft = 0
         self.deltaRight = 0
-        
+
         self.last_time = None
-    
+
     def reset_odometry(self, msg=None):
         with self._lock:
             self._reset_odometry()
             self.update()
             time.sleep(0.10)
             self.update()
-            
+
         return EmptyResponse()
-    
+
     def update_left(self, count):
         """
         Called when the left encoder generates a tick.
@@ -89,7 +89,7 @@ class WheelTracker(object):
                 self.vx = self.deltaLeft * c.METERS_PER_COUNT
                 self.update()
             self._PreviousLeftEncoderCounts = count
-        
+
     def update_right(self, count):
         """
         Called when the right encoder generates a tick.
@@ -100,12 +100,12 @@ class WheelTracker(object):
                 self.vy = self.deltaRight * c.METERS_PER_COUNT
                 self.update()
             self._PreviousRightEncoderCounts = count
-        
+
     def update(self):
-        
+
         self.current_time = rospy.Time.now()
         if self.last_time is not None:
-            
+
             # compute odometry in a typical way given the velocities of the robot
             dt = (self.current_time - self.last_time).to_sec()
             delta_x = (self.vx * cos(self.th) - self.vy * sin(self.th)) * dt
@@ -114,22 +114,22 @@ class WheelTracker(object):
             self.x += delta_x
             self.y += delta_y
             self.th += delta_th
-        
+
             # since all odometry is 6DOF we'll need a quaternion created from yaw
             #geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(th);
             odom_quat = Quaternion(*tf.transformations.quaternion_from_euler(0, 0, self.th))
-        
+
             # next, we'll publish the odometry message over ROS
             #nav_msgs::Odometry odom
             msg = Odometry()
             msg.header.stamp = self.current_time
             msg.header.frame_id = self.frame_id
             msg.child_frame_id = self.child_frame_id
-        
+
             # set the position
             msg.pose.pose.position = Point(self.x, self.y, self.z)
             msg.pose.pose.orientation = odom_quat
-            
+
             # position covariance
 #             p_cov[0:2,0:2] = self.P[0:2,0:2]
 #             # orientation covariance for Yaw
@@ -145,14 +145,14 @@ class WheelTracker(object):
             msg.twist.twist.linear.x = self.vx
             msg.twist.twist.linear.y = self.vy
             msg.twist.twist.angular.z = self.vth
-        
+
             # publish the odometry message
             self.odom_pub.publish(msg)
 
             pos = (msg.pose.pose.position.x,
                    msg.pose.pose.position.y,
                    msg.pose.pose.position.z)
-            
+
             ori = (msg.pose.pose.orientation.x,
                    msg.pose.pose.orientation.y,
                    msg.pose.pose.orientation.z,
@@ -168,38 +168,38 @@ class WheelTracker(object):
 #             odom_trans.transform.translation.y = self.y
 #             odom_trans.transform.translation.z = self.z
 #             odom_trans.transform.rotation = odom_quat
-        
+
             # send the transform
 #             self.tf_br.sendTransform(odom_trans) # for tf2
             self.tf_br.sendTransform(pos, ori, msg.header.stamp, msg.child_frame_id, msg.header.frame_id)
-    
+
         self.last_time = self.current_time
-        
-        
+
+
 class TorsoNode(BaseArduinoNode):
-    
+
     name = c.NAME_TORSO
-    
+
     last_accelerometer = None
-    
+
     last_euler = None
-    
+
     received_imu = False
 
     def create_publishers(self):
         self.imu_pub = rospy.Publisher('imu/data_raw', Imu, queue_size=01)
-        
+
         self._imu_pub_lock = threading.RLock()
         self._imu_pub_thread = threading.Thread(target=self.publish_imu_thread)
         self._imu_pub_thread.daemon = True
         self._imu_pub_thread.start()
-        
+
         self.wheel_tracker = WheelTracker()
 
     def _on_packet_motor_encoder(self, packet):
         """
         Tracks and re-publishes the wheel encoders.
-        
+
             channel: 0|1
             count: +/-
         """
@@ -209,7 +209,7 @@ class TorsoNode(BaseArduinoNode):
                 return
         except (ValueError, TypeError) as e:
             return
-            
+
         channel = packet_dict['channel']
         count = packet_dict['count']
         if channel == 0:
@@ -220,45 +220,45 @@ class TorsoNode(BaseArduinoNode):
     def _on_packet_imu_accelerometer(self, packet):
         """
         Tracks and re-publishes the IMU orientation.
-        
+
             device: 2
             x: 354.0
             y: -0.5
             z: 1.55999994278
         """
-        
+
         try:
             packet_dict = self.get_packet_dict(packet)
             if not packet_dict:
                 return
         except (ValueError, TypeError) as e:
             return
-        
+
         self.last_accelerometer = packet_dict
-        
+
         self.received_imu = True
 
     def _on_packet_imu_euler(self, packet):
         """
         Tracks and re-publishes the IMU orientation.
-        
+
             device: 2
             x: 354.0
             y: -0.5
             z: 1.55999994278
         """
-        
+
         try:
             packet_dict = self.get_packet_dict(packet)
             if not packet_dict:
                 return
         except (ValueError, TypeError) as e:
             return
-        
+
         self.last_euler = packet_dict
-        
+
         self.received_imu = True
-        
+
     def publish_imu_thread(self):
         time.sleep(3)
         while 1:
@@ -269,7 +269,7 @@ class TorsoNode(BaseArduinoNode):
                     time.sleep(5)
                 self.publish_imu()
             time.sleep(.1)
-    
+
     def publish_imu(self):
         if not self.last_euler or not self.last_accelerometer:
             return
@@ -278,7 +278,7 @@ class TorsoNode(BaseArduinoNode):
             imu_msg.header = Header()
             imu_msg.header.stamp = rospy.Time.now()
             imu_msg.header.frame_id = c.BASE_LINK
-            
+
             # Our sensor returns Euler angles in degrees, but ROS requires radians.
             roll = self.last_euler['x'] * pi/180.
             pitch = self.last_euler['y'] * pi/180.
@@ -289,7 +289,7 @@ class TorsoNode(BaseArduinoNode):
             imu_msg.orientation.y = quaternion[1]
             imu_msg.orientation.z = quaternion[2]
             imu_msg.orientation.w = quaternion[3]
-            
+
             #imu_msg.angular_velocity_covariance = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
 #             imu_msg.angular_velocity.x = ns.omgx();
 #             imu_msg.angular_velocity.y = ns.omgy();
@@ -298,9 +298,9 @@ class TorsoNode(BaseArduinoNode):
             imu_msg.linear_acceleration.x = self.last_accelerometer['x']
             imu_msg.linear_acceleration.y = self.last_accelerometer['y']
             imu_msg.linear_acceleration.z = self.last_accelerometer['z']
-            #imu_msg.angular_velocity_covariance = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};    
+            #imu_msg.angular_velocity_covariance = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
             self.imu_pub.publish(imu_msg)
-           
+
 if __name__ == '__main__':
     #speed = 38400
     speed = 57600

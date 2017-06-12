@@ -39,7 +39,7 @@ class CounterbalanceTest(PygameFramework):
 
 #         self._x = 0.20352793
         #1 unit = meter or kg
-        
+
         self.speed = 1
         use_counterweight = 1
         wheel_friction = 100
@@ -50,10 +50,10 @@ class CounterbalanceTest(PygameFramework):
         #wheel_axis = (0.0, -1.)#ok
         wheel_axis = (0.0, -1.25)
         #wheel_axis = (0.0, 0.0)
-        
+
         body_offset_x = -(65+100)/DIVISOR
         body_offset_y = wheel_radius*2
-        
+
         body_box = (65/DIVISOR, 200/DIVISOR)
         body_volume = body_box[0] * body_box[1]
         body_mass = 1300/DIVISOR # kg
@@ -64,29 +64,29 @@ class CounterbalanceTest(PygameFramework):
                 density=calculate_density(volume=body_volume, mass=body_mass)),
         )
         #print [_ for _ in dir(self.body) if 'mass' in _.lower()]
-            
+
         #Set dampingRatio to 1.0 for zero oscillations (i.e. inflexible distance).
         #You may need to set frequencyHz to 0 as well.
-        
+
         #mass_data = self.body.GetMassData()
         mass_data = self.body.massData
-        
+
         # Make COM a little forward and top-heavy. => unstable
         mass_data.center[0] = body_box[0]*.5
         mass_data.center[1] = body_box[1]*.5
-        
+
         # Make COM horizontally centered but top heavy. => a little unstable
 #         mass_data.center[0] = body_box[0]*.0
 #         mass_data.center[1] = body_box[1]*.5
-         
+
         # Make COM perfectly centered. => stable
 #         mass_data.center[0] = body_box[0]*.0
 #         mass_data.center[1] = body_box[1]*.0
-        
+
         if use_counterweight:
-            
+
             counterweight_mass_grams = 1000000
-            counterweight_mass = counterweight_mass_grams/1000./DIVISOR 
+            counterweight_mass = counterweight_mass_grams/1000./DIVISOR
             counterweight_box = (20/DIVISOR, 20/DIVISOR)
             counterweight_volume = counterweight_box[0]*counterweight_box[1]
             counterweight = self.world.CreateDynamicBody(
@@ -100,10 +100,10 @@ class CounterbalanceTest(PygameFramework):
                 bodyB=counterweight,
                 anchor=counterweight.position,
             )
-        
+
         self.body.massData = mass_data
         print 'mass_data:', mass_data
-        
+
         #-x = left, +x=right
         left_wheel = self.world.CreateDynamicBody(
             position=(body_offset_x-65/DIVISOR, wheel_radius),
@@ -122,9 +122,9 @@ class CounterbalanceTest(PygameFramework):
             )
         )
         self.wheels = [left_wheel, right_wheel]
-        
+
         springs = self.springs = []
-        
+
         left_spring = self.world.CreateWheelJoint(
             bodyA=self.body,
             bodyB=left_wheel,
@@ -137,7 +137,7 @@ class CounterbalanceTest(PygameFramework):
             dampingRatio=wheel_zeta
         )
         springs.append(left_spring)
-        
+
         right_spring = self.world.CreateWheelJoint(
             bodyA=self.body,
             bodyB=right_wheel,
@@ -150,7 +150,7 @@ class CounterbalanceTest(PygameFramework):
             dampingRatio=wheel_zeta
         )
         springs.append(right_spring)
-        
+
     def Keyboard(self, key):
         if key == Keys.K_a: # forward
             for spring in self.springs:
@@ -169,12 +169,12 @@ class CounterbalanceTest(PygameFramework):
 
             for spring in self.springs:
                 spring.springFrequencyHz = self.hz
-                
+
 #     def Launch(self):
 #         self.body.transform = [(0, 4), 0]
 #         self.body.linearVelocity = (0, 0)
 #         self.body.angularVelocity = 0
-# 
+#
 #         self.x = b2Random()
 #         self.bullet.transform = [(self.x, 10), 0]
 #         self.bullet.linearVelocity = (0, -50)
@@ -187,4 +187,3 @@ class CounterbalanceTest(PygameFramework):
 
 if __name__ == "__main__":
     main(CounterbalanceTest)
-    

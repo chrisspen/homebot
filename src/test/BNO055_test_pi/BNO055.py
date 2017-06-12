@@ -46,7 +46,7 @@ class BNO055:
 	BNO055_SW_REV_ID_MSB_ADDR 			= 0x05
 	BNO055_BL_REV_ID_ADDR 				= 0X06
 
-	# Accel data register 
+	# Accel data register
 	BNO055_ACCEL_DATA_X_LSB_ADDR 			= 0X08
 	BNO055_ACCEL_DATA_X_MSB_ADDR 			= 0X09
 	BNO055_ACCEL_DATA_Y_LSB_ADDR 			= 0X0A
@@ -54,7 +54,7 @@ class BNO055:
 	BNO055_ACCEL_DATA_Z_LSB_ADDR 			= 0X0C
 	BNO055_ACCEL_DATA_Z_MSB_ADDR 			= 0X0D
 
-	# Mag data register 
+	# Mag data register
 	BNO055_MAG_DATA_X_LSB_ADDR 			= 0X0E
 	BNO055_MAG_DATA_X_MSB_ADDR 			= 0X0F
 	BNO055_MAG_DATA_Y_LSB_ADDR 			= 0X10
@@ -62,15 +62,15 @@ class BNO055:
 	BNO055_MAG_DATA_Z_LSB_ADDR 			= 0X12
 	BNO055_MAG_DATA_Z_MSB_ADDR			= 0X13
 
-	# Gyro data registers 
+	# Gyro data registers
 	BNO055_GYRO_DATA_X_LSB_ADDR 			= 0X14
 	BNO055_GYRO_DATA_X_MSB_ADDR 			= 0X15
 	BNO055_GYRO_DATA_Y_LSB_ADDR 			= 0X16
 	BNO055_GYRO_DATA_Y_MSB_ADDR 			= 0X17
 	BNO055_GYRO_DATA_Z_LSB_ADDR 			= 0X18
 	BNO055_GYRO_DATA_Z_MSB_ADDR 			= 0X19
-	
-	# Euler data registers 
+
+	# Euler data registers
 	BNO055_EULER_H_LSB_ADDR 			= 0X1A
 	BNO055_EULER_H_MSB_ADDR 			= 0X1B
 	BNO055_EULER_R_LSB_ADDR 			= 0X1C
@@ -78,7 +78,7 @@ class BNO055:
 	BNO055_EULER_P_LSB_ADDR 			= 0X1E
 	BNO055_EULER_P_MSB_ADDR 			= 0X1F
 
-	# Quaternion data registers 
+	# Quaternion data registers
 	BNO055_QUATERNION_DATA_W_LSB_ADDR 		= 0X20
 	BNO055_QUATERNION_DATA_W_MSB_ADDR 		= 0X21
 	BNO055_QUATERNION_DATA_X_LSB_ADDR 		= 0X22
@@ -88,7 +88,7 @@ class BNO055:
 	BNO055_QUATERNION_DATA_Z_LSB_ADDR 		= 0X26
 	BNO055_QUATERNION_DATA_Z_MSB_ADDR 		= 0X27
 
-	# Linear acceleration data registers 
+	# Linear acceleration data registers
 	BNO055_LINEAR_ACCEL_DATA_X_LSB_ADDR 		= 0X28
 	BNO055_LINEAR_ACCEL_DATA_X_MSB_ADDR 		= 0X29
 	BNO055_LINEAR_ACCEL_DATA_Y_LSB_ADDR	 	= 0X2A
@@ -96,7 +96,7 @@ class BNO055:
 	BNO055_LINEAR_ACCEL_DATA_Z_LSB_ADDR		= 0X2C
 	BNO055_LINEAR_ACCEL_DATA_Z_MSB_ADDR		= 0X2D
 
-	# Gravity data registers 
+	# Gravity data registers
 	BNO055_GRAVITY_DATA_X_LSB_ADDR 			= 0X2E
 	BNO055_GRAVITY_DATA_X_MSB_ADDR	 		= 0X2F
 	BNO055_GRAVITY_DATA_Y_LSB_ADDR 			= 0X30
@@ -104,10 +104,10 @@ class BNO055:
 	BNO055_GRAVITY_DATA_Z_LSB_ADDR 			= 0X32
 	BNO055_GRAVITY_DATA_Z_MSB_ADDR 			= 0X33
 
-	# Temperature data register 
+	# Temperature data register
 	BNO055_TEMP_ADDR 				= 0X34
 
-	# Status registers 
+	# Status registers
 	BNO055_CALIB_STAT_ADDR 				= 0X35
 	BNO055_SELFTEST_RESULT_ADDR	 		= 0X36
 	BNO055_INTR_STAT_ADDR 				= 0X37
@@ -116,22 +116,22 @@ class BNO055:
 	BNO055_SYS_STAT_ADDR 				= 0X39
 	BNO055_SYS_ERR_ADDR 				= 0X3A
 
-	# Unit selection register 
+	# Unit selection register
 	BNO055_UNIT_SEL_ADDR 				= 0X3B
 	BNO055_DATA_SELECT_ADDR 			= 0X3C
 
-	# Mode registers 
+	# Mode registers
 	BNO055_OPR_MODE_ADDR 				= 0X3D
 	BNO055_PWR_MODE_ADDR 				= 0X3E
 
 	BNO055_SYS_TRIGGER_ADDR 			= 0X3F
 	BNO055_TEMP_SOURCE_ADDR 			= 0X40
 
-	# Axis remap registers 
+	# Axis remap registers
 	BNO055_AXIS_MAP_CONFIG_ADDR 			= 0X41
 	BNO055_AXIS_MAP_SIGN_ADDR 			= 0X42
 
-	# SIC registers 
+	# SIC registers
 	BNO055_SIC_MATRIX_0_LSB_ADDR 			= 0X43
 	BNO055_SIC_MATRIX_0_MSB_ADDR 			= 0X44
 	BNO055_SIC_MATRIX_1_LSB_ADDR 			= 0X45
@@ -150,8 +150,8 @@ class BNO055:
 	BNO055_SIC_MATRIX_7_MSB_ADDR 			= 0X52
 	BNO055_SIC_MATRIX_8_LSB_ADDR 			= 0X53
 	BNO055_SIC_MATRIX_8_MSB_ADDR 			= 0X54
-	
-	# Accelerometer Offset registers	 
+
+	# Accelerometer Offset registers
 	ACCEL_OFFSET_X_LSB_ADDR 			= 0X55
 	ACCEL_OFFSET_X_MSB_ADDR 			= 0X56
 	ACCEL_OFFSET_Y_LSB_ADDR 			= 0X57
@@ -159,7 +159,7 @@ class BNO055:
 	ACCEL_OFFSET_Z_LSB_ADDR 			= 0X59
 	ACCEL_OFFSET_Z_MSB_ADDR 			= 0X5A
 
-	# Magnetometer Offset registers 
+	# Magnetometer Offset registers
 	MAG_OFFSET_X_LSB_ADDR 				= 0X5B
 	MAG_OFFSET_X_MSB_ADDR 				= 0X5C
 	MAG_OFFSET_Y_LSB_ADDR 				= 0X5D
@@ -175,7 +175,7 @@ class BNO055:
 	GYRO_OFFSET_Z_LSB_ADDR 				= 0X65
 	GYRO_OFFSET_Z_MSB_ADDR 				= 0X66
 
-	# Radius registers 
+	# Radius registers
 	ACCEL_RADIUS_LSB_ADDR 				= 0X67
 	ACCEL_RADIUS_MSB_ADDR 				= 0X68
 	MAG_RADIUS_LSB_ADDR 				= 0X69
@@ -308,7 +308,7 @@ if __name__ == '__main__':
 	print 'calibration:', bno.getCalibration()
 	time.sleep(3)
 	while True:
-		print '%.02f' % time.time(), 
+		print '%.02f' % time.time(),
 		print 'temp: %03i' % bno.getTemp(),
 		print 'euler:', format_vector(bno.getVector(BNO055.VECTOR_EULER)),
 		print 'acl:', format_vector(bno.getVector(BNO055.VECTOR_ACCELEROMETER)),

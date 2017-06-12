@@ -13,29 +13,29 @@ from ros_homebot_python.exceptions import DeviceNotFound
 class Limiter(object):
     """
     Helper class to time an event based on a certain period.
-    
+
     If you were to do something like:
-    
+
         period = 5
         last = time.time()
         for item in items:
             if time.time() - last > period
                 do_stuff()
-    
+
     you could instead do:
-    
+
         rate = Limiter(period=5)
         for item in items:
             if rate.ready():
                 do_stuff()
-        
+
     """
-    
+
     def __init__(self, period):
         self.first = True
         self.last_time = time.time()
         self.period = period
-    
+
     def ready(self):
         ret = self.first or (time.time() - self.last_time) >= self.period
         if ret:
@@ -105,7 +105,7 @@ def find_serial_device(name, base_path='/dev/ttyA*', verbose=False):
                 return device_path
         if verbose:
             print 'Unable to identify %s!' % device_path
-                    
+
     raise DeviceNotFound, (
         'Device %s not found. '
         'Ensure device is connected and that base_path %s is correct?'
@@ -122,8 +122,8 @@ def to_10(data):
     return data
 
 def R(theta, u):
-    return [[cos(theta) + u[0]**2 * (1-cos(theta)), 
-             u[0] * u[1] * (1-cos(theta)) - u[2] * sin(theta), 
+    return [[cos(theta) + u[0]**2 * (1-cos(theta)),
+             u[0] * u[1] * (1-cos(theta)) - u[2] * sin(theta),
              u[0] * u[2] * (1 - cos(theta)) + u[1] * sin(theta)],
             [u[0] * u[1] * (1-cos(theta)) - u[2] * sin(theta),
              cos(theta) + u[1]**2 * (1-cos(theta)),
@@ -154,27 +154,27 @@ def head_angles_to_point(pan, tilt, distance):
     """
     pan and tilt are in degrees
     """
-    
-    # Verify hard tilt endstops. 
+
+    # Verify hard tilt endstops.
     if c.TILT_MIN > tilt or c.TILT_MAX < tilt:
-         
+
         return None, None, None
-         
+
     # Tilt angle is centered a 90, so scale to make 90=0.
     tilt -= 90
     print 'tilt0:', tilt
-    
+
     # Pan has no hard endstops, but ensure stays within relative limit.
     pan = pan % c.PAN_MAX
-    
+
     origin, xaxis, yaxis, zaxis = (0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1)
-    
+
     # The initial point is the distance projected from the face of the camera on the head.
     # The positive x-axis extends from the face.
     # The positive y-axis extends from the right-hand side facing outwards from the face.
     point = np.array([c.TORSO_DIAMETER_MM + distance, 0, c.HEIGHT_CENTER_HEIGHT_MM, 0])
     print 'point0:', point
-    
+
     # Apply the tilt angle by rotating about the y-axis of the head.
     if tilt:
         point = np.add((0, 0, -c.HEIGHT_CENTER_HEIGHT_MM, 0), point)
@@ -183,12 +183,12 @@ def head_angles_to_point(pan, tilt, distance):
         print 'point2:', point
         point = np.add((0, 0, +c.HEIGHT_CENTER_HEIGHT_MM, 0), point)
         print 'point3:', point
-    
+
     # Apply the pan angle by rotating about the z-axis.
     if pan:
         #point = rotate(point, (0, 0, 0), (0, 0, 1), pan*pi/180.)
         point = tf.rotation_matrix(pan*pi/180., zaxis).dot(point)
-    
+
     return tuple(point[:3])
 
 def relative_to_absolute_speed(relative):
@@ -201,7 +201,7 @@ def linear_travel_time(speed, distance, start_speed=None, end_speed=None, accel=
     Calculates the total time needed to travel a distance at a given speed.
     """
     accel = accel or c.MOTOR_DEFAULT_ACCEL_REAL
-    
+
     t1 = 0 * c.SEC
     d1 = 0 * c.MM
     if start_speed is not None:
@@ -211,7 +211,7 @@ def linear_travel_time(speed, distance, start_speed=None, end_speed=None, accel=
         # How much distance have we travelled during acceleration?
         # s = vi*t + 0.5*a*t^2
         d1 = start_speed*t1 + 0.5*accel*t1**2
-    
+
     t2 = 0 * c.SEC
     d2 = 0 * c.MM
     if end_speed is not None:
@@ -221,7 +221,7 @@ def linear_travel_time(speed, distance, start_speed=None, end_speed=None, accel=
         # How much distance have we travelled during acceleration?
         # s = vi*t + 0.5*a*t^2
         d2 = end_speed*t2 + 0.5*accel*t2**2
-        
+
     speed = speed.to(c.MM/c.SEC)
     distance = distance.to(c.MM)
     t = abs((distance - d1 - d2) / speed) + t1 + t2
@@ -242,7 +242,7 @@ def assert_node_alive(name):
 def get_angle_of_pixel(pixel, resolution, angle_of_view):
     """
     Calculates a pixels's angle from the origin.
-    
+
     e.g. A pixel at position 0 would be at angle 0, and a pixel at position=resolution
     would be at angle=angle_of_view.
     """

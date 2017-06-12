@@ -10,15 +10,15 @@ def calculate_discharge_time_abs(t0, v0, t1, v1, dead_level=0.8):
     print 'm:', m
     b = v0 - m*t0
     print 'b:', b
-    
+
     v_dead = v0 * dead_level
     print 'v_dead:', v_dead
 
     t_dead = (v_dead - b)/m
     #t_dead = ((v0 * 0.8) - b)/m
     return t_dead
- 
-#battery 1   
+
+#battery 1
 # t_dead_abs = calculate_discharge_time_abs(
 #     t0=0,#11:10
 #     v0=7.56,

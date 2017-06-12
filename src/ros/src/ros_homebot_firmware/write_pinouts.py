@@ -6,7 +6,7 @@ Usage:
 
     write_pinout.py head
     write_pinout.py torso
-    
+
 """
 from __future__ import print_function
 import os, sys, csv

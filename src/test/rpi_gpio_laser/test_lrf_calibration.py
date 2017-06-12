@@ -76,7 +76,7 @@ print '\nmeasurements:', measurements
 
 x = [_pix_dist for _actual_d, _pix_dist in measurements]
 y = [atan(h/_actual_d) for _actual_d, _pix_dist in measurements]
-    
+
 slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
 print '\nlinreg:', slope, intercept, r_value, p_value, std_err
 # y = m * x + b => theta = rpc * pfc + ro

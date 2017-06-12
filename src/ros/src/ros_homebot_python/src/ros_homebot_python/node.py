@@ -54,7 +54,7 @@ def get_pub_attr_name(packet_id):
         return get_name(packet_id) + '_pub'
     except TypeError:
         return
-    
+
 def get_srv_attr_name(packet_id):
     """
     Generates the attribute name used to store the service.
@@ -67,13 +67,13 @@ def get_srv_attr_name(packet_id):
 def get_srv_type_name(packet_id):
     """
     Generates the packet's equivalent /srv file name.
-    
+
     e.g. get_srv_type_name('a') == 'PanAngle'
     """
     name = re.sub(r'[^a-z]+', ' ', c.ALL_IDS[packet_id])
     name = (''.join(map(str.title, name.split(' '))))
     return name
-    
+
 def get_msg_type_name(packet_id):
     """
     Generates the packet's equivalent /msg file name.
@@ -100,7 +100,7 @@ def packet_to_message_type(packet_id):
 def packet_to_service_type(packet_id):
     name = get_srv_type_name(packet_id)
     return getattr(srvs, name)
-    
+
 def packet_to_service_request_type(packet_id):
     name = get_srv_type_name(packet_id)
     return getattr(srvs, name+'Request')
@@ -145,94 +145,94 @@ def camel_to_underscore(name):
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
 class BaseArduinoNode():
-    
+
     name = None
-    
+
     def __init__(self, **kwargs):
-        
+
         self._print_lock = threading.RLock()
-        
+
         assert self.name in (c.NAME_TORSO, c.NAME_HEAD)
-        
+
         rospy.init_node('%s_arduino' % self.name.lower(), log_level=rospy.DEBUG)
-        
+
         self.start_dt = datetime.now()
-        
+
         self.verbose = int(rospy.get_param("~verbose", 0))
-        
+
         self.log('verbose:', self.verbose)
-        
+
         self.reset_log = open(os.path.expanduser(
             '~/.ros/log/latest/%s_reset.log' % self.name.lower()), 'a')
-        
+
         self._last_reset = time.time()
-        
+
         self.limiter = utils.Limiter(period=1)
-        
+
         # If true, indicates that all motor processes should halt.
         self.all_stopping = False
-        
+
         # If true, is trying to connect and communicate with Arduino.
         self.running = False
-        
+
         # If true, the serial port has been opened.
         self.connected = True
-        
+
         # Set to True once the connected device has been identified.
         self.identified = False
-        
+
         # The duplex Serial() instance.
         self._serial = None
-        
+
         self._serial_read_lock = threading.RLock()
         self._serial_write_lock = threading.RLock()
-        
+
         # Serial port. e.g. /dev/ttyACM0
         self.port = kwargs.pop('port', None) or utils.find_serial_device(self.name)
         self.print('Using port %s.' % self.port)
-        
+
         # Serial speed.
         self.speed = int(kwargs.pop('speed', 57600))
-        
+
         # Counter of all packets read from Arduino.
         self.read_count = 0
-        
+
         # Counter of all packets written to Arduino.
         self.write_count = 0
-        
+
         # The time in seconds of the last write.
         self.write_time = 0
-        
+
         # Counter of each time the Arduino failed to acknowledge a packet.
         self.ack_failure_count = 0
-        
+
         # The last time we sent a ping request.
         self.last_ping = 0
         self.last_ping_dt = None
-        
+
         # The time we last received a pong response.
         self.last_pong = 0
         self.last_pong_dt = None
-        
+
         # The time we last received data from the Arduino.
         self.last_read = 0
-        
+
         # The hash value expected for the next read.
         self.expected_hash = None
-        
+
         # Count of times each packet type was received.
         self.packet_counts = defaultdict(int) # {packet_id: count}
-        
+
         # A registry of acknowledgement receipts
         self._acks = {} # {packet_id: time read}
         self._acks_lock = threading.RLock()
-        
+
         # The main read thread handle.
         self._read_thread = None
-        
+
         # The main write thread handle.
         self._write_thread = None
-        
+
         # Serial IO queues.
         queue_size = kwargs.pop('queue_size', 100)
         self.outgoing_queue = Queue(maxsize=queue_size)
@@ -240,7 +240,7 @@ class BaseArduinoNode():
         self.ack_queue_lock = threading.RLock()
         self.serial_out_lock = threading.RLock()
         self.serial_in_lock = threading.RLock()
-        
+
         # Cleanup when termniating the node
         rospy.on_shutdown(self.shutdown)
 
@@ -263,10 +263,10 @@ class BaseArduinoNode():
                 self,
                 pub_attr_name,
                 rospy.Publisher(pub_topic_name, msg_type, queue_size=1))
-        
+
         self.diagnostics_pub = rospy.Publisher('/diagnostics', DiagnosticArray, queue_size=1)
         self.create_publishers()
-        
+
         # Dynamically create a service for each service type.
         formats_in = self.service_formats
         for _packet_id, _def in formats_in.iteritems():
@@ -274,29 +274,29 @@ class BaseArduinoNode():
                 '~' + get_name(_packet_id),
                 getattr(srvs, get_srv_type_name(_packet_id)),
                 partial(self._ros_to_arduino_handler, packet_id=_packet_id))
-        
+
         rospy.Service('~reset', Empty, self.reset)
 
         # Begin processing data to/from Arduino.
         #self.connect(hard=True)#TODO:FIXME? breaks serial connection
         self.connect()
-        
+
         self.print('Running.')
-        
+
         # Start polling the sensors and base controller
         while not rospy.is_shutdown():
-            
+
             # Publish all sensor values on a single topic for convenience
             now = rospy.Time.now()
-            
+
             r.sleep()
-            
+
             if self.limiter.ready():
-                
+
                 pcounts = ', '.join(
                     '%s=%i' % (k, v)
                     for k, v in sorted(self.packet_counts.iteritems(), key=lambda o: o[1]))
-                
+
                 self.print((
                     'STATUS: '
                     '{timestamp} '
@@ -324,7 +324,7 @@ class BaseArduinoNode():
                     ack_failure_count=self.ack_failure_count,
                     #pcounts=pcounts,
                 )))
-            
+
             # Occassionally, the serial port becomes unresponsive.
             # Unsure what the cause is.
             # Happens primarily with an Arduino Uno.
@@ -334,33 +334,33 @@ class BaseArduinoNode():
                 print('[%s] reset' % datetime.now(), file=self.reset_log)
                 self.reset_log.flush()
                 self.reset()
-            
+
         self.print('Main thread terminated.')
-    
+
     @property
     def last_pong_timeout(self):
         """
         Calculates the number of seconds since we last received a pong response from the Arduino.
         """
         return time.time() - self.last_pong
-    
+
     def _on_packet_pong(self, packet):
         """
         Re-publishes the pong responses as a diagnostic message.
         """
-        
+
         try:
             packet_dict = self.get_packet_dict(packet)
             if not packet_dict:
                 return
         except (ValueError, TypeError) as e:
             return
-        
+
         self.last_pong = time.time()
         self.last_pong_dt = datetime.now()
         total = packet_dict['total']
         #print('pong total:', total)
-        
+
         array = DiagnosticArray()
         pong_status = DiagnosticStatus(
             name='%s Arduino' % self.name.title(),
@@ -372,37 +372,37 @@ class BaseArduinoNode():
             pong_status,
         ]
         self.diagnostics_pub.publish(array)
-    
+
     def create_publishers(self):
         pass
-    
+
     def get_packet_dict(self, packet):
-        
+
         packet_id = packet.id
         parameters = packet.parameters
         if packet.id == c.ID_GET_VALUE:
             # If packet is the special get_value container type, convert it to the normal type.
             packet_id = packet.data[0]
             parameters = packet.data[1:].strip().split(' ')
-            
+
         output_format = self.publisher_formats[packet_id]
-        
+
         if len(parameters) != len(output_format):
             self.print('malformed packet:', packet)
             return
-        
+
         d = dict(
             (arg_name, to_type(param, arg_type))
             for (arg_name, arg_type), param in zip(output_format, parameters))
-            
+
         return d
-    
+
     def _arduino_to_ros_handler(self, packet):
         """
         Receives all packets from the Arduino and forwards them to ROS.
         """
         self.log('Receiving packet: %s' % packet)
-        
+
         if self.verbose:
             self.print('-'*80)
             self.print('arduino to ros handler:')
@@ -413,12 +413,12 @@ class BaseArduinoNode():
             self.print('Invalid packet ID: %s' % e, file=sys.stderr)
             traceback.print_exc(file=sys.stderr)
             return
-        
+
         # Try running raw packet handler.
         handler_name = '_on_packet_%s' % packet.id_name
         if hasattr(self, handler_name):
             getattr(self, handler_name)(packet)
-        
+
         # Lookup packet-specific message details.
         packet_id = packet.id
         parameters = packet.parameters
@@ -426,26 +426,26 @@ class BaseArduinoNode():
             # If packet is the special get_value container type, convert it to the normal type.
             packet_id = packet.data[0]
             parameters = packet.data[1:].strip().split(' ')
-        
+
         # Try running resolved packet handler.
         handler_name = '_on_packet_%s' % get_packet_name(packet_id)
         if hasattr(self, handler_name):
             getattr(self, handler_name)(packet)
-            
+
         pub_attr_name = get_pub_attr_name(packet_id)
         publisher = getattr(self, pub_attr_name, None)
         if publisher:
             msg_type = packet_to_message_type(packet_id)
-        
+
             # Create packet-specific message.
             msg = msg_type()
             msg.device = self.name_index
             output_format = self.publisher_formats[packet_id]
-                
+
             # Ignore acknowledgement packet.
             if len(parameters) == 1 and parameters[0] == c.OK:
                 return
-            
+
             # Ignore malformed packets.
             if len(parameters) != len(output_format):
                 self.print(
@@ -454,16 +454,16 @@ class BaseArduinoNode():
                 self.print('parameters:', parameters, file=sys.stderr)
                 self.print('output_format:', output_format, file=sys.stderr)
                 return
-            
+
             try:
-                
+
                 # Convert all params to the correct type.
                 for (arg_name, arg_type), param in zip(output_format, parameters):
                     setattr(msg, arg_name, to_type(param, arg_type))
-            
+
                 # Publish packet on packet-specific publisher.
                 publisher.publish(msg)
-                
+
             #except ROSSerializationException as e:
             except Exception as e:
                 traceback.print_exc(file=sys.stderr)
@@ -485,7 +485,7 @@ class BaseArduinoNode():
         """
         t0 = time.time()
         self.log('Received service request: %s %s' % (req, packet_id))
-        
+
         # Convert ROS message to Arduino packet.
         t1 = time.time()
         input_formats = self.service_formats
@@ -497,11 +497,11 @@ class BaseArduinoNode():
         packet = Packet(id=packet_id, data=' '.join(data))
         t2 = time.time()
         print('t_packet:', t2 - t1)
-        
+
         # Queue for sending.
         self.outgoing_queue.put(packet)
         t3 = time.time()
-        
+
         # If this packet requires acknowledgement, then block until received or timed out.
         ack_success = True
         if packet.id in c.ACK_IDS:
@@ -516,31 +516,31 @@ class BaseArduinoNode():
         t4 = time.time()
         print('t_ack:', time.time() - t3)
         print('t_total:', time.time() - t0)
-        
+
         # Return service response.
         if not ack_success:
             raise Exception('ack failed')
         name = type(req).__name__.replace('Request', '')
         resp_cls = getattr(srvs, name + 'Response')
         return resp_cls()
-    
+
     def _write_packet(self, packet, delay=0.01, max_retries=5): #0.01 works, but slow, 0.001 doesn't work, 0.005 slowly breaks down
         """
         Sends the main packet, prefixed with a checksum packet.
-        
+
         The delay here is very important since the host computer is likely immensely faster
         than the Arduino. Without any delay, the host may overwhelm the Arduino's serial buffer,
         which by default is only 64 bytes, causing the checksum to be lost, causing the resulting
         main packet to be ignored.
-        
+
         We must delay slightly after the checksum packet to give the Arduino enough time
         to process it and extract the checksum.
         """
-        
+
         # Note, the time.sleep()s are necessary to give the Arduino enough time to respond.
         # Otherwise, the Arduino appears to not respond.
         t0 = time.time()
-        
+
         # Send checksum packet.
         s = '%s %s\n' % (c.ID_HASH, packet.hash)
 #         self.print('writing_hash_packet:', repr(s))
@@ -554,7 +554,7 @@ class BaseArduinoNode():
                 except serial.SerialTimeoutException as e:
                     self.print('Error writing hash:', e)
         time.sleep(delay)
-        
+
         # Send main packet.
         data = packet.data.strip()
         if data:
@@ -572,29 +572,29 @@ class BaseArduinoNode():
                 except serial.SerialTimeoutException as e:
                     self.print('Error writing packet:', e)
         time.sleep(delay)
-        
+
         td = time.time() - t0
-        
+
         self.write_count += 1
         self.write_time = td
-        
+
     def _write_data_to_arduino(self, retries=5):
         """
         Continually writes data from outgoing queue to the Arduino.
         """
         while self.running:
-    
+
             # Check heartbeat.
             if self.last_ping+1 <= time.time():
                 self.last_ping = time.time()
                 self.last_ping_dt = datetime.now()
 #                self.print('Queuing ping.')
                 self.outgoing_queue.put(Packet(c.ID_PING))
-            
+
             # Sending pending commands.
             if not self.outgoing_queue.empty():
                 packet = self.outgoing_queue.get()
-                
+
                 ack_success = False
                 for attempt in xrange(retries):
                     self.print('Sending: %s, attempt %i, (%i packets remaining)' % (packet, attempt, self.outgoing_queue.qsize()))
@@ -603,7 +603,7 @@ class BaseArduinoNode():
                     self._write_packet(packet)
                     t0 = time.time() - sent_time
 #                     self.print('Sent secs:', t0, ' self.write_time:', self.write_time)
-                    
+
                     if not self.running:
                         ack_success = True
                         break
@@ -618,11 +618,11 @@ class BaseArduinoNode():
                     else:
                         # Don't wait for acknowledgement.
                         break
-                        
+
                 if packet.id in c.ACK_IDS:
                     with self.ack_queue_lock:
                         self.ack_queue[packet] = ack_success
-                        
+
         self.print('Write thread exited.')
 
     def _wait_for_ack(self, packet_id, sent_time, timeout=5):
@@ -644,7 +644,7 @@ class BaseArduinoNode():
         with self._serial_read_lock:
             data = (self._serial.readline() or '').strip()
 #             self._serial.reset_input_buffer()
-        
+
         if data:
             self.print('read raw data:', data)
             if data[0] == c.ID_HASH:
@@ -660,11 +660,11 @@ class BaseArduinoNode():
 #                     if self.verbose:
                     self.print('Invalid packet read due to hash mismatch:', packet)
                     data = ''
-                    
+
         if data:
             # Record a successful read.
             self.last_read = time.time()
-        
+
         return data
 
     def _read_packet(self):
@@ -674,29 +674,29 @@ class BaseArduinoNode():
         data = self._read_raw_packet()
         if data:
             packet = Packet.from_string(data)
-            
+
             # Keep a receipt of when we receive acknowledgments so the write thread
             # knows when to stop waiting.
             if packet.data == c.OK:
                 with self._acks_lock:
                     self._acks[packet.id] = time.time()
-    
+
             # Record pong so we know Arduino is still alive.
 #             if packet.id == c.ID_PONG:
 #                 self.last_pong = time.time()
-            
+
             self.read_count += 1
-            
+
             if packet.non_get_id in c.ALL_IDS:
                 self.packet_counts[packet.non_get_id] += 2
             return packet
-    
+
     def _read_data_from_arduino(self):
         """
         Continually reads data from the Arduino and writes it to ROS.
         """
         while self.running:
-    
+
             # Read packet from Arduino.
             packet = self._read_packet()
             if not packet:
@@ -704,16 +704,16 @@ class BaseArduinoNode():
                 continue
             #self.log(u'Received: %s' % packet).encode('utf-8'))
             self.log('Received:', packet)
-            
+
             # Process packet.
             try:
                 self._arduino_to_ros_handler(packet)
             except Exception as e:
                 self.print('Error sending packet to ros.')
                 self.print(traceback.format_exc())
-            
+
         self.print('Read thread exited.')
-            
+
     def all_stop(self):
         """
         Signals the Arduino to stop all motors.
@@ -728,9 +728,9 @@ class BaseArduinoNode():
         assert self.running and self.connected and self._serial
         for _ in xrange(max_retries):
             self.log('Confirming device (attempt %i of %i)...' % (_+1, max_retries))
-            
+
             self._write_packet(Packet(c.ID_IDENTIFY))
-            
+
             ret = self._read_raw_packet()
             print('confirm identity read:', ret)
             if ret == c.ID_IDENTIFY+' '+self.name.upper():
@@ -751,7 +751,7 @@ class BaseArduinoNode():
         Starts the thread that establishes serial connection and begins communication.
         """
         with self._serial_read_lock, self._serial_write_lock:
-            
+
             # Disconnect if currently connected.
             if self._serial:
                 self._serial.close()
@@ -760,7 +760,7 @@ class BaseArduinoNode():
 
             self.identified = False
             self.running = True
-        
+
             # Disable reset after hangup.
             # This prevents the Arduino Uno from resetting if we disconnect or lose power.
             # This is necessary if we want to "sleep" by disconnecting head power and using
@@ -769,7 +769,7 @@ class BaseArduinoNode():
                 attrs = termios.tcgetattr(f)
                 attrs[2] = attrs[2] & ~termios.HUPCL
                 termios.tcsetattr(f, termios.TCSAFLUSH, attrs)
-            
+
             # Forcibly cause Arduino to reset.
             if hard:
                 self.print('Resetting Arduino on port %s...' % self.port)
@@ -780,7 +780,7 @@ class BaseArduinoNode():
                     arduino.setDTR(True)
                     time.sleep(10)
                 self.print('Arduino reset.')
-        
+
             # Instantiate serial interface.
             self.print('Opening serial connection on port %s...' % self.port)
             self._serial = serial.Serial(
@@ -790,30 +790,30 @@ class BaseArduinoNode():
                 write_timeout=1,
             )
             self.connected = True
-            
+
             if check_identity:
                 assert self.confirm_identity(), 'Device identity could not be confirmed.'
             self.identified = True
-    
+
             if self._read_thread is None:
                 self.print('Starting read thread...')
                 self._read_thread = threading.Thread(target=self._read_data_from_arduino)
                 self._read_thread.daemon = True
                 self._read_thread.start()
-            
+
             if self._write_thread is None:
                 self.print('Starting write thread...')
                 self._write_thread = threading.Thread(target=self._write_data_to_arduino)
                 self._write_thread.daemon = True
                 self._write_thread.start()
-    
+
     def disconnect(self):
         """
         Terminates the communication thread and closes the serial connection.
         """
         if self._serial is None:
             return
-        
+
         # Stop serial IO threads.
         self.running = False
         try:
@@ -827,7 +827,7 @@ class BaseArduinoNode():
                 self._write_thread = None
         except RuntimeError as e:
             self.print('Error when attempting to disconnect: %s' % e)
-        
+
         # Delete serial connection.
         self.print('Closing serial connection...')
         with self._serial_read_lock, self._serial_write_lock:
@@ -839,12 +839,12 @@ class BaseArduinoNode():
 
     @property
     def needs_reset(self):
-        
+
         # Reset if we're no longer receiving ping responses.
         # This seems to happen after about 4-5 hours due to an unknown reason.
         if (self.last_pong and self.last_pong_timeout > 10 and (time.time() - self._last_reset > 10)):
             return True
-        
+
         # Reset if we haven't reset in an hour.
         # This is done to pre-empt the first case, since it's better to stop
         # the timeout from occurring by proactively resetting on our own timeframe then waiting
@@ -853,13 +853,13 @@ class BaseArduinoNode():
         # so it should have no effect on messages other than to restore proper transmission by PySerial.
         if (time.time() - self._last_reset) > 3600:
             return True
-            
+
         return False
 
     def reset(self, req=None, hard=False):
         """
         Resets the serial connection by disconnecting and reconnecting.
-        
+
         If hard=True, also causes the Arduino to reset, as though its reset button was pressed.
         """
         self.print('Resetting connection...')
@@ -878,11 +878,11 @@ class BaseArduinoNode():
     def log(self, *msg):
         if self.verbose:
             self.print(*msg)
-            
+
     @property
     def name_index(self):
         return c.NAME_TO_INDEX[self.name]
-    
+
     @property
     def publisher_formats(self):
         formats_out = c.BOTH_FORMATS_OUT.copy()
@@ -891,7 +891,7 @@ class BaseArduinoNode():
         if self.name == c.NAME_TORSO:
             formats_out.update(c.TORSO_FORMATS_OUT)
         return formats_out
-        
+
     @property
     def service_formats(self):
         formats_out = c.BOTH_FORMATS_IN.copy()
@@ -900,13 +900,13 @@ class BaseArduinoNode():
         if self.name == c.NAME_TORSO:
             formats_out.update(c.TORSO_FORMATS_IN)
         return formats_out
- 
+
     def shutdown(self):
         """
         Called when ROS issues a shutdown event.
         """
         self.log("Disconnecting the %s arduino..." % self.name)
-        
+
         # Automatically signal device to stop.
         self.outgoing_queue.put(Packet(c.ID_ALL_STOP))
         t0 = time.time()
@@ -915,5 +915,5 @@ class BaseArduinoNode():
             self.log('Waiting for write queue to clear...')
             if time.time() - t0 > 5:
                 break
-        
+
         self.disconnect()

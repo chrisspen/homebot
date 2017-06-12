@@ -26,7 +26,7 @@ COLOR_TO_NAME = dict(
     YELLOW = YELLOW,
     GREEN = GREEN,
     GREEN_T = GREEN_T,
-    GRAY = GRAY,    
+    GRAY = GRAY,
 )
 
 FACE_TO_FACE = 'face-to-face'

@@ -4,16 +4,16 @@
 from math import *
 
 class matrix:
-    
+
     # implements basic operations of a matrix class
-    
+
     def __init__(self, value):
         self.value = value
         self.dimx = len(value)
         self.dimy = len(value[0])
         if value == [[]]:
             self.dimx = 0
-    
+
     def zero(self, dimx, dimy):
         # check if valid dimensions
         if dimx < 1 or dimy < 1:
@@ -22,7 +22,7 @@ class matrix:
             self.dimx = dimx
             self.dimy = dimy
             self.value = [[0 for row in range(dimy)] for col in range(dimx)]
-    
+
     def identity(self, dim):
         # check if valid dimension
         if dim < 1:
@@ -33,12 +33,12 @@ class matrix:
             self.value = [[0 for row in range(dim)] for col in range(dim)]
             for i in range(dim):
                 self.value[i][i] = 1
-    
+
     def show(self):
         for i in range(self.dimx):
             print self.value[i]
         print ' '
-    
+
     def __add__(self, other):
         # check if correct dimensions
         if self.dimx != other.dimx or self.dimy != other.dimy:
@@ -51,7 +51,7 @@ class matrix:
                 for j in range(self.dimy):
                     res.value[i][j] = self.value[i][j] + other.value[i][j]
             return res
-    
+
     def __sub__(self, other):
         # check if correct dimensions
         if self.dimx != other.dimx or self.dimy != other.dimy:
@@ -64,7 +64,7 @@ class matrix:
                 for j in range(self.dimy):
                     res.value[i][j] = self.value[i][j] - other.value[i][j]
             return res
-    
+
     def __mul__(self, other):
         # check if correct dimensions
         if self.dimy != other.dimx:
@@ -78,7 +78,7 @@ class matrix:
                     for k in range(self.dimy):
                         res.value[i][j] += self.value[i][k] * other.value[k][j]
             return res
-    
+
     def transpose(self):
         # compute transpose
         res = matrix([[]])
@@ -87,15 +87,15 @@ class matrix:
             for j in range(self.dimy):
                 res.value[j][i] = self.value[i][j]
         return res
-    
+
     # Thanks to Ernesto P. Adorio for use of Cholesky and CholeskyInverse functions
-    
+
     def Cholesky(self, ztol=1.0e-5):
         # Computes the upper triangular Cholesky factorization of
         # a positive definite matrix.
         res = matrix([[]])
         res.zero(self.dimx, self.dimx)
-        
+
         for i in range(self.dimx):
             S = sum([(res.value[k][i])**2 for k in range(i)])
             d = self.value[i][i] - S
@@ -111,13 +111,13 @@ class matrix:
                     S = 0.0
                 res.value[i][j] = (self.value[i][j] - S)/res.value[i][i]
         return res
-    
+
     def CholeskyInverse(self):
         # Computes inverse of matrix given its Cholesky upper Triangular
         # decomposition of matrix.
         res = matrix([[]])
         res.zero(self.dimx, self.dimx)
-        
+
         # Backward step for inverse.
         for j in reversed(range(self.dimx)):
             tjj = self.value[j][j]
@@ -126,12 +126,12 @@ class matrix:
             for i in reversed(range(j)):
                 res.value[j][i] = res.value[i][j] = -sum([self.value[i][k]*res.value[k][j] for k in range(i+1, self.dimx)])/self.value[i][i]
         return res
-    
+
     def inverse(self):
         aux = self.Cholesky()
         res = aux.CholeskyInverse()
         return res
-    
+
     def __repr__(self):
         return repr(self.value)
 
@@ -143,7 +143,7 @@ class matrix:
 def kalman_filter(x, P):
     for n in range(len(measurements)):
         z = matrix([[measurements[n]]])
-        
+
         # measurement update
         #print (H * x)
         #y = z - (H * x).value[0][0]
@@ -156,7 +156,7 @@ def kalman_filter(x, P):
         # prediction
         x = F * x + u
         P = F * P * F.transpose()
-        
+
     return x,P
 
 ############################################

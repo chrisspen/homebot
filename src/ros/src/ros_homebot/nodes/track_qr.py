@@ -26,63 +26,63 @@ class TrackQR:
     """
     Moves the head to track a QR code.
     """
-  
+
     def __init__(self):
-        
+
         rospy.init_node('track_qr')
-        
+
 #         assert_node_alive('head_arduino')
 #         assert_node_alive('qr_tracker')
 #         assert_node_alive('sound')
-        
+
         # Cleanup when termniating the node
         rospy.on_shutdown(self.shutdown)
-        
+
         self.target = rospy.get_param("~target", '')
         assert self.target, 'No target specified.'
-        
+
         self.rate = rospy.Rate(int(rospy.get_param("~rate", 60)))
-        
+
         self.pan_rate = Limiter(period=0.25)
-        
+
         self.tilt_rate = Limiter(period=1)
-        
+
         self._lock = RLock()
-        
+
         # The last QR code match received.
         self.last_match_msg = None
         self.last_match_time = None
-        
+
         # The last QR code that needs to be processed.
         self.unprocessed_match_msg = None
-        
+
         # How much we increment the pan angle to every N seconds.
         self.pan_angle_increment = 360/10.
-        
+
         # The current pan angle, as most recently updated.
         self.pan_angle = 0
-        
+
         self.tilt_angle = 0
-        
+
         self.stage = Stages.INITIALIZING
-        
+
         self.subscribe()
-        
+
         self.request_sensor_update()
-        
+
         self.set_qr_target(self.target)
-        
+
 #         rospy.spin()
         self.execute()
-    
+
     def subscribe(self):
-        
+
         subscribe_to_topic(c.HEAD, c.ID_PAN_ANGLE, self.on_pan_angle_update)
-        
+
         subscribe_to_topic(c.HEAD, c.ID_TILT_ANGLE, self.on_tilt_angle_update)
-        
+
         rospy.Subscriber('/qr_tracker/matches', Percept, self.on_qr_match)
-    
+
     def request_sensor_update(self):
 #         service_name = get_topic_name(c.HEAD, c.ID_FORCE_SENSORS)
 #         service_type = packet_to_service_type(c.ID_FORCE_SENSORS)
@@ -122,7 +122,7 @@ class TrackQR:
         t0 = time.time()
         while time.time() - t0 < timeout:
             get_service_proxy(c.HEAD, c.ID_PAN_ANGLE)(angle)
-             
+
             # Wait for response.
             for _ in range(10):
                 time.sleep(.1)
@@ -138,7 +138,7 @@ class TrackQR:
         t0 = time.time()
         while time.time() - t0 < timeout:
             get_service_proxy(c.HEAD, c.ID_TILT_ANGLE)(angle)
-            
+
             # Wait for response.
             for _ in range(10):
                 time.sleep(.1)
@@ -151,16 +151,16 @@ class TrackQR:
     def execute(self):
         say('Tracking started.')
         while not rospy.is_shutdown():
-            
+
             if self.stage == Stages.INITIALIZING:
-            
+
                 if self.pan_angle is None or self.tilt_angle is None:
                     print('waiting for sensors')
                 else:
                     self.stage = Stages.SEARCHING
-            
+
             elif self.stage == Stages.SEARCHING:
-                
+
                 # Slowly spin head 360 until QR found.
 #                 if self.pan_rate.ready():
 #                     print 'panning!'
@@ -173,12 +173,12 @@ class TrackQR:
                     self.stage = Stages.TRACKING
 #                 else:
 #                     print('no last_match_time')
-                
+
             elif self.stage == Stages.TRACKING:
-                
+
                 msg = self.pop_qr_match()
                 if msg:
-                    
+
                     # Find QR centerpoint.
                     x = []
                     y = []
@@ -188,7 +188,7 @@ class TrackQR:
                     x = sum(x)/float(len(x))
                     y = sum(y)/float(len(y))
     #                 print 'qr center:', x, y
-                    
+
                     # Move pan to center horizontally.
                     # 360->0 = counter clockwise = -1
                     # 0->360 = clockwise = +1
@@ -202,7 +202,7 @@ class TrackQR:
                             self.pan_angle += h_angle1 * 0.5
                             self.pan_angle = self.pan_angle % 360
                             self.set_pan_angle(self.pan_angle)
-                    
+
                     # Move tilt to center vertically.
                     # 0->180 = up
                     # 180->0 = down
@@ -216,38 +216,38 @@ class TrackQR:
                             self.tilt_angle += v_angle1 * 0.5
                             self.tilt_angle = min(max(self.tilt_angle, c.TILT_MIN), c.TILT_MAX)
                             self.set_tilt_angle(self.tilt_angle)
-                    
+
                 if self.last_match_time and (time.time() - self.last_match_time) > 5:
                     self.stage = Stages.SEARCHING
-                    say('Target lost.') 
-                
+                    say('Target lost.')
+
     #         desired_angle = self.pan_angle
-    #         
+    #
     #         while not self.server.is_preempt_requested():
     #             print 'Spinning head...'
-    #             
+    #
     #             # Increment angle.
     #             desired_angle += self.pan_angle_increment
     #             desired_angle %= 360
     #             self.set_pan_angle(desired_angle)
-    #             
+    #
     #             # Wait.
     #             time.sleep(1)
-    #             
+    #
     #         #self._as.publish_feedback(self._feedback)
     #         self.server.set_succeeded(self._result)
             self.rate.sleep()
 
     def shutdown(self):
         rospy.loginfo('Shutting down...')
-        
+
         # Stop QR tracker.
         rospy.ServiceProxy('/qr_tracker/stop', std_srvs.srv.Empty)()
-        
+
         # Stop all head motion.
         get_service_proxy(c.HEAD, c.ID_ALL_STOP)()
-        
+
         rospy.loginfo('Done.')
-        
+
 if __name__ == '__main__':
   TrackQR()

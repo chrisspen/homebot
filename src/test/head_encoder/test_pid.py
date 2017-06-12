@@ -34,4 +34,3 @@ for actual_pos, expected_pos, expected_speed in inputs:
     speed = round(speed, 0)
     print 'pos: %s -> %s, speed.expected %s, speed.actual: %s' % (expected_pos, actual_pos, expected_speed, speed)
     assert speed == expected_speed, 'Expected %s but calculated %s.' % (expected_speed, speed)
-    

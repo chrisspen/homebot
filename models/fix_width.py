@@ -18,5 +18,5 @@ def fix_size(diameter, nozzle=0.4):
     _diameter = Decimal(str(diameter))
     _nozzle = Decimal(str(nozzle))
     return floor(_diameter/_nozzle)*nozzle
-    
+
 print fix_size(float(sys.argv[1]))

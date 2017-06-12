@@ -4,7 +4,7 @@ Renders a 3d model showing the IMU readings.
 
     sudo apt-get install libglfw3*
     pip install vispy
-    
+
 """
 from __future__ import print_function
 
@@ -110,9 +110,9 @@ class IMUVisualizer(app.Canvas):
 
         rospy.init_node('imu_visualizer')
 #         assert_node_alive('torso_arduino')
-        
+
         rospy.Subscriber('imu/data_raw', Imu, self.on_imu)
-        
+
         # Cleanup when termniating the node
         rospy.on_shutdown(self.shutdown)
 
@@ -149,16 +149,16 @@ class IMUVisualizer(app.Canvas):
         self._timer = app.Timer('auto', connect=self.on_timer, start=True)
 
         self.show()
-        
+
         app.run()
-        
+
         rospy.signal_shutdown("Shutting done.")
         self.shutdown()
         print('Node shutdown.')
 
     def on_imu(self, msg):
 #         print('imu:', msg)
-        
+
         quaternion = (
             msg.orientation.x,
             msg.orientation.y,
@@ -170,12 +170,12 @@ class IMUVisualizer(app.Canvas):
         yaw = -euler[0]
         roll = -euler[1]
         pitch = euler[2]
-        
+
         # ROS uses radians, but vispy uses degrees.
         roll = roll*180/pi
         pitch = pitch*180/pi
         yaw = yaw*180/pi
-        
+
         # The yaw is absolute but may be centered to an arbitrary position,
         # so to use the current position as center, we record the initial yaw
         # and zero this out.
@@ -184,7 +184,7 @@ class IMUVisualizer(app.Canvas):
             self.yaw0 = yaw
         yaw -= self.yaw0
         yaw = yaw % 360
-        
+
 #         print('roll:', roll, 'pitch:', pitch, 'yaw:', yaw)
         self.yaw = yaw
         self.roll = roll
@@ -192,7 +192,7 @@ class IMUVisualizer(app.Canvas):
 
     # ---------------------------------
     def on_timer(self, event):
-        
+
 #         self.yaw += .5 # yaw
 #         self.roll += .5 # roll
 #         self.pitch += .5 # pitch
@@ -235,6 +235,6 @@ class IMUVisualizer(app.Canvas):
         rospy.loginfo('Shutting down...')
         self._timer.stop()
         rospy.loginfo('Done.')
-        
+
 if __name__ == '__main__':
     IMUVisualizer()

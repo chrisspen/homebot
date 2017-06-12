@@ -65,7 +65,7 @@ while (True):
         time.sleep(0.01)
 
     time.sleep(5)
-    
+
     print "\tSlow down..."
     for i in reversed(range(255)):
         myMotor.setSpeed(i)

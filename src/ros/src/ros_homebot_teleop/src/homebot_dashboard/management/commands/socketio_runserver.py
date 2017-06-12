@@ -17,8 +17,8 @@ from homebot_dashboard.server import Server, DEFAULT_PORT
 
 # DEFAULT_PORT = settings.DEFAULT_PORT
 # RELOAD = False
-# 
-# 
+#
+#
 # def reload_watcher():
 #     global RELOAD
 #     while True:
@@ -74,7 +74,7 @@ class Command(BaseCommand):
 
 #         if options.get('use_reloader'):
 #             start_new_thread(reload_watcher, ())
-# 
+#
 #         try:
 #             bind = (self.addr, int(self.port))
 #             print 'SocketIOServer running on %s:%s\n\n' % bind

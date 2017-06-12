@@ -26,10 +26,10 @@ def get_connections():
 
 @namespace('/echo')
 class EchoNamespace(BaseNamespace, BroadcastMixin):
-    
+
     def recv_connect(self):
         global thread, connections, _broadcaster
-        
+
         def background_thread():
             """Example of how to send server generated events to clients."""
             count = 0
@@ -37,21 +37,21 @@ class EchoNamespace(BaseNamespace, BroadcastMixin):
                 time.sleep(1)
                 count += 1
                 self.broadcast_event('update_count', {'count': count})
-                
+
         connections += 1
         if thread is None:
             _broadcaster = self
             thread = Thread(target=background_thread)
             thread.daemon = True
             thread.start()
-    
+
     def recv_disconnect(self):
         global connections
         connections -= 1
-    
+
     def call_method(self, method_name, packet, *args):
         print 'call_method:', method_name, packet, args
-        
+
         if hasattr(self, method_name):
             # Use override method.
             return super(EchoNamespace, self).call_method(method_name, packet, *args)
@@ -64,20 +64,20 @@ class EchoNamespace(BaseNamespace, BroadcastMixin):
                 packet_name = '_'.join(parts[2:])
                 packet_id = get_packet_id(packet_name)
                 node.publish_packet_write(device, packet_id, *args)
-    
+
     def on_head_reset(self, state=None):
         print 'head reset'
         rospy.ServiceProxy('/head_arduino/reset', std_srvs.srv.Empty)()
-    
+
     def on_torso_reset(self, state=None):
         print 'torso reset'
         rospy.ServiceProxy('/torso_arduino/reset', std_srvs.srv.Empty)()
-    
+
     def on_torso_shutdown(self, state=None):
         print 'shutdown:', state
         if node:
             node.publish_packet_write(c.NAME_TORSO, c.ID_SHUTDOWN, state)
-    
+
 #     def on_msg(self, msg):
 #         print '1'*80
 #         print 'msg:', msg
@@ -85,6 +85,6 @@ class EchoNamespace(BaseNamespace, BroadcastMixin):
 #                    name='msg',
 #                    args='Someone said: {0}'.format(msg),
 #                    endpoint=self.ns_name)
-# 
+#
 #         for sessid, socket in self.socket.server.sockets.iteritems():
 #             socket.send_packet(pkt)

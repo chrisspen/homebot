@@ -14,22 +14,22 @@ class SignalCallback:
 
 class Widget(object):
     """Base class for all PGU graphical objects.
-        
+
     Example - Creating your own Widget:
 
         class Draw(gui.Widget):
             def paint(self,s):
                 # Paint the pygame.Surface
                 return
-            
+
             def update(self,s):
                 # Update the pygame.Surface and return the update rects
                 return [pygame.Rect(0,0,self.rect.w,self.rect.h)]
-                
+
             def event(self,e):
                 # Handle the pygame.Event
                 return
-                
+
             def resize(self,width=None,height=None):
                 # Return the width and height of this widget
                 return 256,256
@@ -47,12 +47,12 @@ class Widget(object):
     _rect_content = None
     # A dictionary of signal callbacks, hashed by signal ID
     connects = None
-    
-    def __init__(self, **params): 
+
+    def __init__(self, **params):
         """Create a new Widget instance given the style parameters.
 
         Keyword arguments:
-            decorate -- whether to call theme.decorate(self) to allow the 
+            decorate -- whether to call theme.decorate(self) to allow the
                 theme a chance to decorate the widget. (default is true)
             style -- a dict of style parameters.
             x, y -- position parameters
@@ -62,8 +62,8 @@ class Widget(object):
             color -- the color property, if applicable
             background -- the widget used to paint the background
             cls -- class name as used by Theme
-            name -- name of widget as used by Form.  If set, will call 
-                form.add(self,name) to add the widget to the most recently 
+            name -- name of widget as used by Form.  If set, will call
+                form.add(self,name) to add the widget to the most recently
                 created Form.
             focusable -- True if this widget can receive focus via Tab, etc.
                 (default is True)
@@ -71,31 +71,31 @@ class Widget(object):
             value -- initial value
 
         """
-        #object.Object.__init__(self) 
+        #object.Object.__init__(self)
         self.connects = {}
         params.setdefault('decorate',True)
         params.setdefault('style',{})
         params.setdefault('focusable',True)
         params.setdefault('disabled',False)
-        
+
         self.focusable = params['focusable']
         self.disabled = params['disabled']
-        
+
         self.rect = pygame.Rect(params.get('x',0),
                                 params.get('y',0),
                                 params.get('width',0),
                                 params.get('height',0))
-        
+
         s = params['style']
         #some of this is a bit "theme-ish" but it is very handy, so these
         #things don't have to be put directly into the style.
         for att in ('align','valign','x','y','width','height','color','font','background'):
             if att in params: s[att] = params[att]
         self.style = style.Style(self,s)
-        
+
         self.cls = 'default'
         if 'cls' in params: self.cls = params['cls']
-        if 'name' in params:    
+        if 'name' in params:
             from . import form
             self.name = params['name']
             if form.Form.form:
@@ -103,7 +103,7 @@ class Widget(object):
                 self.form = form.Form.form
         if 'value' in params: self.value = params['value']
         self.pcls = ""
-        
+
         if params['decorate'] != False:
             if (not pguglobals.app):
                 # TODO - fix this somehow
@@ -113,11 +113,11 @@ class Widget(object):
 
     def focus(self):
         """Focus this Widget."""
-        if self.container: 
+        if self.container:
             if self.container.myfocus != self:  ## by Gal Koren
                 self.container.focus(self)
 
-    def blur(self): 
+    def blur(self):
         """Blur this Widget."""
         if self.container: self.container.blur(self)
 
@@ -152,13 +152,13 @@ class Widget(object):
 
     def chsize(self):
         """Signal that this widget has changed its size."""
-        
-        if (not self._painted): 
+
+        if (not self._painted):
             return
-        
-        if (not self.container): 
+
+        if (not self.container):
             return
-        
+
         if (pguglobals.app):
             pguglobals.app.chsize()
 
@@ -169,7 +169,7 @@ class Widget(object):
 
         """
         return
-        
+
     def paint(self,s):
         """Render this widget onto the given surface
 
@@ -178,7 +178,7 @@ class Widget(object):
         """
         return
 
-    def repaint(self): 
+    def repaint(self):
         """Request a repaint of this Widget."""
         if self.container: self.container.repaint(self)
 
@@ -186,27 +186,27 @@ class Widget(object):
         """Request a repaint of all Widgets."""
         if self.container: self.container.repaintall()
 
-    def reupdate(self): 
+    def reupdate(self):
         """Request a reupdate of this Widget."""
         if self.container: self.container.reupdate(self)
 
-    def next(self): 
+    def next(self):
         """Pass focus to next Widget.
-        
+
         Widget order determined by the order they were added to their container.
 
         """
         if self.container: self.container.next(self)
 
-    def previous(self): 
+    def previous(self):
         """Pass focus to previous Widget.
-        
+
         Widget order determined by the order they were added to their container.
 
         """
-        
+
         if self.container: self.container.previous(self)
-    
+
     def get_abs_rect(self):
         """Returns the absolute rect of this widget on the App screen."""
         x, y = self.rect.x, self.rect.y
@@ -222,25 +222,25 @@ class Widget(object):
 
     def connect(self,code,func,*params):
         """Connect an event code to a callback function.
-        
+
         Note that there may be multiple callbacks per event code.
 
         Arguments:
             code -- event type
             fnc -- callback function
-            *values -- values to pass to callback.  
+            *values -- values to pass to callback.
 
-        Please note that callbacks may also have "magicaly" parameters.  
+        Please note that callbacks may also have "magicaly" parameters.
         Such as:
 
             _event -- receive the event
             _code -- receive the event code
             _widget -- receive the sending widget
-        
+
         Example:
             def onclick(value):
                 print 'click', value
-            
+
             w = Button("PGU!")
             w.connect(gui.CLICK,onclick,'PGU Button Clicked')
 
@@ -297,10 +297,10 @@ class Widget(object):
 
             # If the function is bound to an instance, remove the first argument name. Again
             # we keep compatibility with older versions of python.
-            if (hasattr(func, "__self__") and hasattr(func.__self__, "__class__") or 
-                hasattr(func,'im_class')): 
+            if (hasattr(func, "__self__") and hasattr(func.__self__, "__class__") or
+                hasattr(func,'im_class')):
                 names.pop(0)
-            
+
             args = []
             magic = {'_event':event,'_code':code,'_widget':self}
             for name in names:
@@ -312,18 +312,18 @@ class Widget(object):
                     break
             args.extend(values)
             func(*args)
-    
+
     def _event(self,e):
         if self.disabled: return
         self.send(e.type,e)
         return self.event(e)
-        
+
     def event(self,e):
         """Called when an event is passed to this object.
-        
+
         Please note that if you use an event, returning the value True
         will stop parent containers from also using the event.  (For example, if
-        your widget handles TABs or arrow keys, and you don't want those to 
+        your widget handles TABs or arrow keys, and you don't want those to
         also alter the focus.)
 
         This should be implemented by a subclass.

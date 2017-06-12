@@ -22,7 +22,7 @@ def reload_watcher():
         sleep(5)
 
 class Server(object):
-    
+
     def __init__(self, addr='', port=DEFAULT_PORT, **kwargs):
         self.addr = ''
         self.port = port
@@ -30,7 +30,7 @@ class Server(object):
         self.insecure_serving = kwargs.pop('insecure_serving', False)
         self.use_reloader = kwargs.pop('use_reloader', False)
         self.use_psyco = kwargs.pop('use_psyco', True)
-        
+
         self.server = None
 
     def stop(self):
@@ -51,9 +51,9 @@ class Server(object):
                 (use_static_handler and insecure_serving)):
             handler = StaticFilesHandler(handler)
         return handler
-        
+
     def run(self):
-        
+
 #         if not addrport:
 #             self.addr = ''
 #             self.port = DEFAULT_PORT

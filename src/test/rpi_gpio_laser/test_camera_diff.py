@@ -14,12 +14,12 @@ def only_red(im):
     data = np.array(im)   # "data" is a height x width x 4 numpy array
     red, green, blue, alpha = data.T # Temporarily unpack the bands for readability
     #red, green, blue = data.T # Temporarily unpack the bands for readability
-    
+
     # Replace all non-red areas with black
     #red_areas = red#(red < blue) & (red < green)
     #data[..., :-1][red_areas.T] = (255, 0, 0) # Transpose back needed
     #data[..., :-1][red_areas.T] = (0, 0, 0) # Transpose back needed
-    
+
     im2 = Image.fromarray(red.T)
     return im2
 

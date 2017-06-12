@@ -19,24 +19,24 @@ class ArduinoSatchel(Satchel):
     """
 
     name = 'arduino'
-    
+
     def set_defaults(self):
         # Find most recent version at https://www.arduino.cc/en/Main/Software
         #self.env.version = '1.6.1'
         self.env.version = '1.8.2'
-        
+
         # This is the 1.5.* location.
         #self.env.base_variants_dir = '/usr/share/arduino/hardware/arduino/variants'
         # This is the 1.8.* location.
         self.env.base_variants_dir = '/usr/share/arduino/hardware/arduino/avr/variants'
-        
+
         # This is the 1.5.* location.
         #self.env.boards_path = '/usr/share/arduino/hardware/arduino/boards.txt'
         # This is the 1.8.* location.
         self.env.boards_path = '/usr/share/arduino/hardware/arduino/avr/boards.txt'
-    
+
         self.env.sketchbook_path = '~/Arduino'
-    
+
     @property
     def packager_system_packages(self):
         return {
@@ -56,29 +56,29 @@ class ArduinoSatchel(Satchel):
                 'ros-kinetic-rosserial-python',
             ],
         }
-    
+
     @task
     def install(self):
         r = self.local_renderer
-        
+
         # Note, we have to install arduino-core (which is an ancient obsolute version of Arduino IDE)
         # because it's required by rosserial-arduino.
         # However, we have to delete everything it installs to /usr/share/arduino,
         # otherwise it break Arduino-Makefile.
         self.install_packages()
-        
+
         # Setup the Arduino IDE.
         # http://wiki.ros.org/rosserial_arduino/Tutorials/Arduino%20IDE%20Setup
         r.env.setup_path = os.path.abspath('./src/ros/setup.bash')
         r.run('. {setup_path}; '
             'cd {sketchbook_path}; mkdir libraries; cd libraries; rm -rf ros_lib; '
             'rosrun rosserial_arduino make_libraries.py .')
-        
+
         # Install Arduino-Makefile
         r.run('cd /tmp; [ -d Arduino-Makefile ] && rm -Rf Arduino-Makefile || true; '
             'git clone git@github.com:sudar/Arduino-Makefile.git; '
             'sudo mkdir -p /usr/share/arduino; sudo cp -R ./Arduino-Makefile/* /usr/share/arduino/')
-        
+
         # Determine target architecture.
         arch = (r.run('uname -m') or '').strip() or 'x86_64'
         if arch == 'x86_64':
@@ -87,11 +87,11 @@ class ArduinoSatchel(Satchel):
             r.env.fname = 'linuxarm'
         else:
             raise NotImplementedError('Unknown architecture: %s' % arch)
-        
+
         # Download and install Arduino IDE.
         r.run('cd /tmp; wget https://www.arduino.cc/download.php?f=/arduino-{version}-{fname}.tar.xz -O arduino.tar.xz; tar -xJf arduino.tar.xz')
         r.sudo('cp -R /tmp/arduino-{version}/* /usr/share/arduino')
-        
+
         # Install Arduino IDE support files for Arduino Uno*Pro.
         if not r.file_contains(r.env.boards_path, 'Arduino Uno*Pro'):
             r.append(filename=r.env.boards_path, text='''
@@ -124,33 +124,33 @@ uno_pro.build.variant=uno_pro
         r.sudo('mkdir -p {base_variants_dir}/uno_pro')
         path = self.find_template('arduino/pins_arduino.h')
         r.put(local_path=path, remote_path='{base_variants_dir}/uno_pro/pins_arduino.h', use_sudo=True)
-        
+
         # Symlink our custom libraries to the sketchbook.
         # Note, our sketchbook path must match USER_LIB_PATH in the Makefile.
         #TODO:remove this when support for multiple custom library paths is supported by Arduino-Makefile
         r.env.libpath = os.path.abspath('src/ros/src/ros_homebot/src/firmware/torso2/Adafruit_BNO055')
         r.run('[ ! -e {sketchbook_path}/libraries/Adafruit_BNO055 ] && ln -s {libpath} {sketchbook_path}/libraries/ || true')
-    
+
     @task
     def uninstall(self):
         r = self.local_renderer
         r.sudo('rm -Rf /usr/share/arduino')
         #r.sudo("sed -i '/^uno_pro/d' {boards_path}")
         #r.sudo('rm -f {base_variants_dir}/uno_pro/pins_arduino.h')
-    
+
     @task(precursors=['packager', 'user', 'ros'])
     def configure(self):
         r = self.local_renderer
-        
+
         # Install Arduino from repo.
         self.install_packages()
-        
+
         # Allow user to upload code to arduino.
         r.sudo('usermod -a -G dialout $USER')
-        
+
         # Install Arduino IDE, makefile and other utilities.
         self.install()
-        
+
         # Fixes error avrdude.conf not found.
         r.sudo('mkdir -p /usr/share/arduino/hardware/tools/avr/etc')
         with settings(warn_only=True):

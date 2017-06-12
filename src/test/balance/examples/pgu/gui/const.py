@@ -35,7 +35,7 @@ OPEN = pygame.locals.USEREVENT + 6
 CLOSE = pygame.locals.USEREVENT + 7
 INIT = 'init'
 
-class NOATTR: 
+class NOATTR:
     pass
 
 

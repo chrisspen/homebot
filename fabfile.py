@@ -26,13 +26,13 @@ from satchels import ros, homebot, arduino
 def deploy_cura():
     """
     Updates files for the Printrbot manager. e.g.
-    
+
         fab printer deploy_cura
     """
-    
+
     # Ensure our 3d configuration options are up-to-date.
     run_or_dryrun('mkdir -p ~/git; cd ~/git; git clone https://github.com/chrisspen/3d-printer-profiles.git; cd 3d-printer-profiles; git pull')
-    
+
     # Ensure our 3d models are up-to-date.
     sudo_or_dryrun('mkdir -p %(project_home)s/models/printable' % env)
     sudo_or_dryrun('chown -R %(user)s:%(user)s %(project_home)s' % env)

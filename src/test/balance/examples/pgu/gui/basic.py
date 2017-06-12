@@ -12,7 +12,7 @@ def parse_color(desc):
         # Already a color
         return desc
     elif (desc and desc[0] == "#"):
-        # Because of a bug in pygame 1.8.1 we need to explicitly define the 
+        # Because of a bug in pygame 1.8.1 we need to explicitly define the
         # alpha value otherwise it will default to transparent.
         if (len(desc) == 7):
             desc += "FF"
@@ -37,12 +37,12 @@ class Spacer(widget.Widget):
     def __init__(self,width,height,**params):
         params.setdefault('focusable',False)
         widget.Widget.__init__(self,width=width,height=height,**params)
-        
+
 
 class Color(widget.Widget):
     """A widget that renders as a solid block of color.
-    
-    Note the color can be changed by setting the 'value' field, and the 
+
+    Note the color can be changed by setting the 'value' field, and the
     widget will automatically be repainted, eg:
 
         c = Color()
@@ -52,12 +52,12 @@ class Color(widget.Widget):
     """
 
     _value = None
-    
+
     def __init__(self,value=None,**params):
         params.setdefault('focusable',False)
         if value != None: params['value']=value
         widget.Widget.__init__(self,**params)
-    
+
     def paint(self,s):
         if hasattr(self,'value'): s.fill(self.value)
 
@@ -76,7 +76,7 @@ class Color(widget.Widget):
             # Emit a change signal
             self.send(CHANGE)
             self.repaint()
-    
+
 
 class Label(widget.Widget):
     """A text label widget."""
@@ -88,7 +88,7 @@ class Label(widget.Widget):
         self.value = value
         self.font = self.style.font
         self.style.width, self.style.height = self.font.size(self.value)
-    
+
     def paint(self,s):
         """Renders the label onto the given surface in the upper-left corner."""
         s.blit(self.font.render(self.value, 1, self.style.color),(0,0))
@@ -118,22 +118,22 @@ class Image(widget.Widget):
         params.setdefault('focusable',False)
         widget.Widget.__init__(self,**params)
         if type(value) == str: value = pygame.image.load(value)
-        
+
         ow,oh = iw,ih = value.get_width(),value.get_height()
         sw,sh = self.style.width,self.style.height
-        
+
         if sw and not sh:
             iw,ih = sw,ih*sw/iw
         elif sh and not sw:
             iw,ih = iw*sh/ih,sh
         elif sw and sh:
             iw,ih = sw,sh
-        
+
         if (ow,oh) != (iw,ih):
             value = pygame.transform.scale(value,(iw,ih))
         self.style.width,self.style.height = iw,ih
         self.value = value
-    
+
     def paint(self,s):
         s.blit(self.value,(0,0))
 

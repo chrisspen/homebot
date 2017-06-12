@@ -39,25 +39,25 @@ def calculate_distance(measurements, max_height, vert_fov_deg=41.41, ro=-0.21):
     #Horizontal field of view     53.50 +/- 0.13 degrees
     #Vertical field of view     41.41 +/- 0.11 degress
     h = 22.5 # distance between laser and camera in mm
-    
+
     # D = h/tan(theta)
     # theta = pfc*rpc + ro
-    
+
     # pfc = ? # number of pixels from center of focal plane
     # Calculated per pixel.
-    
+
     # rpc = ? # radians per pixel pitch
     # 180 deg=pi rad
     rpc = (vert_fov_deg*pi/180.)/max_height
-    
+
     # ro = ? # radian offset (compensates for alignment errors)
-    
-    D_lst = [] 
+
+    D_lst = []
     for laser_row_i in measurements:
         pfc = abs(laser_row_i - max_height)
         D = h/tan(pfc*rpc + ro)
         D_lst.append(D)
-        
+
     return D_lst
 
 def compress_list(lst, bins=10):

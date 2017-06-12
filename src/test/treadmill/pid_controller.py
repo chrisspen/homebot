@@ -16,20 +16,20 @@
 #
 # Only modify code at the bottom!
 # ------------
- 
+
 from math import *
 import random
 
 
 # ------------------------------------------------
-# 
+#
 # this is the robot class
 #
 
 class robot:
 
     # --------
-    # init: 
+    # init:
     #    creates robot and initializes location/orientation to 0, 0, 0
     #
 
@@ -125,7 +125,7 @@ def run(param1, param2, param3):
     speed = 1.0 # motion distance is equal to speed (we assume time = 1)
     N = 300
     #myrobot.set_steering_drift(10.0 / 180.0 * pi) # 10 degree bias, this will be added in by the move function, you do not need to add it below!
-    
+
     tau_p = param1
     tau_d = param2
     tau_i = param3

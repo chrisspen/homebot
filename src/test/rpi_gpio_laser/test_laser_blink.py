@@ -16,23 +16,22 @@ GPIO.output(LASER_EN_PIN, GPIO.LOW) # Lasert off
 
 # def cleanup():
 #     GPIO.cleanup()
-# 
+#
 # atexit.register(cleanup)
 
 try:
     while 1:
-        
+
         # Turn on laser.
         print 'D'
         GPIO.output(LASER_EN_PIN, GPIO.HIGH)
-        
+
         time.sleep(1)
-        
+
         # Turn off laser.
         print 'E'
         GPIO.output(LASER_EN_PIN, GPIO.LOW)
-        
+
         time.sleep(1)
 except KeyboardInterrupt:
     GPIO.cleanup()
-    

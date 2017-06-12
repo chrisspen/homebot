@@ -44,7 +44,7 @@ IMU_CALIBRATION_FN = 'imu_calibration.pickle'
 def ltof(values):
     """
     Converts the special integer-encoded doubles back into Python floats.
-    
+
     See the Arduino's equivalent ftol().
     """
     assert isinstance(values, (tuple, list))
@@ -55,37 +55,37 @@ def ltof(values):
 # http://wiki.ros.org/navigation/Tutorials/RobotSetup/Odom
 # http://answers.ros.org/question/79851/python-odometry/
 class TorsoRelay:
-  
+
     diagnostics_prefix = 'Torso Arduino'
-    
+
     cache_dir = '~/.homebot_cache/torso_relay'
-    
+
     # Covariance
     #P = np.mat(np.diag([0.0]*3))
-  
+
     def __init__(self):
         rospy.init_node('torso_relay')
-        
+
         self._imu_data = {}
-        
+
         self._lock = threading.RLock()
-        
+
         self.imu_calibration_loaded = False
-        
+
         self.diagnostics_msg_count = 0
-        
+
         # http://wiki.ros.org/tf/Tutorials/Writing%20a%20tf%20broadcaster%20%28Python%29
         self.tf_br = tf.TransformBroadcaster()
         #self.tf2_br = tf2_ros.TransformBroadcaster()
-        
+
         #rospy.Service('~reset_odometry', Empty, self.reset_odometry)
 
         ## Publishers.
 
         self.diagnostics_pub = rospy.Publisher('/diagnostics', DiagnosticArray, queue_size=10)
-        
+
         self.odometry_pub = rospy.Publisher('/odom', Odometry, queue_size=10)
-        
+
         self.imu_calibration_load_pub = rospy.Publisher('/torso_arduino/imu/calibration/load', UInt16MultiArray, queue_size=1)
 
         self.imu_pub = rospy.Publisher('imu/data_raw', Imu, queue_size=10)
@@ -93,17 +93,17 @@ class TorsoRelay:
         ## Subscribers.
 
         rospy.Subscriber('/torso_arduino/diagnostics_relay', String, self.on_diagnostics_relay)
-        
+
         rospy.Subscriber('/torso_arduino/imu/calibration/save', UInt16MultiArray, self.on_imu_calibration_save)
-        
+
         rospy.Subscriber('/torso_arduino/imu_relay', String, self.on_imu_relay)
-        
+
         rospy.Subscriber('/torso_arduino/odometry_relay', String, self.on_odometry_relay)
-        
+
         ## Begin IO.
-        
+
         rospy.spin()
-    
+
     @property
     def imu_calibration_filename(self):
         cache_dir = self.cache_dir
@@ -112,13 +112,13 @@ class TorsoRelay:
             os.makedirs(cache_dir)
         fn = os.path.join(cache_dir, IMU_CALIBRATION_FN)
         return fn
-        
+
     def load_imu_calibration(self):
         """
         Automatically called once after the first diagnostic message is received.
-        
+
         Per Adafruit's documentation:
-        
+
         "One thing to keep in mind though is that the sensor isn't necessarily 'plug and play' with
         loading the calibration data, in particular the magnetometer needs to be recalibrated even if
         the offsets are loaded. The magnetometer calibration is very dynamic so saving the values
@@ -153,24 +153,24 @@ class TorsoRelay:
     def on_imu_relay(self, msg):
         #print('imu_relay.msg:', msg)
         parts = msg.data.split(':')
-        
+
         # Validate type.
         typ = parts[0]
         assert typ in 'aeg', 'Invalid typ: %s' % typ
-        
+
         # Conver the integers to the original floats.
         nums = ltof(parts[1:])
         for num, axis in zip(nums, 'xyz'):
             self._imu_data['%s%s' % (typ, axis)] = num
         #print('imu_data:', self._imu_data)
-        
+
         # If we've received the final segment, re-publish the complete IMU message.
         if typ == 'a':
             imu_msg = Imu()
             imu_msg.header = Header()
             imu_msg.header.stamp = rospy.Time.now()
             imu_msg.header.frame_id = c.BASE_LINK
-            
+
             # Our sensor returns Euler angles in degrees, but ROS requires radians.
             # http://answers.ros.org/question/69754/quaternion-transformations-in-python/
             roll = self._imu_data['ex']
@@ -181,11 +181,11 @@ class TorsoRelay:
             imu_msg.orientation.y = quaternion[1]
             imu_msg.orientation.z = quaternion[2]
             imu_msg.orientation.w = quaternion[3]
-            
+
             imu_msg.angular_velocity.x = self._imu_data['gx']
             imu_msg.angular_velocity.y = self._imu_data['gy']
             imu_msg.angular_velocity.z = self._imu_data['gz']
-            
+
             imu_msg.linear_acceleration.x = self._imu_data['ax']
             imu_msg.linear_acceleration.y = self._imu_data['ay']
             imu_msg.linear_acceleration.z = self._imu_data['az']
@@ -200,27 +200,27 @@ class TorsoRelay:
         """
         #print('diagnostics.msg:', msg)
         self.diagnostics_msg_count += 1
-        
+
         if not self.imu_calibration_loaded:
             self.load_imu_calibration()
             self.imu_calibration_loaded = True
-        
+
         # Extract parts.
         parts = msg.data.split(':')
         if len(parts) < 2:
             print('Malformed diagnostics message.', file=sys.stderr)
             return
-        
+
         # Complete name part.
         name = '%s: %s' % (self.diagnostics_prefix, parts[0].strip())
-        
+
         # Complete level part.
         try:
             level = int(parts[1]) # OK|WARN|ERROR|STALE
             assert level in range(4)
         except (TypeError, ValueError, AssertionError) as exc:
             print('Malformed level: %s' % parts[1])
-            
+
         # Complete message part.
         message = ''
         if len(parts) >= 3:
@@ -230,7 +230,7 @@ class TorsoRelay:
         if not message:
             # If not given, default the message to the name equivalent of the level.
             message = status_id_to_name.get(level, '')
-        
+
         # Construct and send diagnostics array.
         # http://docs.ros.org/api/diagnostic_msgs/html/msg/DiagnosticStatus.html
         array = DiagnosticArray()
@@ -240,21 +240,21 @@ class TorsoRelay:
         self.diagnostics_pub.publish(array)
 
     def on_odometry_relay(self, msg):
-        
+
         print('odometry.msg:', msg)
-        
+
         parts = msg.data.split(':')
         if len(parts) < 5:
             print('Malformed odometry message.', file=sys.stderr)
             return
-        
+
         # Validate type.
         typ = parts[0]
         assert typ in (V0, V1), 'Invalid type: %s' % typ
-        
+
         # Validate numbers.
         nums = ltof(parts[1:])
-        
+
         # Save type parts.
         if typ == V0:
             # Position.
@@ -264,7 +264,7 @@ class TorsoRelay:
             # Velocity.
             # vx,vy,vz,vth
             self._odometry_v1 = nums
-        
+
         # Combine and publish a complete odometry message on the receipt of the last part.
         if typ == V1:
             current_time = rospy.Time.now()
@@ -286,7 +286,7 @@ class TorsoRelay:
             msg.twist.twist.linear.x = vx
             msg.twist.twist.linear.y = vy
             msg.twist.twist.angular.z = vth
-        
+
             # publish the odometry message
             self.odometry_pub.publish(msg)
 
@@ -295,7 +295,7 @@ class TorsoRelay:
                 msg.pose.pose.position.y,
                 msg.pose.pose.position.z,
             )
-            
+
             ori = (
                 msg.pose.pose.orientation.x,
                 msg.pose.pose.orientation.y,
@@ -313,7 +313,7 @@ class TorsoRelay:
 #             odom_trans.transform.translation.y = self.y
 #             odom_trans.transform.translation.z = self.z
 #             odom_trans.transform.rotation = odom_quat
-        
+
             # send the transform
             self.tf_br.sendTransform(pos, ori, msg.header.stamp, msg.child_frame_id, msg.header.frame_id)
             #self.tf2_br.sendTransform(odom_trans)
