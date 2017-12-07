@@ -16,6 +16,8 @@ from burlap.decorators import task
 class ArduinoSatchel(Satchel):
     """
     Installs the Arduino IDE and dependencies.
+
+    Note, this satchel depends on the ROS satchel, and extends it.
     """
 
     name = 'arduino'
@@ -23,7 +25,7 @@ class ArduinoSatchel(Satchel):
     def set_defaults(self):
         # Find most recent version at https://www.arduino.cc/en/Main/Software
         #self.env.version = '1.6.1'
-        self.env.version = '1.8.2'
+        self.env.version = '1.8.3'
 
         # This is the 1.5.* location.
         #self.env.base_variants_dir = '/usr/share/arduino/hardware/arduino/variants'
@@ -35,7 +37,7 @@ class ArduinoSatchel(Satchel):
         # This is the 1.8.* location.
         self.env.boards_path = '/usr/share/arduino/hardware/arduino/avr/boards.txt'
 
-        self.env.sketchbook_path = '~/Arduino'
+        self.env.sketchbook_path = '/home/{user}/sketchbook'
 
     @property
     def packager_system_packages(self):
@@ -61,22 +63,19 @@ class ArduinoSatchel(Satchel):
     def install(self):
         r = self.local_renderer
 
-        # Note, we have to install arduino-core (which is an ancient obsolute version of Arduino IDE)
-        # because it's required by rosserial-arduino.
-        # However, we have to delete everything it installs to /usr/share/arduino,
-        # otherwise it break Arduino-Makefile.
-        self.install_packages()
-
         # Setup the Arduino IDE.
         # http://wiki.ros.org/rosserial_arduino/Tutorials/Arduino%20IDE%20Setup
-        r.env.setup_path = os.path.abspath('./src/ros/setup.bash')
-        r.run('. {setup_path}; '
-            'cd {sketchbook_path}; mkdir libraries; cd libraries; rm -rf ros_lib; '
-            'rosrun rosserial_arduino make_libraries.py .')
+        # Do this instead in each Arduino project's ./lib directory.
+        #r.run('. {ros_source_path}; '
+            #'cd {sketchbook_path}; mkdir libraries; cd libraries; rm -rf ros_lib; '
+            #'rosrun rosserial_arduino make_libraries.py .')
+
+        # Clear the old Arduino IDE installed by the obsolete arduino package, which is unfortunately required by the rosserial-arduino package.
+        r.sudo('rm -Rf /usr/share/arduino/*')
 
         # Install Arduino-Makefile
         r.run('cd /tmp; [ -d Arduino-Makefile ] && rm -Rf Arduino-Makefile || true; '
-            'git clone git@github.com:sudar/Arduino-Makefile.git; '
+            'git clone https://github.com/sudar/Arduino-Makefile.git; '
             'sudo mkdir -p /usr/share/arduino; sudo cp -R ./Arduino-Makefile/* /usr/share/arduino/')
 
         # Determine target architecture.
@@ -128,8 +127,16 @@ uno_pro.build.variant=uno_pro
         # Symlink our custom libraries to the sketchbook.
         # Note, our sketchbook path must match USER_LIB_PATH in the Makefile.
         #TODO:remove this when support for multiple custom library paths is supported by Arduino-Makefile
-        r.env.libpath = os.path.abspath('src/ros/src/ros_homebot/src/firmware/torso2/Adafruit_BNO055')
-        r.run('[ ! -e {sketchbook_path}/libraries/Adafruit_BNO055 ] && ln -s {libpath} {sketchbook_path}/libraries/ || true')
+        #lib_paths = [
+            #'src/ros/src/ros_homebot/src/firmware/head2/lib',
+            #'src/ros/src/ros_homebot/src/firmware/torso2/lib',
+        #]
+        #for lib_path in lib_paths:
+            #for lib_name in os.listdir(lib_path):
+                #fq_lib_name = os.path.join(r.genv.project_home, lib_path, lib_name)
+                #r.env.fq_lib_name = fq_lib_name
+                #r.env.lib_name = lib_name
+                #r.run('[ ! -e {sketchbook_path}/libraries/{lib_name} ] && ln -s {fq_lib_name} {sketchbook_path}/libraries/ || true')
 
     @task
     def uninstall(self):
@@ -138,11 +145,20 @@ uno_pro.build.variant=uno_pro
         #r.sudo("sed -i '/^uno_pro/d' {boards_path}")
         #r.sudo('rm -f {base_variants_dir}/uno_pro/pins_arduino.h')
 
+    @task
+    def init_sketchbook(self):
+        r = self.local_renderer
+        r.run('mkdir -p ~/sketchbook/libraries')
+
     @task(precursors=['packager', 'user', 'ros'])
     def configure(self):
         r = self.local_renderer
 
         # Install Arduino from repo.
+        # Note, we have to install arduino-core (which is an ancient obsolute version of Arduino IDE)
+        # because it's required by rosserial-arduino.
+        # However, we have to delete everything it installs to /usr/share/arduino,
+        # otherwise it break Arduino-Makefile.
         self.install_packages()
 
         # Allow user to upload code to arduino.
@@ -154,7 +170,7 @@ uno_pro.build.variant=uno_pro
         # Fixes error avrdude.conf not found.
         r.sudo('mkdir -p /usr/share/arduino/hardware/tools/avr/etc')
         with settings(warn_only=True):
-            r.sudo('ln -s /usr/share/arduino/hardware/tools/avrdude.conf '
-                '/usr/share/arduino/hardware/tools/avr/etc/')
+            r.sudo('[ ! -e /usr/share/arduino/hardware/tools/avr/etc/avrdude.conf ] && '
+                'ln -s /usr/share/arduino/hardware/tools/avrdude.conf /usr/share/arduino/hardware/tools/avr/etc/ || true')
 
 arduino = ArduinoSatchel()

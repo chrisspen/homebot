@@ -2,7 +2,7 @@ import os
 
 from burlap.constants import *
 from burlap import ServiceSatchel
-from burlap.decorators import task
+from burlap.decorators import task, runs_once
 from burlap.trackers import FilesystemTracker, SettingsTracker
 
 class HomebotSatchel(ServiceSatchel):
@@ -52,9 +52,11 @@ class HomebotSatchel(ServiceSatchel):
         self.env.upstart_name = self.name
 
         self.env.upstart_user = self.env.user
+        
+        self.env.auto_upload_firmware = False
 
     def get_trackers(self):
-        return [
+        parts = [
 
             SettingsTracker(
                 satchel=self,
@@ -81,13 +83,37 @@ class HomebotSatchel(ServiceSatchel):
                 action=self.update_settings),
 
             FilesystemTracker(
+                base_dir='src/ros/src/ros_homebot/src/firmware/head2', extensions='*.ino *.h *.cpp',
+                action=self.make_firmware_head2),
+
+            FilesystemTracker(
+                base_dir='src/ros/src/ros_homebot/src/firmware/torso2', extensions='*.ino *.h *.cpp',
+                action=self.make_firmware_torso2),
+
+            FilesystemTracker(
                 base_dir='src/ros/src', extensions='*.py *.launch *.action *.yaml',
                 action=self.deploy_code),
 
             FilesystemTracker(
                 base_dir='roles', extensions='apt-requirements.txt pip-requirements.txt',
                 action=self.pip_install),
+        ]
 
+        if self.env.auto_upload_firmware:
+            
+            parts.extend([
+
+                FilesystemTracker(
+                    base_dir='src/ros/src/ros_homebot/src/firmware/head2', extensions='*.ino *.h *.cpp',
+                    action=self.upload_firmware_head2),
+
+                FilesystemTracker(
+                    base_dir='src/ros/src/ros_homebot/src/firmware/torso2', extensions='*.ino *.h *.cpp',
+                    action=self.upload_firmware_torso2),
+
+            ])
+
+        parts.extend([
             SettingsTracker(
                 satchel=self,
                 names='upstart_setup upstart_launch upstart_name upstart_user',
@@ -97,7 +123,41 @@ class HomebotSatchel(ServiceSatchel):
 
             #TODO:Rebuild C/C++ ROS nodes.
             #r.run('cd {project_dir}/src/ros; . ./setup.bash; catkin_make')
-        ]
+        ])
+
+        return parts
+
+    @task
+    def make_firmware_head2(self):
+        """
+        Cross-compiles the head Arduino firmware locally.
+        """
+        r = self.local_renderer
+        r.local('cd {project_dir}/src/ros/src/ros_homebot/src/firmware/head2; make')
+
+    @task
+    def make_firmware_torso2(self):
+        """
+        Cross-compiles the torso Arduino firmware locally.
+        """
+        r = self.local_renderer
+        r.local('cd {project_dir}/src/ros/src/ros_homebot/src/firmware/torso2; make')
+
+    @task
+    def upload_firmware_head2(self):
+        """
+        Uploads the previously cross-compiled firmware to the head Arduino.
+        """
+        r = self.local_renderer
+        r.run('cd {project_dir}/src/ros/src/ros_homebot/src/firmware/head2; make upload')
+
+    @task
+    def upload_firmware_torso2(self):
+        """
+        Uploads the previously cross-compiled firmware to the head Arduino.
+        """
+        r = self.local_renderer
+        r.run('cd {project_dir}/src/ros/src/ros_homebot/src/firmware/torso2; make upload')
 
     @task
     def reboot(self, *args, **kwargs):
@@ -206,6 +266,7 @@ class HomebotSatchel(ServiceSatchel):
             '--exclude=setup_local.bash '
             '--delete --rsh "ssh -t -o StrictHostKeyChecking=no -i {key_filename}" '
             'src {user}@{host_string}:{project_dir}')
+            #'--exclude=build-* '
 
         #TODO:remove once lib stable
 #         r.local('rsync --recursive --verbose --perms --times --links --compress --copy-links '
@@ -281,6 +342,12 @@ class HomebotSatchel(ServiceSatchel):
             r.env.log_path = log_path
             if not r.file_exists(log_path):
                 r.sudo('touch {log_path}; chown {user}:{group} {log_path}')
+
+    @task
+    @runs_once
+    def firmware_shell(self, *args, **kwargs):
+        debug = self.get_satchel('debug')
+        debug.shell(shell_interactive_cmd_str='cd %s/src/ros/src/ros_homebot/src/firmware; /bin/bash -i;' % self.env.project_dir, *args, **kwargs)
 
     @task(precursors=['packager', 'user', 'ros', 'rpi', 'ntp', 'ntpclient'])
     def configure(self):

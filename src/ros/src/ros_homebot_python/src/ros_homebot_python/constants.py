@@ -38,11 +38,13 @@ INDEX_TO_NAME = {
 # Things to expect from running `udevadm info --query=all --name=/dev/ttyACM*`
 DEVICE_SIGNATURES = {
     NAME_TORSO: [
-        'ID_MODEL_FROM_DATABASE=Uno R3 (CDC ACM)',
+        #'ID_MODEL_FROM_DATABASE=Uno R3 (CDC ACM)',
+        'arduino__www.arduino.cc__0043_854363236313514132d0',
     ],
     NAME_HEAD: [
         #'ID_MODEL=Arduino_Leonardo',
-        'leonardo',
+        #'leonardo',
+        'arduino__www.arduino.cc__0043_5533330393435171b041',
     ],
 }
 

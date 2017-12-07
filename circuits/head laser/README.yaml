@@ -1,0 +1,4 @@
+description: Wiring connecting the line laser to the Raspberry Pi in the head.
+status: production
+parts:
+    head_laser.fzz: Simple wiring from the RPi pins to the laser.

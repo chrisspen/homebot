@@ -85,7 +85,7 @@ class PanController{
         
         // The angle we currently believe we're at.
         // -1=unknown, should always be positive angle in degrees, 0:359
-        ChangeTracker<float> actual_angle = ChangeTracker<float>(-1, 500, 1000);
+        ChangeTracker<float> actual_angle = ChangeTracker<float>(-1, 10, 100);//500, 1000);
 
         // Reports true when we've seen the centermark at least once.
         ChangeTracker<bool> calibrated = ChangeTracker<bool>(false);
@@ -189,31 +189,8 @@ class PanController{
             set_target_angle(0);
         }
 
-        int raw_centermark(){
-            return analogRead(_sensor_a_pin);
-        }
-
         bool is_centermark(){
-            // Reads the centermark sensor and sets the internal latched value,
-            // but does not update the publicly reported centermark value.
-
-            // To help guard against false positives, once we've confirmed the centermark,
-            // don't bother re-checking until we know we're close.
-            if(_centermark_checked && (actual_angle.get_latest() > 10 || actual_angle.get_latest() < 350)){
-                return false;
-            }
-
-            int v = raw_centermark();
-            if(_centermark_latch){
-                if(v >= PM_CENTERMARK_THRESHOLD + PM_CENTERMARK_SPAN){
-                    _centermark_latch = false;
-                }
-            }else{
-                if(v <= PM_CENTERMARK_THRESHOLD - PM_CENTERMARK_SPAN){
-                    _centermark_latch = true;
-                }
-            }
-            return _centermark_latch;
+            return !digitalRead(_sensor_a_pin); // 1=not centered, 0=centered
         }
 
         void stop(){
@@ -225,9 +202,8 @@ class PanController{
                 _seeking = false;
             }
         }
-
-        void update(){
-
+        
+        void update_centermark() {
             // Refreshes and publishes the current centermark value.
             centermark.set(is_centermark());
             if(centermark.get_latest()){
@@ -237,6 +213,11 @@ class PanController{
                 _count = 0;
                 _centermark_checked = true;
             }
+        }
+
+        void update(){
+
+            update_centermark();
 
             // Update calibration reporting.
             calibrated.set(is_calibrated());

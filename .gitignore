@@ -10,6 +10,7 @@ __pycache__/
 .build/
 .build_ano/
 build-uno/
+build-leonardo/
 build-mega-atmega2560/
 build-uno_pro/
 develop-eggs/

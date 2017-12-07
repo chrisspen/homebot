@@ -1,8 +1,8 @@
 
 #include <Wire.h>
-#include "Adafruit_BNO055/Adafruit_Sensor.h"
-#include "Adafruit_BNO055/Adafruit_BNO055.h"
-#include "Adafruit_BNO055/utility/imumaths.h"
+#include "Adafruit_Sensor.h"
+#include "Adafruit_BNO055.h"
+#include "utility/imumaths.h"
 
 #include "ID.h"
 #include "ChangeTracker.h"

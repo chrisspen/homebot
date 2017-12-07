@@ -1,4 +1,4 @@
-"Arduino Pin","Interruptable","Mode","PWM","Function","Label","Label Color","Variable","Wire Color","Notes"
+"Arduino Pin","Supports Interrupt","Mode","Supports PWM","Function","Label","Label Color","Variable","Wire Color","Notes"
 "D0",,"NA",,"USB",,,,,
 "D1",,"NA",,"USB",,,,,
 "D2",1,"input",,"accel/gyro interrupt","AGI",,"ACCEL_GYRO_INT_PIN",,
@@ -19,3 +19,4 @@
 "A3",,"input",,"external power sense 1","EP1",,"EXTERNAL_POWER_SENSE_1_PIN","green",
 "A4",,"NA",,"I2C",,,,,
 "A5",,"NA",,"I2C",,,,,
+"torso",,,,,,,,,

@@ -1,0 +1,6 @@
+<!-- Runs all components necessary for testing and debugging the head. -->
+<launch>
+
+    <include file="$(find ros_homebot)/launch/serial_head.launch" />
+
+</launch>

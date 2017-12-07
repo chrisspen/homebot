@@ -1,0 +1,15 @@
+This is experimental firmware for the head Arduino Leonardo, which uses rosserial.
+
+It does not work. It uses too much memory and becomes unstable.
+
+Build with:
+
+    make
+
+Upload to Arduino with:
+
+    make upload
+
+To delete all temporary files:
+
+    make clean
