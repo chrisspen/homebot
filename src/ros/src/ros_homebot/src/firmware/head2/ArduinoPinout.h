@@ -16,7 +16,6 @@ Pinouts for the Arduino located in the head2.
 #define PAN_MOTOR_ENABLE               8 // PEN
 #define TILT_SERVO_POS_SET             9 // TS
 #define STATUS_LED_GREEN               10 // LG
-#define ULTRABRIGHT_LED_2              11 // L2
+#define TILT_SERVO_POS_GET             11 // TG
 #define STATUS_LED_RED                 12 // LR
-#define ULTRABRIGHT_LED_3              13 // L3
-#define TILT_SERVO_POS_GET             A0 // TG
+#define LINE_LASER_SET                 13 // LP

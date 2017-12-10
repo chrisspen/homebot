@@ -6,8 +6,8 @@
 #BOARD_SUB    = atmega2560
 BOARD_TAG    = uno_pro
 #BOARD_TAG    = leonardo
-MONITOR_PORT = /dev/ttyACM0
-#MONITOR_PORT = $(shell list_arduinos.py head) #TODO:fixme
+#MONITOR_PORT = /dev/ttyACM0
+MONITOR_PORT = $(shell list_arduinos.py head)
 AVRDUDE_OPTS = -v
 # Note, you must copy these to USER_LIB_PATH, TODO:fixme
 ARDUINO_LIBS = ros_lib Servo ServoEaser

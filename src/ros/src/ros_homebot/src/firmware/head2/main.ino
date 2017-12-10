@@ -157,10 +157,19 @@ void toggle_led() {
 // rostopic pub --once /head_arduino/toggle_led std_msgs/Empty
 // rostopic pub --rate 1 /head_arduino/toggle_led std_msgs/Empty
 void on_toggle_led(const std_msgs::Empty& msg) {
-    //nh.loginfo("LED toggled.");
+    nh.loginfo("LED toggled.");
     toggle_led();
 }
 ros::Subscriber<std_msgs::Empty> toggle_led_sub("toggle_led", &on_toggle_led);
+
+// rostopic pub --once /head_arduino/linelaser/set std_msgs/Bool 1
+// rostopic pub --rate 1 /head_arduino/linelaser/set std_msgs/Bool
+void on_line_laser_set(const std_msgs::Bool& msg) {
+    snprintf(buffer, MAX_OUT_CHARS, "linelaser/set:%d", msg.data);
+    nh.loginfo(buffer);
+    digitalWrite(LINE_LASER_SET, msg.data);
+}
+ros::Subscriber<std_msgs::Bool> line_laser_set_sub("linelaser/set", &on_line_laser_set);
 
 // rostopic pub --once /head_arduino/ultrabright/set std_msgs/Int16 0
 // rostopic pub --once /head_arduino/ultrabright/set std_msgs/Int16 254
@@ -170,8 +179,8 @@ void on_set_ultrabright(const std_msgs::Int16& msg) {
     //SoftPWMSet(ULTRABRIGHT_LED_2, msg.data);
     //SoftPWMSet(ULTRABRIGHT_LED_3, msg.data);
     digitalWrite(ULTRABRIGHT_LED_1, msg.data);
-    digitalWrite(ULTRABRIGHT_LED_2, msg.data);
-    digitalWrite(ULTRABRIGHT_LED_3, msg.data);
+    //digitalWrite(ULTRABRIGHT_LED_2, msg.data);
+    //digitalWrite(ULTRABRIGHT_LED_3, msg.data);
 }
 ros::Subscriber<std_msgs::Int16> set_ultrabright_sub("ultrabright/set", &on_set_ultrabright);
 
@@ -201,6 +210,7 @@ void setup() {
     nh.subscribe(set_ultrabright_sub);
     nh.subscribe(set_rgb_sub);
     nh.subscribe(on_force_sensors_sub);
+    nh.subscribe(line_laser_set_sub);
     //nh.subscribe(on_pan_angle_set_sub);
     //nh.subscribe(on_tilt_angle_set_sub);
     //nh.subscribe(on_halt_sub);
@@ -223,11 +233,11 @@ void setup() {
     //SoftPWMSet(ULTRABRIGHT_LED_3, 0);
     //SoftPWMSetFadeTime(ULTRABRIGHT_LED_2, 1000, 1000);
     pinMode(ULTRABRIGHT_LED_1, OUTPUT);
-    pinMode(ULTRABRIGHT_LED_2, OUTPUT);
-    pinMode(ULTRABRIGHT_LED_2, OUTPUT);
+    //pinMode(ULTRABRIGHT_LED_2, OUTPUT);
+    //pinMode(ULTRABRIGHT_LED_3, OUTPUT);
     digitalWrite(ULTRABRIGHT_LED_1, 0);
-    digitalWrite(ULTRABRIGHT_LED_2, 0);
-    digitalWrite(ULTRABRIGHT_LED_3, 0);
+    //digitalWrite(ULTRABRIGHT_LED_2, 0);
+    //igitalWrite(ULTRABRIGHT_LED_3, 0);
     
     pinMode(STATUS_LED_RED, OUTPUT);
     pinMode(STATUS_LED_GREEN, OUTPUT);
@@ -236,6 +246,10 @@ void setup() {
     digitalWrite(STATUS_LED_GREEN, 0);
     digitalWrite(STATUS_LED_BLUE, 0);
 
+    pinMode(LINE_LASER_SET, OUTPUT);
+    digitalWrite(LINE_LASER_SET, 0);
+    //pinMode(A0, OUTPUT);
+    //digitalWrite(A0, 1);
 }
 
 //long ftol(double v) {
