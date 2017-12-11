@@ -6,20 +6,8 @@
 #include "ChangeTracker.h"
 
 // This is the speed used when rotating the head to find the centermark.
-#define PM_CALIBRATION_SPEED 120
-
-// The centermark sensor is an analog IR sensor looking for a single white stripe on a black
-// background.
-// The sensor is wired so that when it sees the white strip, the analog value goes to 0.
-// The threshold sets the mid-point below which a positive centermark measurement is detected.
-// Off readings average around 531.
-// On readings average around 442.
-#define PM_CENTERMARK_THRESHOLD 480
-
-// If the centermark sensor is right on the edge of the white stripe, the readings may rapidly
-// fluxuation above and below the threshold. To above rapidly changing false readings, the span
-// determines the amount of hystersis needed before a change over the threshold is allowed.
-#define PM_CENTERMARK_SPAN 3
+// Speed is in the range of [-255:+255].
+#define PM_CALIBRATION_SPEED 32
 
 // The number of pulses the pan motor's encoder will give to rotate the head a full 360 degrees.
 // This number was calculated through the size of the neck gears, motor gearing, and encoder
@@ -63,7 +51,6 @@ class PanController{
         
         // The current latched value of the centermark sensor.
         // The raw analog value would have to move above or below
-        // PM_CENTERMARK_THRESHOLD +- PM_CENTERMARK_SPAN for this to change.
         bool _centermark_latch = false;
 
         // Set to true if we've seen the centermark at least once since the system came online,
@@ -254,7 +241,7 @@ class PanController{
                 int min_speed = 110; // too slow
                 //int max_speed = 175; // too slow
                 //int min_speed = 125; // too slow
-                int max_speed = 200; // too slow
+                int max_speed = 200;
                 int min_angle = 0;
                 int max_angle = 180;
                 if(millis() - _time_count_last_updated > 2000){

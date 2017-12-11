@@ -133,12 +133,12 @@ class TiltController{
             start();
             change_degrees = abs(_last_start_degrees - degrees);
             if(change_degrees < 5){
-                _servoEaser.easeTo(degrees, 500);
+                _servoEaser.easeTo(degrees, 500/2);
             }else if(change_degrees < 10){
-                _servoEaser.easeTo(degrees, 1000);
+                _servoEaser.easeTo(degrees, 1000/2);
 
             }else{
-                _servoEaser.easeTo(degrees, 2000);
+                _servoEaser.easeTo(degrees, 2000/2);
 
             }
         }

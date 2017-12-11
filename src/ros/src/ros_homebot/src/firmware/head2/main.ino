@@ -211,9 +211,9 @@ void setup() {
     nh.subscribe(set_rgb_sub);
     nh.subscribe(on_force_sensors_sub);
     nh.subscribe(line_laser_set_sub);
-    //nh.subscribe(on_pan_angle_set_sub);
-    //nh.subscribe(on_tilt_angle_set_sub);
-    //nh.subscribe(on_halt_sub);
+    nh.subscribe(on_pan_angle_set_sub);
+    nh.subscribe(on_tilt_angle_set_sub);
+    nh.subscribe(on_halt_sub);
 
     // Register publishers.
     //nh.advertise(diagnostics_publisher);
@@ -248,8 +248,6 @@ void setup() {
 
     pinMode(LINE_LASER_SET, OUTPUT);
     digitalWrite(LINE_LASER_SET, 0);
-    //pinMode(A0, OUTPUT);
-    //digitalWrite(A0, 1);
 }
 
 //long ftol(double v) {

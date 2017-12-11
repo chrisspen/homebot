@@ -260,6 +260,7 @@ class HomebotSatchel(ServiceSatchel):
             '--exclude=.build --exclude=build --exclude=devel '
             '--exclude=overlay '
             '--exclude=.build_ano '
+            '--exclude=build-uno_pro '
             '--exclude=db.sqlite3 '
             '--exclude=bags '
             '--exclude=.env '
@@ -348,6 +349,21 @@ class HomebotSatchel(ServiceSatchel):
     def firmware_shell(self, *args, **kwargs):
         debug = self.get_satchel('debug')
         debug.shell(shell_interactive_cmd_str='cd %s/src/ros/src/ros_homebot/src/firmware; /bin/bash -i;' % self.env.project_dir, *args, **kwargs)
+
+    @task
+    def view_camera(self):
+        """
+        To be run like:
+        
+            fab prod homebot.view_camera
+            
+        Assumes raspicam_compressed_320.launch is running on the robot.
+        """
+        r = self.local_renderer
+        #self.genv.shell = '/bin/bash'
+        r.local(
+            'bash -c "cd src/ros; source ./setup.bash; export ROS_MASTER_URI=http://{host_string}:11311; '
+            'rosrun image_view image_view image:=/raspicam/image _image_transport:=compressed"')
 
     @task(precursors=['packager', 'user', 'ros', 'rpi', 'ntp', 'ntpclient'])
     def configure(self):
