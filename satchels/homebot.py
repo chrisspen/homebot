@@ -1,4 +1,5 @@
 import os
+import time
 
 from burlap.constants import *
 from burlap import ServiceSatchel
@@ -13,10 +14,10 @@ class HomebotSatchel(ServiceSatchel):
 
         self.env.project_dir = '/usr/local/homebot'
 
-        self.env.log_paths = [
-            '/var/log/homebot-head.log',
-            '/var/log/homebot-torso.log',
-        ]
+        #self.env.log_paths = [
+            #'/var/log/homebot-head.log',
+            #'/var/log/homebot-torso.log',
+        #]
 
         self.env.user = 'ubuntu'
 
@@ -26,22 +27,26 @@ class HomebotSatchel(ServiceSatchel):
 
         self.env.service_commands = {
             START:{
-                UBUNTU: 'service %s start' % self.env.daemon_name,
+                UBUNTU: 'service supervisor start',
+                #UBUNTU: 'service %s start' % self.env.daemon_name,
             },
             STOP:{
-                UBUNTU: 'service %s stop' % self.env.daemon_name,
+            UBUNTU: 'service supervisor stop',
+                #UBUNTU: 'service %s stop' % self.env.daemon_name,
             },
             DISABLE:{
-                UBUNTU: 'chkconfig %s off' % self.env.daemon_name,
+                #UBUNTU: 'chkconfig %s off' % self.env.daemon_name,
             },
             ENABLE:{
-                UBUNTU: 'chkconfig %s on' % self.env.daemon_name,
+                #UBUNTU: 'chkconfig %s on' % self.env.daemon_name,
             },
             RESTART:{
-                UBUNTU: 'service %s restart' % self.env.daemon_name,
+            UBUNTU: 'service supervisor restart',
+                #UBUNTU: 'service %s restart' % self.env.daemon_name,
             },
             STATUS:{
-                UBUNTU: 'service %s status' % self.env.daemon_name,
+            UBUNTU: 'service supervisor status',
+                #UBUNTU: 'service %s status' % self.env.daemon_name,
             },
         }
 
@@ -52,7 +57,7 @@ class HomebotSatchel(ServiceSatchel):
         self.env.upstart_name = self.name
 
         self.env.upstart_user = self.env.user
-        
+
         self.env.auto_upload_firmware = False
 
     def get_trackers(self):
@@ -68,10 +73,10 @@ class HomebotSatchel(ServiceSatchel):
                 names='project_dir user group',
                 action=self.init_project),
 
-            SettingsTracker(
-                satchel=self,
-                names='log_paths user group',
-                action=self.init_log),
+            #SettingsTracker(
+                #satchel=self,
+                #names='log_paths user group',
+                #action=self.init_log),
 
             SettingsTracker(
                 satchel=self,
@@ -83,6 +88,14 @@ class HomebotSatchel(ServiceSatchel):
                 action=self.update_settings),
 
             FilesystemTracker(
+                base_dir='src/ros/src', extensions='*.py *.launch *.action *.yaml',
+                action=self.deploy_code),
+
+            FilesystemTracker(
+                base_dir='roles/prod/templates/supervisor', extensions='homebot.conf.template',
+                action=self.install_upstart),
+
+            FilesystemTracker(
                 base_dir='src/ros/src/ros_homebot/src/firmware/head2', extensions='*.ino *.h *.cpp',
                 action=self.make_firmware_head2),
 
@@ -91,16 +104,16 @@ class HomebotSatchel(ServiceSatchel):
                 action=self.make_firmware_torso2),
 
             FilesystemTracker(
-                base_dir='src/ros/src', extensions='*.py *.launch *.action *.yaml',
-                action=self.deploy_code),
-
-            FilesystemTracker(
                 base_dir='roles', extensions='apt-requirements.txt pip-requirements.txt',
                 action=self.pip_install),
+
+            FilesystemTracker(
+                base_dir='src/ros/src', extensions='*.py *.launch *.action *.yaml',
+                action=self.delete_logs),
         ]
 
         if self.env.auto_upload_firmware:
-            
+
             parts.extend([
 
                 FilesystemTracker(
@@ -113,35 +126,39 @@ class HomebotSatchel(ServiceSatchel):
 
             ])
 
-        parts.extend([
-            SettingsTracker(
-                satchel=self,
-                names='upstart_setup upstart_launch upstart_name upstart_user',
-                action=self.install_upstart),
+        #parts.extend([
+            #SettingsTracker(
+                #satchel=self,
+                #names='upstart_setup upstart_launch upstart_name upstart_user',
+                #action=self.install_upstart),
 
             #TODO:Rebuild messages.
 
             #TODO:Rebuild C/C++ ROS nodes.
             #r.run('cd {project_dir}/src/ros; . ./setup.bash; catkin_make')
-        ])
+        #])
 
         return parts
 
     @task
     def make_firmware_head2(self):
         """
-        Cross-compiles the head Arduino firmware locally.
+        Cross-compiles the head Arduino firmware.
         """
         r = self.local_renderer
-        r.local('cd {project_dir}/src/ros/src/ros_homebot/src/firmware/head2; make')
+        # CS 2017.1.5 Hoped to cross-compile and upload compiled firmware, because dev computer is much faster than the Pi,
+        # but the cross-compiled firmware is not compatible when uploaded.
+        #r.local('cd {project_dir}/src/ros/src/ros_homebot/src/firmware/head2; make')
+        r.run('cd {project_dir}/src/ros/src/ros_homebot/src/firmware/head2; make clean; make; make upload')
 
     @task
     def make_firmware_torso2(self):
         """
-        Cross-compiles the torso Arduino firmware locally.
+        Cross-compiles the torso Arduino firmware.
         """
         r = self.local_renderer
-        r.local('cd {project_dir}/src/ros/src/ros_homebot/src/firmware/torso2; make')
+        #r.local('cd {project_dir}/src/ros/src/ros_homebot/src/firmware/torso2; make')
+        r.run('cd {project_dir}/src/ros/src/ros_homebot/src/firmware/torso2; make clean; make; make upload')
 
     @task
     def upload_firmware_head2(self):
@@ -172,24 +189,33 @@ class HomebotSatchel(ServiceSatchel):
     @task
     def install_upstart(self, force=0):
         """
-        Installs the upstart script for automatically starting your application.
+        Installs the script to automatically start the ROS core at boot time.
 
-        http://docs.ros.org/api/robot_upstart/html/
+        Should be run like:
+
+            fab prod homebot.install_upstart
         """
         force = int(force)
         r = self.local_renderer
-        if force or not r.file_exists('/etc/init/homebot.conf'):
-            r.sudo('source {upstart_setup}; rosrun robot_upstart install '
-                '--setup {upstart_setup} --job {upstart_name} '
-                '--user {upstart_user} {upstart_launch}')
-            r.sudo('systemctl daemon-reload && systemctl start {upstart_name}')
+
+        #CS 2018-1-2 Remove due to instability and unreliability. Obscures log files. Generally unusable. Replaced with supervisor.
+        #if force or not r.file_exists('/etc/init/homebot.conf'):
+            #r.sudo('source {upstart_setup}; rosrun robot_upstart install '
+                #'--setup {upstart_setup} --job {upstart_name} '
+                #'--rosdistro kinetic'
+                #'--user {upstart_user} {upstart_launch}')
+            #r.sudo('systemctl daemon-reload && systemctl start {upstart_name}')
             #r.reboot(wait=300, timeout=60)
+        #http://docs.ros.org/jade/api/robot_upstart/html/
+
+        r.install_config(local_path='supervisor/homebot.conf.template', remote_path='/etc/supervisor/conf.d/homebot.conf')
 
     @task
     def uninstall_upstart(self):
         r = self.local_renderer
-        if r.file_exists('/etc/init/homebot.conf'):
-            r.sudo('rosrun robot_upstart uninstall {upstart_name}')
+        #if r.file_exists('/etc/init/homebot.conf'):
+        #r.sudo('source {upstart_setup}; rosrun robot_upstart uninstall {upstart_name}')
+        r.sudo('rm /etc/supervisor/conf.d/homebot.conf')
 
     @task
     def catkin_make(self, pkg=None):
@@ -206,7 +232,10 @@ class HomebotSatchel(ServiceSatchel):
     @task
     def delete_logs(self):
         r = self.local_renderer
-        r.sudo('rm -Rf /home/pi/.ros/log/*')
+        #r.sudo('rm -Rf /home/{user}/.ros/log/*')
+        prompts = {'(y/n)?': 'y'}
+        with self.settings(prompts=prompts):
+            r.run('cd {project_dir}/src/ros; . ./setup.bash; rosclean purge')
 
     #DEPRECATED
     @task
@@ -242,6 +271,38 @@ class HomebotSatchel(ServiceSatchel):
         r.local('mkdir -p src/settings/{ROLE}')
         r.local('cp roles/all/apt-requirements.txt src/settings/{ROLE}')
         r.local('cp roles/all/pip-requirements.txt src/settings/{ROLE}')
+
+    @task
+    def upload_rosserial(self):
+        # Uploads our custom rosserial branch for testing.
+        r = self.local_renderer
+        r.sudo('chown -R ubuntu:ubuntu /opt/ros/kinetic/lib/python2.7/dist-packages/rosserial_python')
+        r.sudo('mkdir -p /opt/ros/kinetic/lib/python2.7/dist-packages/rosserial_arduino; ' \
+            'chown -R ubuntu:ubuntu /opt/ros/kinetic/lib/python2.7/dist-packages/rosserial_arduino')
+        r.sudo('mkdir -p /opt/ros/kinetic/lib/rosserial_arduino; ' \
+            'chown -R ubuntu:ubuntu /opt/ros/kinetic/lib/rosserial_arduino')
+
+        # rosserial_python
+        r.local('rsync --recursive --verbose --perms --times --links --compress '
+            '--rsh "ssh -t -o StrictHostKeyChecking=no -i roles/prod/rae-ubuntu.pem" '
+            '../rosserial/rosserial_python/src/rosserial_python/*  {user}@{host_string}:/opt/ros/kinetic/lib/python2.7/dist-packages/rosserial_python/')
+
+        # rosserial_arduino
+        r.local('rsync --recursive --verbose --perms --times --links --compress '
+            '--rsh "ssh -t -o StrictHostKeyChecking=no -i roles/prod/rae-ubuntu.pem" '
+            '../rosserial/rosserial_arduino/src/rosserial_arduino/__init__.py '
+            '{user}@{host_string}:/opt/ros/kinetic/lib/python2.7/dist-packages/rosserial_arduino/__init__.py')
+        r.local('rsync --recursive --verbose --perms --times --links --compress '
+            '--rsh "ssh -t -o StrictHostKeyChecking=no -i roles/prod/rae-ubuntu.pem" '
+            '../rosserial/rosserial_arduino/src/rosserial_arduino/SerialClient.py '
+            '{user}@{host_string}:/opt/ros/kinetic/lib/python2.7/dist-packages/rosserial_arduino/SerialClient.py')
+        r.local('rsync --recursive --verbose --perms --times --links --compress '
+            '--rsh "ssh -t -o StrictHostKeyChecking=no -i roles/prod/rae-ubuntu.pem" '
+            '../rosserial/rosserial_arduino/nodes/serial_node.py  {user}@{host_string}:/opt/ros/kinetic/lib/rosserial_arduino/serial_node.py')
+
+        r.sudo('chown -R root:root /opt/ros/kinetic/lib/python2.7/dist-packages/rosserial_python')
+        r.sudo('chown -R root:root /opt/ros/kinetic/lib/python2.7/dist-packages/rosserial_arduino')
+        r.sudo('chown -R root:root /opt/ros/kinetic/lib/rosserial_arduino')
 
     @task
     def deploy_code(self):
@@ -281,15 +342,9 @@ class HomebotSatchel(ServiceSatchel):
 #             '/home/chris/git/i2cdevlib {user}@{host_string}:/usr/share/arduino/libraries/')
 
     @task
-    def view_head_log(self):
+    def view_log(self):
         r = self.local_renderer
-        r.env.log_path = '/var/log/homebot-head.log'
-        r.run('tail -f {log_path}')
-
-    @task
-    def view_torso_log(self):
-        r = self.local_renderer
-        r.env.log_path = '/var/log/homebot-torso.log'
+        r.env.log_path = '/var/log/supervisor-homebot.log'
         r.run('tail -f {log_path}')
 
     @task
@@ -333,16 +388,16 @@ class HomebotSatchel(ServiceSatchel):
         r.run('{project_dir}/.env/bin/pip install -U pip')
         r.run('{project_dir}/.env/bin/pip install --only-binary numpy,matplotlib,scipy -r {project_dir}/src/settings/{ROLE}/pip-requirements.txt')
 
-    @task
-    def init_log(self):
-        """
-        Initializes our custom log files.
-        """
-        r = self.local_renderer
-        for log_path in self.lenv.log_paths:
-            r.env.log_path = log_path
-            if not r.file_exists(log_path):
-                r.sudo('touch {log_path}; chown {user}:{group} {log_path}')
+    #@task
+    #def init_log(self):
+        #"""
+        #Initializes our custom log files.
+        #"""
+        #r = self.local_renderer
+        #for log_path in self.lenv.log_paths:
+            #r.env.log_path = log_path
+            #if not r.file_exists(log_path):
+                #r.sudo('touch {log_path}; chown {user}:{group} {log_path}')
 
     @task
     @runs_once
@@ -353,10 +408,12 @@ class HomebotSatchel(ServiceSatchel):
     @task
     def view_camera(self):
         """
+        Views the camera on the remote robot from the local ROS installation.
+
         To be run like:
-        
+
             fab prod homebot.view_camera
-            
+
         Assumes raspicam_compressed_320.launch is running on the robot.
         """
         r = self.local_renderer
@@ -365,8 +422,28 @@ class HomebotSatchel(ServiceSatchel):
             'bash -c "cd src/ros; source ./setup.bash; export ROS_MASTER_URI=http://{host_string}:11311; '
             'rosrun image_view image_view image:=/raspicam/image _image_transport:=compressed"')
 
+    @task
+    def view_diagnostics(self):
+        """
+        Views diagnostics on the remote robot from the local ROS installation.
+
+        To be run like:
+
+            fab prod homebot.view_diagnostics
+
+        """
+        r = self.local_renderer
+        r.local(
+            'bash -c "cd src/ros; source ./setup.bash; export ROS_MASTER_URI=http://{host_string}:11311; '
+            'rosrun rqt_robot_monitor rqt_robot_monitor"')
+
     @task(precursors=['packager', 'user', 'ros', 'rpi', 'ntp', 'ntpclient'])
     def configure(self):
+        self.stop()
         super(HomebotSatchel, self).configure() # runs tasks triggered by trackers
+        self.start()
+        time.sleep(20) # wait for rosmaster to start
+        r = self.local_renderer
+        r.run('cd {project_dir}/src/ros; . ./setup.bash; roswtf')
 
 homebot = HomebotSatchel()

@@ -30,6 +30,7 @@
 #include <diagnostic_msgs/DiagnosticStatus.h>
 //#include <diagnostic_msgs/KeyValue.h>
 #include <Wire.h>
+#include <MemoryFree.h>
 
 #include "ArduinoPinout.h"
 #include "I2CAddresses.h"
@@ -46,7 +47,8 @@
 //#define PING_TIMEOUT_MS 10000
 
 #define DIAGNOSTIC_STATUS_LENGTH 1
-#define DIAGNOSTIC_REPORT_FREQ_MS 1000
+#define DIAGNOSTIC_REPORT_FREQ_MS 1000 // 1 seconds
+//#define DIAGNOSTIC_REPORT_FREQ_MS 10000 // 10 seconds
 
 char base_link[] = "/base_link";
 const char * const ultrasonic_links[] = { "/base_link/ultrasonic0", "/base_link/ultrasonic1", "/base_link/ultrasonic2" };
@@ -66,8 +68,8 @@ MotionController motion_controller;
 
 OdometryTracker odometry_tracker = OdometryTracker();
 
-geometry_msgs::TransformStamped ts;
-tf::TransformBroadcaster tf_broadcaster;
+//geometry_msgs::TransformStamped ts;
+//tf::TransformBroadcaster tf_broadcaster;
 //tf::Transform transform;
 //tf::TransformBroadcaster br;
 //tf::Transform transform;
@@ -88,6 +90,8 @@ bool force_sensors = false;
 // Records when we last received a message from rosserial on the host.
 // This is used to detect a lost connection to the host and perform emergency shutdown of the motors.
 bool connected = false;
+
+unsigned long last_memory_report = 0;
 
 // http://wiki.ros.org/roscpp/Overview/Logging
 // http://wiki.ros.org/rosserial/Overview/Logging
@@ -112,7 +116,10 @@ nav_msgs::Odometry odom_msg;
 adafruit_bno055_offsets_t imu_calib_struct;
 
 #define MAX_OUT_CHARS 255
+#define TEN_CHARS 10
 char buffer[MAX_OUT_CHARS + 1];  //buffer used to format a line (+1 is for trailing 0)
+char midbuffer[TEN_CHARS + 1];  //buffer used to format a line (+1 is for trailing 0)
+char prebuffer[TEN_CHARS + 1];  //buffer used to format a line (+1 is for trailing 0)
 
 bool battery_changed = false;
 
@@ -124,9 +131,23 @@ unsigned long last_diagnostic = 0;
 unsigned long a_encoder_last_change = 0;
 unsigned long b_encoder_last_change = 0;
 
+// Flags to track when the IMU first becomes ready.
+// We track this separately from the IMU's direct flags, because those can turn false, as the fusion algorithm constantly recalibrates.
+// When this happens, the IMU will read uncalibrated, even though it's still generating usable euler angles and other motion data,
+// so we don't want treat this as an error condition.
+int accel_ready, gyro_ready, magnetometer_ready, imu_ready;
+
 //diagnostic_msgs::DiagnosticArray dia_array;
 //diagnostic_msgs::DiagnosticStatus robot_status;
 //diagnostic_msgs::KeyValue status_keyvalue;
+
+//https://learn.adafruit.com/memories-of-an-arduino/measuring-free-memory
+int freeRam () 
+{
+  extern int __heap_start, *__brkval; 
+  int v; 
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval); 
+}
 
 /*
  * Begin sensor definitions.
@@ -169,11 +190,11 @@ BooleanSensor edge_sensors[3] = {
 };
 
 //DEPRECATED
-BooleanSensor bumper_sensors[3] = {
-    BooleanSensor(BUMPER_L_PIN),
-    BooleanSensor(BUMPER_M_PIN),
-    BooleanSensor(BUMPER_R_PIN)
-};
+//BooleanSensor bumper_sensors[3] = {
+//    BooleanSensor(BUMPER_L_PIN),
+//    BooleanSensor(BUMPER_M_PIN),
+//    BooleanSensor(BUMPER_R_PIN)
+//};
 
 UltrasonicSensor ultrasonic_sensors[3] = {
     UltrasonicSensor(SONIC_L_PIN),
@@ -441,6 +462,8 @@ void setup() {
     //robot_status.values_length = DIAGNOSTIC_STATUS_LENGTH;
     //dia_array.status[0].values = (diagnostic_msgs::KeyValue*)malloc(DIAGNOSTIC_STATUS_LENGTH * sizeof(diagnostic_msgs::KeyValue));
     //dia_array.status[0].values_length = DIAGNOSTIC_STATUS_LENGTH;
+    
+    accel_ready = gyro_ready = magnetometer_ready = imu_ready = 0;
 
     // http://answers.ros.org/question/10988/use-multiarray-in-rosserial/
     //uint16ma_msg.data = (uint16_t *)malloc(sizeof(uint16_t)*11);
@@ -451,14 +474,14 @@ void setup() {
 
     // Turn on power status light.
     pinMode(STATUS_LED_PIN, OUTPUT);
-    //digitalWrite(STATUS_LED_PIN, true);
-    digitalWrite(STATUS_LED_PIN, 0);
+    digitalWrite(STATUS_LED_PIN, true); // keep light on to indicate robot is powered
+    //digitalWrite(STATUS_LED_PIN, false); // keep light off because it's super bright and annoying
 
 //    pinMode(EXTERNAL_POWER_SENSE_1_PIN, INPUT);
 //    pinMode(EXTERNAL_POWER_SENSE_2_PIN, INPUT);
 
-    //nh.getHardware()->setBaud(57600);
-    nh.getHardware()->setBaud(115200); // loses connection?
+    nh.getHardware()->setBaud(57600);
+    //nh.getHardware()->setBaud(115200); // loses connection after 5 minutes, causes ROS error "Lost sync with device, restarting..."?
     nh.initNode();
 
     // Register subscriptions.
@@ -522,9 +545,40 @@ void send_diagnostics() {
     // Assumes you called `snprintf(buffer, MAX_OUT_CHARS, "key:value");` first
     string_msg.data = buffer;
     diagnostics_publisher.publish(&string_msg);
+    Serial.flush(); // hack to fix "Lost sync with device" error?
+    
+    /*/ Send each character as a single smaller message.
+    snprintf(prebuffer, TEN_CHARS, "^");
+    string_msg.data = prebuffer;
+    diagnostics_publisher.publish(&string_msg);
+    Serial.flush(); // hack to fix "Lost sync with device" error?
+    
+    for(int i=0; i < strlen(buffer); i++){ //TODO:send 5 byte chunks?
+        strncpy(midbuffer, buffer + i, 1);
+        string_msg.data = midbuffer;
+        diagnostics_publisher.publish(&string_msg);
+        Serial.flush(); // hack to fix "Lost sync with device" error?
+    }
+    
+    snprintf(prebuffer, TEN_CHARS, "$");
+    string_msg.data = prebuffer;
+    diagnostics_publisher.publish(&string_msg);
+    Serial.flush(); // hack to fix "Lost sync with device" error?
+    */
 }
 
 void loop() {
+
+    // Report memory usage every 10 seconds.
+    if (millis() - last_memory_report >= 10000) { // 300000=5 minutes
+        last_memory_report = millis();
+
+        snprintf(buffer, MAX_OUT_CHARS, "freeMemory(): %d", freeMemory());
+        nh.loginfo(buffer);
+
+        snprintf(buffer, MAX_OUT_CHARS, "freeRam(): %d", freeRam());
+        nh.loginfo(buffer);
+    }
 
     report_diagnostics = false;
     if (millis() - last_diagnostic >= DIAGNOSTIC_REPORT_FREQ_MS) {
@@ -565,11 +619,11 @@ void loop() {
 
     // Track connection status with host.
     if (nh.connected()) {
-        digitalWrite(STATUS_LED_PIN, 1);
+        //digitalWrite(STATUS_LED_PIN, 1);
         connected = true;
     } else if (connected) {
         // If we just became disconnected from the host, then immediately halt all motors as a safety precaution.
-        digitalWrite(STATUS_LED_PIN, 0);
+        //digitalWrite(STATUS_LED_PIN, 0);
         motion_controller.stop();
         delay(50);
         connected = false;
@@ -647,6 +701,9 @@ void loop() {
         }
     }
 
+    Serial.flush();
+    nh.spinOnce();
+
     // Temperature.
     // CS 2017.2.1 Disabled because not supported by the chip in the Arduino Uno*Pro.
     // If necessary, we could replace this with the temperature output from the IMU.
@@ -702,6 +759,9 @@ void loop() {
             motion_controller.b_encoder.get_latest());
         send_diagnostics();
     }
+
+    Serial.flush();
+    nh.spinOnce();
 
     // Odometry
     if (odometry_tracker.changed && millis() - odometry_tracker.last_report_time >= 1000) {
@@ -763,17 +823,22 @@ void loop() {
         tf_broadcaster.sendTransform(ts);
         */
     }
+    
+    Serial.flush();
+    nh.spinOnce();
 
     // IMU sensor.
     ag_sensor.update();
     if (ag_sensor.sys_calib.get_and_clear_changed() || force_sensors) {
         int16_msg.data = ag_sensor.sys_calib.get();
         imu_calibration_sys_publisher.publish(&int16_msg);
+        imu_ready = max(imu_ready, int16_msg.data);
 
         // http://www.cplusplus.com/reference/cstdio/snprintf/
-        snprintf(buffer, MAX_OUT_CHARS, "imu_calib.sys:%d", calib_to_status[int16_msg.data]);
+        snprintf(buffer, MAX_OUT_CHARS, "imu_calib.sys:%d", calib_to_status[imu_ready]);
         send_diagnostics();
 
+        /*/TODO:re-enable, contributing to crash? message too big?
         if (int16_msg.data == 3) {
             // When the IMU is fully calibrated, save the calibration to the host.
             ag_sensor.bno.getSensorOffsets(imu_calib_struct);
@@ -789,18 +854,24 @@ void loop() {
             uint16ma_msg.data[9] = imu_calib_struct.accel_radius;
             uint16ma_msg.data[10] = imu_calib_struct.mag_radius;
             imu_calibration_save_publisher.publish(&uint16ma_msg);
-        }
+        }*/
     }
+    
+    Serial.flush();
+    nh.spinOnce();
+    
     if (ag_sensor.gyr_calib.get_and_clear_changed() || force_sensors) {
         int16_msg.data = ag_sensor.gyr_calib.get();
         imu_calibration_gyr_publisher.publish(&int16_msg);
+        gyro_ready = max(gyro_ready, int16_msg.data);
 
-        snprintf(buffer, MAX_OUT_CHARS, "imu_calib.gyr:%d", calib_to_status[int16_msg.data]);
+        snprintf(buffer, MAX_OUT_CHARS, "imu_calib.gyr:%d", calib_to_status[gyro_ready]);
         send_diagnostics();
     }
     if (ag_sensor.acc_calib.get_and_clear_changed() || force_sensors) {
         int16_msg.data = ag_sensor.acc_calib.get();
         imu_calibration_acc_publisher.publish(&int16_msg);
+        accel_ready = max(accel_ready, int16_msg.data);
 
         //This never seems to calibrate, even after following Adafruit's instructions.
         //TODO:fixme
@@ -810,8 +881,9 @@ void loop() {
     if (ag_sensor.mag_calib.get_and_clear_changed() || force_sensors) {
         int16_msg.data = ag_sensor.mag_calib.get();
         imu_calibration_mag_publisher.publish(&int16_msg);
+        magnetometer_ready = max(magnetometer_ready, int16_msg.data);
 
-        snprintf(buffer, MAX_OUT_CHARS, "imu_calib.mag:%d", calib_to_status[int16_msg.data]);
+        snprintf(buffer, MAX_OUT_CHARS, "imu_calib.mag:%d", calib_to_status[magnetometer_ready]);
         send_diagnostics();
     }
     if (ag_sensor.get_and_clear_changed_euler() || ag_sensor.get_and_clear_changed_accel() || ag_sensor.get_and_clear_changed_gyro() || force_sensors) {
@@ -862,6 +934,10 @@ void loop() {
         imu_publisher.publish(&string_msg);
 
     }
+    
+    Serial.flush();
+    nh.spinOnce();
+    
     if (report_diagnostics) {
         snprintf(buffer, MAX_OUT_CHARS, "imu.euler.x:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, static_cast<int>(ag_sensor.ex.get_latest()));
         send_diagnostics();
@@ -882,6 +958,9 @@ void loop() {
             send_diagnostics();
         }
     }
+    
+    Serial.flush();
+    nh.spinOnce();
 
     // Power button.
     power_button_sensor.update();
@@ -900,10 +979,14 @@ void loop() {
         snprintf(buffer, MAX_OUT_CHARS, "Power controller state changed: %d", power_controller.power_state.get());
         nh.loginfo(buffer);
     }
+    
+    Serial.flush();
+    nh.spinOnce();
 
     // Battery state change.
     if (battery_changed) {
         battery_changed = false;
+
         // http://docs.ros.org/kinetic/api/sensor_msgs/html/msg/BatteryState.html
         battery_msg.header.stamp = nh.now();
         battery_msg.header.frame_id = base_link;
@@ -929,10 +1012,10 @@ void loop() {
         snprintf(buffer, MAX_OUT_CHARS, "battery.voltage:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, static_cast<int>(battery_msg.voltage));
         send_diagnostics();
 
-        if (battery_msg.percentage <= 0.25) {
+        if (battery_msg.percentage <= 0.10) {
             snprintf(buffer, MAX_OUT_CHARS, "battery.percentage:%d:%d",
                 diagnostic_msgs::DiagnosticStatus::ERROR, static_cast<int>(battery_msg.percentage*100));
-        } else if (battery_msg.percentage <= 0.5) {
+        } else if (battery_msg.percentage <= 0.25) {
             snprintf(buffer, MAX_OUT_CHARS, "battery.percentage:%d:%d",
                 diagnostic_msgs::DiagnosticStatus::WARN, static_cast<int>(battery_msg.percentage*100));
         } else {
@@ -951,6 +1034,9 @@ void loop() {
 
     force_sensors = false;
 
+    Serial.flush();
+    nh.requestSyncTime();
+    Serial.flush();
     nh.spinOnce();
     delay(1);
 

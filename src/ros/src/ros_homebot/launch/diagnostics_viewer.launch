@@ -6,6 +6,5 @@ When the aggregator is running, this will show a window, listing diagnostic repo
 http://wiki.ros.org/diagnostics/Tutorials/Configuring%20Diagnostic%20Aggregators
 -->
 <launch>
-    <node pkg="rqt_robot_monitor" type="rqt_robot_monitor" name="rqt_robot_monitor" >
-    </node>
+    <node pkg="rqt_robot_monitor" type="rqt_robot_monitor" name="rqt_robot_monitor"></node>
 </launch>

@@ -71,7 +71,7 @@ std_msgs::Int16 int16_msg;
 //std_msgs::Byte byte_msg;
 //std_msgs::Bool bool_msg;
 //std_msgs::Float32 float_msg;
-//std_msgs::String string_msg;
+std_msgs::String string_msg;
 //std_msgs::UInt16MultiArray uint16ma_msg;
 //sensor_msgs::Range range_msg;
 //sensor_msgs::BatteryState battery_msg;
@@ -92,7 +92,7 @@ char buffer[MAX_OUT_CHARS + 1];  //buffer used to format a line (+1 is for trail
 //bool report_diagnostics = false;
 unsigned long last_diagnostic = 0;
 
-//ros::Publisher diagnostics_publisher = ros::Publisher("diagnostics_relay", &string_msg);
+ros::Publisher diagnostics_publisher = ros::Publisher("diagnostics_relay", &string_msg);
 
 void on_pan_encoder_change() {
     /*
@@ -132,6 +132,7 @@ ros::Subscriber<std_msgs::Empty> on_force_sensors_sub("force_sensors", &on_force
 // 180=backwards
 // 360=origin/forward/center
 void on_pan_angle_set(const std_msgs::Int16& msg) {
+    pan_controller.active = true;
     pan_controller.set_target_angle(msg.data);
 }
 ros::Subscriber<std_msgs::Int16> on_pan_angle_set_sub("pan/set", &on_pan_angle_set);
@@ -216,7 +217,7 @@ void setup() {
     nh.subscribe(on_halt_sub);
 
     // Register publishers.
-    //nh.advertise(diagnostics_publisher);
+    nh.advertise(diagnostics_publisher);
     nh.advertise(pan_angle_publisher);
 
     attachInterrupt(digitalPinToInterrupt(PAN_MOTOR_ENCODER_A), on_pan_encoder_change, CHANGE);
@@ -256,11 +257,11 @@ void setup() {
 //    return static_cast<long>(v*1000);
 //}
 
-//void send_diagnostics() {
+void send_diagnostics() {
     // Assumes you called `snprintf(buffer, MAX_OUT_CHARS, "key:value");` first
-//    string_msg.data = buffer;
-//    diagnostics_publisher.publish(&string_msg);
-//}
+    string_msg.data = buffer;
+    diagnostics_publisher.publish(&string_msg);
+}
 
 void loop() {
 

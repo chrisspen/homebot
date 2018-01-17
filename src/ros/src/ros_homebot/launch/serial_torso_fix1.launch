@@ -1,0 +1,11 @@
+<!--
+Does not work on the Pi.
+-->
+<launch>
+    <group ns="torso_arduino">
+        <node pkg="rosserial_server" type="serial_node" name="serial_node" output="screen">
+            <param name="~port" command="list_arduinos.py torso" />
+            <param name="~baud" value="57600" />
+        </node>
+    </group>
+</launch>

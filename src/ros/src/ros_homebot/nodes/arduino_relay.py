@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-#DEPRECATED: use arduino_relay.py instead
 from __future__ import print_function
 #import time
 import traceback
@@ -7,6 +6,7 @@ import os
 import sys
 import threading
 import cPickle as pickle
+from functools import partial
 #from math import pi, sin, cos
 
 #import numpy as np
@@ -30,6 +30,8 @@ WARN = DiagnosticStatus.WARN # 1
 ERROR = DiagnosticStatus.ERROR # 2
 STALE = DiagnosticStatus.STALE # 3
 
+IMU_CALIBRATION_FN = 'imu_calibration.pickle'
+
 V0 = 'v0'
 V1 = 'v1'
 
@@ -39,8 +41,6 @@ status_id_to_name = {
     ERROR: 'ERROR',
     STALE: 'STALE',
 }
-
-IMU_CALIBRATION_FN = 'imu_calibration.pickle'
 
 def ltof(values):
     """
@@ -55,9 +55,7 @@ def ltof(values):
 # http://wiki.ros.org/tf2/Tutorials/Writing%20a%20tf2%20broadcaster%20%28Python%29
 # http://wiki.ros.org/navigation/Tutorials/RobotSetup/Odom
 # http://answers.ros.org/question/79851/python-odometry/
-class TorsoRelay:
-
-    diagnostics_prefix = 'Torso Arduino'
+class ArduinoRelay:
 
     cache_dir = '~/.homebot_cache/torso_relay'
 
@@ -65,7 +63,7 @@ class TorsoRelay:
     #P = np.mat(np.diag([0.0]*3))
 
     def __init__(self):
-        rospy.init_node('torso_relay')
+        rospy.init_node('arduino_relay')
 
         self._imu_data = {}
 
@@ -75,6 +73,8 @@ class TorsoRelay:
 
         self.diagnostics_msg_count = 0
 
+        self.diagnostics_buffer = []
+
         # http://wiki.ros.org/tf/Tutorials/Writing%20a%20tf%20broadcaster%20%28Python%29
         self.tf_br = tf.TransformBroadcaster()
         #self.tf2_br = tf2_ros.TransformBroadcaster()
@@ -82,8 +82,6 @@ class TorsoRelay:
         #rospy.Service('~reset_odometry', Empty, self.reset_odometry)
 
         ## Publishers.
-        
-        self.diagnostics_buffer = []
 
         self.diagnostics_pub = rospy.Publisher('/diagnostics', DiagnosticArray, queue_size=10)
 
@@ -95,7 +93,8 @@ class TorsoRelay:
 
         ## Subscribers.
 
-        rospy.Subscriber('/torso_arduino/diagnostics_relay', String, self.on_diagnostics_relay)
+        rospy.Subscriber('/head_arduino/diagnostics_relay', String, partial(self.on_diagnostics_relay, prefix='head'))
+        rospy.Subscriber('/torso_arduino/diagnostics_relay', String, partial(self.on_diagnostics_relay, prefix='torso'))
 
         rospy.Subscriber('/torso_arduino/imu/calibration/save', UInt16MultiArray, self.on_imu_calibration_save)
 
@@ -109,8 +108,7 @@ class TorsoRelay:
 
     @property
     def imu_calibration_filename(self):
-        cache_dir = self.cache_dir
-        cache_dir = os.path.expanduser(cache_dir)
+        cache_dir = os.path.expanduser(self.cache_dir)
         if not os.path.isdir(cache_dir):
             os.makedirs(cache_dir)
         fn = os.path.join(cache_dir, IMU_CALIBRATION_FN)
@@ -195,13 +193,13 @@ class TorsoRelay:
 
             self.imu_pub.publish(imu_msg)
 
-    def on_diagnostics_relay(self, msg):
+    def on_diagnostics_relay(self, msg, prefix):
         """
         The Arduino has limited RAM and an even more limited serial buffer, so it can't send complex ROS structures like DiagnosticArrays.
         So instead, it publishes diagnostic data via a key/value pair formatted in a simple string,
         which we convert to a proper diagnostic message.
         """
-        print('diagnostics.msg:', msg.data)
+        #print('diagnostics.msg:', msg)
         self.diagnostics_msg_count += 1
 
         if not self.imu_calibration_loaded:
@@ -209,23 +207,31 @@ class TorsoRelay:
             self.imu_calibration_loaded = True
 
         # Aggregate single-character messages into a complete message.
-        if msg.data and msg.data[0] == '^':
-            self.diagnostics_buffer = []
-            return
-        elif msg.data and msg.data[0] == '$':
-            msg.data = ''.join(self.diagnostics_buffer)
-        else:
-            self.diagnostics_buffer.append(msg.data)
-            return
+        #if not msg.data:
+            #print('Received empty message.')
+            #return
+        #elif msg.data[0] == '^':
+            #print('Received message start.')
+            #self.diagnostics_buffer = []
+            #return
+        #elif msg.data[0] == '$':
+            #print('Received message end.')
+            #msg.data = ''.join(self.diagnostics_buffer)
+        #else:
+            #print('Recieved %i chars.' % len(msg.data))
+            #self.diagnostics_buffer.append(msg.data)
+            #return
 
         # Extract parts.
+        print('Message length:', len(msg.data))
+        print('Message data:', msg.data)
         parts = msg.data.split(':')
         if len(parts) < 2:
             print('Malformed diagnostics message.', file=sys.stderr)
             return
 
         # Complete name part.
-        name = '%s: %s' % (self.diagnostics_prefix, parts[0].strip())
+        name = '%s: %s' % (prefix, parts[0].strip())
 
         # Complete level part.
         try:
@@ -332,4 +338,4 @@ class TorsoRelay:
             #self.tf2_br.sendTransform(odom_trans)
 
 if __name__ == '__main__':
-    TorsoRelay()
+    ArduinoRelay()

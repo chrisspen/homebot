@@ -7,7 +7,7 @@ Note, when this is running, you can view status in a GUI by running:
 http://wiki.ros.org/diagnostics/Tutorials/Configuring%20Diagnostic%20Aggregators
 -->
 <launch>
-    <node pkg="diagnostic_aggregator" type="aggregator_node" name="diag_agg" >
+    <node pkg="diagnostic_aggregator" type="aggregator_node" name="diagnostic_aggregator">
         <rosparam command="load" file="$(find ros_homebot)/config/analyzers.yaml" />
     </node>
 </launch>

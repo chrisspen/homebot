@@ -1,5 +1,5 @@
 <!--
-roslaunch ros_homebot_base serial_torso.launch
+roslaunch ros_homebot serial_torso_fix3.launch
 
 rostopic pub /torso_arduino/toggle_led std_msgs/Empty -once
 rostopic pub /torso_arduino/force_sensors std_msgs/Empty -once
@@ -8,11 +8,10 @@ rostopic echo
 -->
 <launch>
     <group ns="torso_arduino">
-        <node pkg="rosserial_python" type="serial_node.py" name="serial_node" output="screen">
-            <!--<param name="~port" value="/dev/ttyACM0" />-->
+        <node pkg="rosserial_arduino" type="serial_node.py" name="serial_node" output="screen">
             <param name="~port" command="list_arduinos.py torso" />
             <param name="~baud" value="57600" />
-            <!--<param name="~baud" value="115200" />-->
+            <param name="~auto_reset_timeout" value="10" />
         </node>
     </group>
 </launch>

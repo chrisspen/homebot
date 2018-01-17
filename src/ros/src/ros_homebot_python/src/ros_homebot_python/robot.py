@@ -2,14 +2,15 @@
 import rospy
 # from ros_homebot_msgs import srv as srvs
 
-from ros_homebot_python import constants as c
-from ros_homebot_python.node import (
+#from ros_homebot_python import constants as c
+#from ros_homebot_python.node import (
 #    subscribe_to_topic,
-    get_service_proxy,
+    #get_service_proxy,
 #     packet_to_message_type,
 #     set_line_laser,
 #     say,
-)
+#)
+from std_msgs.msg import UInt8MultiArray, Int16
 
 class Robot(object):
     """
@@ -43,6 +44,9 @@ class Robot(object):
 
         self.init_subscriptions()
 
+        self._head_rgb_set_pub = None
+        self._head_ultrabright_set_pub = None
+
         r = rospy.Rate(self.sleep_hertz)
         while not rospy.is_shutdown():
             self.on_loop()
@@ -50,6 +54,18 @@ class Robot(object):
 
     def init_subscriptions(self):
         pass
+
+    @property
+    def head_rgb_set_pub(self):
+        if self._head_rgb_set_pub is None:
+            self._head_rgb_set_pub = rospy.Publisher('/head_arduino/rgb/set', UInt8MultiArray, queue_size=1)
+        return self._head_rgb_set_pub
+
+    @property
+    def head_ultrabright_set_pub(self):
+        if self._head_ultrabright_set_pub is None:
+            self._head_ultrabright_set_pub = rospy.Publisher('/head_arduino/ultrabright/set', Int16, queue_size=1)
+        return self._head_ultrabright_set_pub
 
     def is_shutdown(self):
         return not self.running
@@ -103,12 +119,14 @@ class Robot(object):
         """
         assert len(value) == 3
         for i, v in enumerate(value):
-            assert 0 <= i <= 254
-            get_service_proxy(c.HEAD, c.ID_LED)(i, v)
+            assert 0 <= v <= 254
+            #get_service_proxy(c.HEAD, c.ID_LED)(i, v)
+        self.head_rgb_set_pub.publish(UInt8MultiArray(data=value))
 
     def set_ultrabright(self, value):
         """
         Value is a single integer between 0-254 representing brightness with 0 being off and 254 being full brightness.
         """
         assert 0 <= value <= 254
-        get_service_proxy(c.HEAD, c.ID_LED)(3, value)
+        #get_service_proxy(c.HEAD, c.ID_LED)(3, value)
+        self.head_ultrabright_set_pub.publish(Int16(value))

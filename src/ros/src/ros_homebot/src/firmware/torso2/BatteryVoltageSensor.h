@@ -95,6 +95,7 @@ class BatteryVoltageSensor: public Sensor{
             battery_voltage += _voltage_offset;
             
             return battery_voltage;
+            //return ((5./1023. * measurements.get()) * (_r1 + _r2)/_r2) + _voltage_offset;
         }
         
         float get_charge_ratio(){
@@ -111,8 +112,8 @@ class BatteryVoltageSensor: public Sensor{
         }
 
         virtual bool get_and_clear_changed(){
-        	//ser.write("bv.get_and_clear_changed");
-        	return measurements.get_and_clear_changed();
+            //ser.write("bv.get_and_clear_changed");
+            return measurements.get_and_clear_changed();
         }
 };
 

@@ -232,7 +232,16 @@ class Adafruit_BNO055 : public Adafruit_Sensor
       OPERATION_MODE_IMUPLUS                                  = 0X08,
       OPERATION_MODE_COMPASS                                  = 0X09,
       OPERATION_MODE_M4G                                      = 0X0A,
+      // Described on page 20.
+      // This fusion mode is same as NDOF mode, but with the Fast Magnetometer Calibration turned ‘OFF’.
       OPERATION_MODE_NDOF_FMC_OFF                             = 0X0B,
+      // This is a fusion mode with 9 degrees of freedom where the fused absolute orientation data
+      // is calculated from accelerometer, gyroscope and the magnetometer. The advantages of
+      // combining all three sensors are a fast calculation, resulting in high output data rate, and high
+      // robustness from magnetic field distortions. In this mode the Fast Magnetometer calibration
+      // is turned ON and thereby resulting in quick calibration of the magnetometer and higher
+      // output data accuracy. The current consumption is slightly higher in comparison to the
+      // NDOF_FMC_OFF fusion mode.
       OPERATION_MODE_NDOF                                     = 0X0C
     } adafruit_bno055_opmode_t;
 

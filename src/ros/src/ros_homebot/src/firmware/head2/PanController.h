@@ -7,7 +7,7 @@
 
 // This is the speed used when rotating the head to find the centermark.
 // Speed is in the range of [-255:+255].
-#define PM_CALIBRATION_SPEED 32
+#define PM_CALIBRATION_SPEED 45
 
 // The number of pulses the pan motor's encoder will give to rotate the head a full 360 degrees.
 // This number was calculated through the size of the neck gears, motor gearing, and encoder
@@ -77,6 +77,9 @@ class PanController{
         // Reports true when we've seen the centermark at least once.
         ChangeTracker<bool> calibrated = ChangeTracker<bool>(false);
         
+        // If true, updates position when set. Otherwise, does nothing.
+        bool active = false;
+
         PanController(int enable_pin, int phase_pin, int sensor_a_pin){
             _sensor_a_pin = sensor_a_pin;
             _enable_pin = enable_pin;
@@ -209,7 +212,8 @@ class PanController{
             // Update calibration reporting.
             calibrated.set(is_calibrated());
 
-            if(!is_calibrated()){
+            if(!active){
+            }else if(!is_calibrated()){
                 // If we're uncalibrated, begin a dumb centermark search.
                 set_speed(PM_CALIBRATION_SPEED);
             }else if(_seeking){

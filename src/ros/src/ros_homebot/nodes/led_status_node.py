@@ -2,6 +2,7 @@
 from __future__ import print_function
 
 from diagnostic_msgs.msg import DiagnosticStatus
+#from std_msgs.msg import UInt8MultiArray
 
 from ros_homebot_python.robot import Robot
 
@@ -19,6 +20,7 @@ class LEDStatusNode(Robot):
     Inspect the diagnostics toplevel status with:
 
         rostopic echo /diagnostics_toplevel_state
+
     """
 
     node_name = 'led_status_node'

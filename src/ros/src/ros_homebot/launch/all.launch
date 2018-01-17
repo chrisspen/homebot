@@ -1,20 +1,42 @@
 <!-- Loads all nodes for the full production system. -->
+<!-- Remember to source setup.bash before running this! -->
 <launch>
+
+    <!-- Relays messages to/from the head arduino. -->
     <include file="$(find ros_homebot)/launch/serial_head.launch" />
-    <include file="$(find ros_homebot)/launch/serial_torso.launch" />
+    
+    <!-- Relays messages to/from the torso arduino. -->
+    <!--<include file="$(find ros_homebot)/launch/serial_torso.launch" /> TODO-->
+    
+    <!-- Relays complex messages from the arduinos. -->
+    <include file="$(find ros_homebot)/launch/arduino_relay.launch" />
+    
+    <!-- Reads from the Pi camera and publishes it as compressed ROS image messages. -->
     <include file="$(find ros_homebot)/launch/raspicam_compressed_320.launch" />
+    
+    <!-- Handles generating speech from text. -->
+    <include file="$(find ros_homebot)/launch/sound.launch" />
+    
+    <!-- Updates the external status LED to reflect diagnostic status. -->
+    <include file="$(find ros_homebot)/launch/led_status.launch" />
+    
+    <!-- Monitors system metrics (CPU/memory/disk) and reports them as diagnostic messages. -->
+    <include file="$(find ros_homebot)/launch/system.launch" />
 
-    <!--<include file="$(find ros_homebot)/launch/robot_state_publisher.launch" />-->
-    <!--<include file="$(find ros_homebot)/launch/diagnostics_aggregator.launch" />-->
+    <!-- Collects all diagnostic messages and publishes an overall diagnostic status. -->
+    <include file="$(find ros_homebot)/launch/diagnostics_aggregator.launch" />
 
+    <!-- Collects odometry and joint messages and publishes an overall robot model state. -->
+    <include file="$(find ros_homebot)/launch/robot_state_publisher.launch" />
+
+    <!-- Waits until all other nodes are up, then uses the sound node to say the system is initialized. -->
+    <include file="$(find ros_homebot)/launch/init.launch" />
+
+    <!-- DEPRECATED but potentially still useful. -->
     <!--<include file="$(find ros_homebot)/launch/teleop.launch" />-->
     <!--<include file="$(find ros_homebot)/launch/mjpeg_server.launch" />-->
     <!--<include file="$(find ros_homebot)/launch/rpi_gpio.launch" />-->
     <!--<include file="$(find ros_homebot)/launch/lrf_compressed_320.launch" />-->
     <!--<include file="$(find ros_homebot)/launch/power.launch" />-->
-    <!--<include file="$(find ros_homebot)/launch/system.launch" />-->
-    <!--<include file="$(find ros_homebot)/launch/sound.launch" />-->
     <!--<include file="$(find ros_homebot)/launch/qr_tracker.launch" />-->
-    <!--<include file="$(find ros_homebot)/launch/led_status.launch" />-->
-    <!--<include file="$(find ros_homebot)/launch/init.launch" />-->
 </launch>

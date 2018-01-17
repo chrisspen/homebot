@@ -34,6 +34,8 @@ What has changed
 
 NOTE: The analog-to-digital (ADC) pins seem to behave a little differently. Using digitalRead() on these pins, a higher than usual reference voltage is used, resulting in even 4V being interpreted as a logical 0. If you want to get normal behavior, you'll need to use analogRead() and then convert that 0-1024 scale to 0-1.
 
+Also, YOU CANNOT USE ANY OF THE ANALOG PINS AS OUTPUTS. They only work as inputs.
+
 Installation
 ------------
 

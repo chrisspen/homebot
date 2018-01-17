@@ -1,0 +1,11 @@
+[program:homebot]
+command=bash -c "source /usr/local/homebot/src/ros/setup.bash; roslaunch ros_homebot all.launch"
+directory=/usr/local/homebot/src/ros
+user=ubuntu
+stdout_logfile=/var/log/supervisor-homebot.log
+stderr_logfile=/var/log/supervisor-homebot.log
+stopasgroup=true
+autostart=true
+autorestart=true
+startretries=3
+priority=998

@@ -1,27 +1,27 @@
 #!/usr/bin/env python
 from __future__ import print_function
 #import time
-import traceback
-import os
-import sys
+#import traceback
+#import os
+#import sys
 import threading
-import cPickle as pickle
+#import cPickle as pickle
 #from math import pi, sin, cos
 
 #import numpy as np
 import rospy
-import tf
+#import tf
 #import tf2_ros
 #http://docs.ros.org/api/sensor_msgs/html/msg/Imu.html
-from sensor_msgs.msg import Imu
-from std_msgs.msg import Header
-from std_msgs.msg import String, UInt16MultiArray
+#from sensor_msgs.msg import Imu
+#from std_msgs.msg import Header
+from std_msgs.msg import String#, UInt16MultiArray
 #from std_srvs.srv import Empty, EmptyResponse
-from nav_msgs.msg import Odometry
-from geometry_msgs.msg import Quaternion, Point
+#from nav_msgs.msg import Odometry
+#from geometry_msgs.msg import Quaternion, Point
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus#, KeyValue
 
-from ros_homebot_python import constants as c
+#from ros_homebot_python import constants as c
 #from ros_homebot_python.node import BaseArduinoNode
 
 OK = DiagnosticStatus.OK # 0
