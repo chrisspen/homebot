@@ -224,7 +224,7 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(PAN_MOTOR_POSITION_REF), on_pan_reference_change, CHANGE);
     //pan_controller.set_power(true);
     //tilt_controller.set_power(true);
-    
+
     // Initialize ultrabright dimmers and set default to off.
     //SoftPWMBegin();
     //SoftPWMSet(ULTRABRIGHT_LED_1, 0);
@@ -239,7 +239,7 @@ void setup() {
     digitalWrite(ULTRABRIGHT_LED_1, 0);
     //digitalWrite(ULTRABRIGHT_LED_2, 0);
     //igitalWrite(ULTRABRIGHT_LED_3, 0);
-    
+
     pinMode(STATUS_LED_RED, OUTPUT);
     pinMode(STATUS_LED_GREEN, OUTPUT);
     pinMode(STATUS_LED_BLUE, OUTPUT);

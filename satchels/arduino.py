@@ -5,7 +5,6 @@ Arduino
 Tools for configuring software and features specific to systems interacting
 with Arduino microcontrollers.
 """
-import os
 
 from fabric.api import settings
 

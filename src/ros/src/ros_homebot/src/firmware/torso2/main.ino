@@ -145,11 +145,11 @@ int accel_ready, gyro_ready, magnetometer_ready, imu_ready;
 //diagnostic_msgs::KeyValue status_keyvalue;
 
 //https://learn.adafruit.com/memories-of-an-arduino/measuring-free-memory
-//int freeRam () 
+//int freeRam ()
 //{
-//  extern int __heap_start, *__brkval; 
-//  int v; 
-//  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval); 
+//  extern int __heap_start, *__brkval;
+//  int v;
+//  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 //}
 
 /*
@@ -481,7 +481,7 @@ void setup() {
     //robot_status.values_length = DIAGNOSTIC_STATUS_LENGTH;
     //dia_array.status[0].values = (diagnostic_msgs::KeyValue*)malloc(DIAGNOSTIC_STATUS_LENGTH * sizeof(diagnostic_msgs::KeyValue));
     //dia_array.status[0].values_length = DIAGNOSTIC_STATUS_LENGTH;
-    
+
     accel_ready = gyro_ready = magnetometer_ready = imu_ready = 0;
 
     // http://answers.ros.org/question/10988/use-multiarray-in-rosserial/
@@ -566,12 +566,12 @@ void send_diagnostics() {
     // Assumes you called `snprintf(buffer, MAX_OUT_CHARS, "key:value");` first
     string_msg.data = buffer;
     diagnostics_publisher.publish(&string_msg);
-    
+
     // Send each character as a single smaller message.
     //snprintf(prebuffer, TEN_CHARS, "^");
     //string_msg.data = prebuffer;
     //diagnostics_publisher.publish(&string_msg);
-    
+
     //for(int i=0; i < strlen(buffer); i+=5){ // send 5 byte chunks? note, chunk size should be -1 less than midbuffer size
         //strncpy(midbuffer, buffer + i, min(5, strlen(buffer) - i));
         //midbuffer[min(5, strlen(buffer) - i)] = '\0';
@@ -581,7 +581,7 @@ void send_diagnostics() {
     //snprintf(prebuffer, TEN_CHARS, "$");
     //string_msg.data = prebuffer;
     //diagnostics_publisher.publish(&string_msg);
-    
+
     nh.spinOnce();
     Serial.flush(); // hack to fix "Lost sync with device" error?
 }
@@ -659,7 +659,7 @@ void loop() {
         delay(50);
         connected = false;
     }
-    
+
     // Power down if we've disconnected and deadman switch is set.
     if (!connected) {
         if (deadman) {
@@ -669,9 +669,9 @@ void loop() {
         delay(100);
         return;
     }
-    
+
     // CS 2018.1.18 Passed with slipring at count=7000
-    
+
     // Battery sensor.
     battery_voltage_sensor.update();
     if (battery_voltage_sensor.get_and_clear_changed() || force_sensors) {
@@ -746,7 +746,7 @@ void loop() {
             }
         }
     }
-    
+
     // CS 2018.1.18 Passed with slipring at count=1000
 
     nh.spinOnce();
@@ -879,7 +879,7 @@ void loop() {
         tf_broadcaster.sendTransform(ts);
         */
     }
-    
+
     nh.spinOnce();
     Serial.flush();
 
@@ -913,10 +913,10 @@ void loop() {
             imu_calibration_save_publisher.publish(&uint16ma_msg);
         }*/
     }
-    
+
     // CS 2018.1.19 Failed with true cable at 20!
     // CS 2018.1.20 Passed with true cable and CONFIG2 at 8000
-    
+
     nh.spinOnce();
     Serial.flush();
 
@@ -1000,10 +1000,10 @@ void loop() {
         nh.spinOnce();
 
     }
-    
+
     Serial.flush();
     nh.spinOnce();
-    
+
     if (report_diagnostics) {
         snprintf(buffer, MAX_OUT_CHARS, "imu.euler.x:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, static_cast<int>(ag_sensor.ex.get_latest()));
         send_diagnostics();
@@ -1046,7 +1046,7 @@ void loop() {
         snprintf(buffer, MAX_OUT_CHARS, "Power controller state changed: %d", power_controller.power_state.get());
         nh.loginfo(buffer);
     }
-    
+
     Serial.flush();
     nh.spinOnce();
 

@@ -82,7 +82,7 @@ class TorsoRelay:
         #rospy.Service('~reset_odometry', Empty, self.reset_odometry)
 
         ## Publishers.
-        
+
         self.diagnostics_buffer = []
 
         self.diagnostics_pub = rospy.Publisher('/diagnostics', DiagnosticArray, queue_size=10)
