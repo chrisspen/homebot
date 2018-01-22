@@ -46,13 +46,21 @@ class PowerController: public Sensor{
         }
 
         bool is_idle(){
-        	return power_state.get_latest() == POWERCONTROLLER_STANDBY;
+            return power_state.get_latest() == POWERCONTROLLER_STANDBY;
+        }
+
+        bool is_powering_off(){
+            return !digitalRead(SIGNAL_BUTTON_PIN);
+        }
+
+        bool is_shutdown_ready(){
+            return power_state.get_latest() == POWERCONTROLLER_READY || power_state.get_latest() == POWERCONTROLLER_SHUTDOWN;
         }
 
         virtual void update(){
-            is_pressed = !digitalRead(SIGNAL_BUTTON_PIN);
+            is_pressed = is_powering_off();
             if(power_state.get_latest() == POWERCONTROLLER_STANDBY){
-            	// Default state. Power button is not being used.
+                // Default state. Power button is not being used.
             
                 // When button's pressed, begin shutdown procedure.
                 if(is_pressed){
@@ -61,13 +69,13 @@ class PowerController: public Sensor{
                 }
             
             }else if(power_state.get_latest() == POWERCONTROLLER_WAITING){
-            	// Power button has been pressed, and we're waiting to see how long it's being held down.
+                // Power button has been pressed, and we're waiting to see how long it's being held down.
             
                 if(is_pressed){
                     // When button is held down for less than 5 seconds...
                     if((millis() - _power_button_pressed_timestamp) < 5000){
                         // Toggle LED.
-                        digitalWrite(STATUS_LED_PIN, (bool)(((millis() - _power_button_pressed_timestamp)/500) % 2));
+                        digitalWrite(STATUS_LED_PIN, (bool)(((millis() - _power_button_pressed_timestamp)/250) % 2));
                     }else{
                         // Then do actual shutdown.
                         power_state.set(POWERCONTROLLER_READY);
@@ -78,8 +86,8 @@ class PowerController: public Sensor{
                 }
             
             }else if(power_state.get_latest() == POWERCONTROLLER_READY){
-            	// Power button has been held down long enough to cause a hard power off,
-            	// so signal the shutdown is ready and wait for the button to be released.
+                // Power button has been held down long enough to cause a hard power off,
+                // so signal the shutdown is ready and wait for the button to be released.
         
                 // Signal ready to shutdown.
                 digitalWrite(STATUS_LED_PIN, LOW);
@@ -90,16 +98,17 @@ class PowerController: public Sensor{
                 }
             
             }else if(power_state.get_latest() == POWERCONTROLLER_SHUTDOWN){
-            	// Button released, finalizing hard power off.
+                // Button released, finalizing hard power off.
         
                 // Shutdown.
-                shutdown();
+                // CS 2018.1.22 Don't do this here. Wait until the host has shutdown and we lose contact.
+                //shutdown();
                 
             }
         }
 
         virtual bool get_and_clear_changed(){
-        	return power_state.get_and_clear_changed();
+            return power_state.get_and_clear_changed();
         }
         
 };

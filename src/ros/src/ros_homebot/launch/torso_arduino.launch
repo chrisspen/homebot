@@ -6,9 +6,9 @@
         sudo bash -c "source /usr/local/homebot/src/ros/setup.bash; roslaunch ros_homebot torso_arduino.launch"
         
     -->
-    <!--<node name="torso_arduino" pkg="ros_homebot" type="torso_node.py" output="screen" launch-prefix="nice -n 19 ionice -c1 -n0">-->
-    <!--<node name="torso_arduino" pkg="ros_homebot" type="torso_node.py" output="screen" launch-prefix="nice -n 19 ionice -c2 -n0">-->
-    <node name="torso_arduino" pkg="ros_homebot" type="torso_node.py" output="screen" launch-prefix="nice -n 19">
+    <!--<node name="torso_arduino" pkg="ros_homebot" type="torso_node.py" output="screen" launch-prefix="sudo -E nice -n 19 ionice -c1 -n0">-->
+    <!--<node name="torso_arduino" pkg="ros_homebot" type="torso_node.py" output="screen" launch-prefix="sudo -E nice -n 19 ionice -c2 -n0">-->
+    <node name="torso_arduino" pkg="ros_homebot" type="torso_node.py" output="screen" launch-prefix="sudo -E nice -n 15">
         <param name="verbose" type="bool" value="0" />
     </node>
 </launch>

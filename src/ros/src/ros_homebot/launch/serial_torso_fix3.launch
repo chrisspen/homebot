@@ -10,8 +10,8 @@ rostopic echo
     <group ns="torso_arduino">
         <node pkg="rosserial_arduino" type="serial_node.py" name="serial_node" output="screen">
             <param name="~port" command="list_arduinos.py torso" />
-            <param name="~baud" value="57600" />
-            <param name="~auto_reset_timeout" value="10" />
+            <param name="~baud" value="115200" />
+            <param name="~auto_reset_timeout" value="30" />
         </node>
     </group>
 </launch>

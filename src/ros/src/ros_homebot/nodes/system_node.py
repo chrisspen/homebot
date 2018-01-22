@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 from commands import getoutput
+import os
+import multiprocessing
 
 import rospy
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
@@ -89,7 +91,8 @@ class SystemNode():
     def __init__(self):
         rospy.init_node('system_node', log_level=rospy.DEBUG)
 
-        self.cpu_publisher = rospy.Publisher('~cpu', msgs.CPUUsage, queue_size=1)
+        # self.load_publisher = rospy.Publisher('~load', msgs.CPUUsage, queue_size=1)
+        # self.cpu_publisher = rospy.Publisher('~cpu', msgs.CPUUsage, queue_size=1)
         self.memory_publisher = rospy.Publisher('~memory', msgs.MemoryUsage, queue_size=1)
         self.disk_publisher = rospy.Publisher('~disk', msgs.DiskUsage, queue_size=1)
         self.diagnostics_pub = rospy.Publisher('/diagnostics', DiagnosticArray, queue_size=10)
@@ -103,8 +106,20 @@ class SystemNode():
         r = rospy.Rate(self.rate)
         while not rospy.is_shutdown():
 
+            # Find normalized system load.
+            # The ideal normalized system load less than or equal 1.0, meaning the processor is getting no more than the maximum number of tasks it can handle.
+            proc_count = multiprocessing.cpu_count()
+            load_1, load_5, load_15 = os.getloadavg()
+            normalized_load_1 = load_1/float(proc_count)
+            normalized_load_5 = load_5/float(proc_count)
+            normalized_load_15 = load_15/float(proc_count)
+            normalized_load_level = OK
+            if normalized_load_level >= 4.0:
+                normalized_load_level = ERROR
+            elif normalized_load_level >= 2.0:
+                normalized_load_level = WARN
+
             # Find CPU.
-#             rospy.loginfo('Finding CPU.')
             cpu_usage_percent = to_percent(getoutput("grep 'cpu ' /proc/stat | awk '{usage=($2+$4)*100/($2+$4+$5)} END {print usage }'"))
             cpu_usage_percent_level = OK
             if cpu_usage_percent >= c.CPU_USAGE_PERCENT_ERROR:
@@ -112,11 +127,10 @@ class SystemNode():
             elif cpu_usage_percent >= c.CPU_USAGE_PERCENT_WARN:
                 cpu_usage_percent_level = WARN
 
-            msg = msgs.CPUUsage()
-            msg.header.stamp = rospy.Time.now()
-            msg.percent_used = cpu_usage_percent
-#             print msg
-            self.cpu_publisher.publish(msg)
+            # msg = msgs.CPUUsage()
+            # msg.header.stamp = rospy.Time.now()
+            # msg.percent_used = cpu_usage_percent
+            # self.cpu_publisher.publish(msg)
 
             # Find memory.
             memory_usage_free_gbytes = to_float(getoutput("free -m|grep -i 'Mem:'|awk '{print $4}'"))
@@ -137,7 +151,6 @@ class SystemNode():
             msg.free_gbytes = memory_usage_free_gbytes
             msg.total_gbytes = memory_usage_total_gbytes
             msg.percent_used = memory_usage_percent
-#             print msg
             self.memory_publisher.publish(msg)
 
             # Find disk.
@@ -157,7 +170,6 @@ class SystemNode():
             msg.free_gbytes = disk_usage_free_gbytes
             msg.total_gbytes = disk_usage_total_gbytes
             msg.percent_used = disk_usage_percent
-#             print msg
             self.disk_publisher.publish(msg)
 
             # Find CPU clock speed.
@@ -168,10 +180,10 @@ class SystemNode():
             cpu_clock_speed_percent = get_cpu_clock_speed_percent()
 #             print('cpu_clock_speed_percent:', cpu_clock_speed_percent)
             cpu_clock_speed_percent_level = OK
-            if cpu_clock_speed_percent <= c.CPU_CLOCK_SPEED_PERCENT_ERROR:
-                cpu_clock_speed_percent_level = ERROR
-            elif cpu_clock_speed_percent <= c.CPU_CLOCK_SPEED_PERCENT_WARN:
-                cpu_clock_speed_percent_level = WARN
+            # if cpu_clock_speed_percent <= c.CPU_CLOCK_SPEED_PERCENT_ERROR:
+                # cpu_clock_speed_percent_level = ERROR
+            # elif cpu_clock_speed_percent <= c.CPU_CLOCK_SPEED_PERCENT_WARN:
+                # cpu_clock_speed_percent_level = WARN
 
             # Find CPU temperature.
             cpu_temp = get_cpu_temp()
@@ -184,23 +196,36 @@ class SystemNode():
             # Publish standard diagnostics.
             array = DiagnosticArray()
 
+            normalized_load_status = DiagnosticStatus(
+                name='Normalized System Load',
+                level=normalized_load_level,
+                message=str(normalized_load_15))
+            normalized_load_status.values = [
+                KeyValue(key='normalized load 1', value=str(normalized_load_1)),
+                KeyValue(key='normalized load 5', value=str(normalized_load_5)),
+                KeyValue(key='normalized load 15', value=str(normalized_load_15)),
+            ]
+
             cpu_temperature_status = DiagnosticStatus(
                 name='CPU Temperature',
-                level=cpu_temp_level)
+                level=cpu_temp_level,
+                message=str(cpu_temp))
             cpu_temperature_status.values = [
                 KeyValue(key='celcius', value=str(cpu_temp)),
             ]
 
             cpu_usage_status = DiagnosticStatus(
                 name='CPU Usage',
-                level=cpu_usage_percent_level)
+                level=cpu_usage_percent_level,
+                message=str(cpu_usage_percent))
             cpu_usage_status.values = [
                 KeyValue(key='percent', value=str(cpu_usage_percent)),
             ]
 
             cpu_clock_speed_status = DiagnosticStatus(
                 name='CPU Speed',
-                level=cpu_clock_speed_percent_level)
+                level=cpu_clock_speed_percent_level,
+                message=str(cpu_clock_speed_percent))
             cpu_clock_speed_status.values = [
                 KeyValue(key='clock speed (GHz)', value=str(cpu_clock_speed)),
                 KeyValue(key='min clock speed (GHz)', value=str(min_ghz)),
@@ -210,7 +235,8 @@ class SystemNode():
 
             disk_usage_status = DiagnosticStatus(
                 name='Disk Usage',
-                level=disk_usage_level)
+                level=disk_usage_level,
+                message=str(disk_usage_percent))
             disk_usage_status.values = [
                 KeyValue(key='percent', value=str(disk_usage_percent)),
                 KeyValue(key='free gb', value=str(disk_usage_free_gbytes)),
@@ -220,7 +246,8 @@ class SystemNode():
 
             memory_usage_status = DiagnosticStatus(
                 name='Memory Usage',
-                level=memory_usage_percent_level)
+                level=memory_usage_percent_level,
+                message=str(memory_usage_percent))
             memory_usage_status.values = [
                 KeyValue(key='percent', value=str(memory_usage_percent)),
                 KeyValue(key='free gb', value=str(memory_usage_free_gbytes)),
@@ -229,6 +256,7 @@ class SystemNode():
             ]
 
             array.status = [
+                normalized_load_status,
                 cpu_temperature_status,
                 cpu_usage_status,
                 cpu_clock_speed_status,

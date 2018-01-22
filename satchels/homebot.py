@@ -437,6 +437,24 @@ class HomebotSatchel(ServiceSatchel):
             'bash -c "cd src/ros; source ./setup.bash; export ROS_MASTER_URI=http://{host_string}:11311; '
             'rosrun rqt_robot_monitor rqt_robot_monitor"')
 
+    @task
+    def refesh_dns(self):
+        """
+        Clears DNS. Useful for when the robot has rebooted and it's local network name no longer resolves to the old IP.
+
+        To be run like:
+
+            fab local homebot.refresh_dns
+
+        """
+        r = self.local_renderer
+        r.sudo('/etc/init.d/dns-clean restart; /etc/init.d/networking force-reload')
+
+    @task
+    def test_sound(self):
+        r = self.local_renderer
+        r.sudo('aplay /usr/share/sounds/alsa/Front_Center.wav')
+
     @task(precursors=['packager', 'user', 'ros', 'rpi', 'ntp', 'ntpclient'])
     def configure(self):
         self.stop()

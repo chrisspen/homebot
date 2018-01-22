@@ -4,6 +4,7 @@ from __future__ import print_function
 import traceback
 import os
 import sys
+import time
 import threading
 import cPickle as pickle
 from functools import partial
@@ -15,8 +16,8 @@ import tf
 #import tf2_ros
 #http://docs.ros.org/api/sensor_msgs/html/msg/Imu.html
 from sensor_msgs.msg import Imu
-from std_msgs.msg import Header
-from std_msgs.msg import String, UInt16MultiArray
+#http://wiki.ros.org/std_msgs
+from std_msgs.msg import Header, String, UInt16MultiArray, Bool
 #from std_srvs.srv import Empty, EmptyResponse
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Quaternion, Point
@@ -102,6 +103,8 @@ class ArduinoRelay:
 
         rospy.Subscriber('/torso_arduino/odometry_relay', String, self.on_odometry_relay)
 
+        rospy.Subscriber('/torso_arduino/power/shutdown', Bool, self.on_power_shutdown)
+
         ## Begin IO.
 
         rospy.spin()
@@ -128,23 +131,29 @@ class ArduinoRelay:
         try:
             fn = self.imu_calibration_filename
             if os.path.isfile(fn):
-                print('Loading imu calibration %s...' % fn)
+                rospy.loginfo('Loading imu calibration %s...' % fn)
                 with open(fn, 'r') as fin:
                     msg = pickle.load(fin)
-                print('Sending calibration:')
-                print(msg)
+                rospy.loginfo('Sending calibration:')
+                rospy.loginfo(msg)
                 self.imu_calibration_load_pub.publish(msg)
+                rospy.loginfo('Sent.')
             else:
-                print('No saved imu calibration.')
+                rospy.loginfo('No saved imu calibration.')
         except Exception as exc:
             traceback.print_exc()
         finally:
             self.imu_calibration_loaded = True
 
+    def on_power_shutdown(self, msg):
+        rospy.loginfo('Received shutdown signal. Issuing halt command in 3 seconds...')
+        time.sleep(3)
+        os.system('sudo halt')
+
     def on_imu_calibration_save(self, msg):
         #print('Received imu calibration:', msg)
         if sum(msg.data) == 0:
-            print('Ignoring blank calibration.')
+            rospy.logwarn('Ignoring blank calibration.')
             self.load_imu_calibration()
             return
         fn = self.imu_calibration_filename
@@ -207,27 +216,27 @@ class ArduinoRelay:
             self.imu_calibration_loaded = True
 
         # Aggregate single-character messages into a complete message.
-        #if not msg.data:
-            #print('Received empty message.')
-            #return
-        #elif msg.data[0] == '^':
-            #print('Received message start.')
-            #self.diagnostics_buffer = []
-            #return
-        #elif msg.data[0] == '$':
-            #print('Received message end.')
-            #msg.data = ''.join(self.diagnostics_buffer)
-        #else:
-            #print('Recieved %i chars.' % len(msg.data))
-            #self.diagnostics_buffer.append(msg.data)
-            #return
+        # if not msg.data:
+            # #print('Received empty message.')
+            # return
+        # elif msg.data[0] == '^':
+            # #print('Received message start.')
+            # self.diagnostics_buffer = []
+            # return
+        # elif msg.data[0] == '$':
+            # #print('Received message end.')
+            # msg.data = ''.join(self.diagnostics_buffer)
+        # else:
+            # #print('Recieved %i chars.' % len(msg.data))
+            # self.diagnostics_buffer.append(msg.data)
+            # return
 
         # Extract parts.
-        print('Message length:', len(msg.data))
-        print('Message data:', msg.data)
+        # print('Message length:', len(msg.data))
+        # print('Message data:', msg.data)
         parts = msg.data.split(':')
         if len(parts) < 2:
-            print('Malformed diagnostics message.', file=sys.stderr)
+            rospy.logerr('Malformed diagnostics message.', file=sys.stderr)
             return
 
         # Complete name part.
@@ -238,7 +247,8 @@ class ArduinoRelay:
             level = int(parts[1]) # OK|WARN|ERROR|STALE
             assert level in range(4)
         except (TypeError, ValueError, AssertionError) as exc:
-            print('Malformed level: %s' % parts[1])
+            rospy.logerr('Malformed level: "%s"' % parts[1])
+            return
 
         # Complete message part.
         message = ''
@@ -260,11 +270,11 @@ class ArduinoRelay:
 
     def on_odometry_relay(self, msg):
 
-        print('odometry.msg:', msg)
+        # print('odometry.msg:', msg)
 
         parts = msg.data.split(':')
         if len(parts) < 5:
-            print('Malformed odometry message.', file=sys.stderr)
+            rospy.logerr('Malformed odometry message.', file=sys.stderr)
             return
 
         # Validate type.
@@ -287,9 +297,9 @@ class ArduinoRelay:
         # Combine and publish a complete odometry message on the receipt of the last part.
         if typ == V1:
             current_time = rospy.Time.now()
-            print('position:', self._odometry_v0)
+            # print('position:', self._odometry_v0)
             x, y, z, th = self._odometry_v0
-            print('velocity:', self._odometry_v1)
+            # print('velocity:', self._odometry_v1)
             vx, vy, vz, vth = self._odometry_v1
 
             # since all odometry is 6DOF we'll need a quaternion created from yaw

@@ -91,8 +91,6 @@ bool force_sensors = false;
 // This is used to detect a lost connection to the host and perform emergency shutdown of the motors.
 bool connected = false;
 
-unsigned long last_memory_report = 0;
-
 // http://wiki.ros.org/roscpp/Overview/Logging
 // http://wiki.ros.org/rosserial/Overview/Logging
 ros::NodeHandle nh;
@@ -123,6 +121,7 @@ char prebuffer[TEN_CHARS + 1];  //buffer used to format a line (+1 is for traili
 
 bool battery_changed = false;
 
+unsigned long cnt = 0;
 unsigned long last_debug = 0;
 
 bool report_diagnostics = false;
@@ -130,6 +129,10 @@ unsigned long last_diagnostic = 0;
 
 unsigned long a_encoder_last_change = 0;
 unsigned long b_encoder_last_change = 0;
+
+// If false, stays on when it becomes disconneced.
+// If set to false, then if we lose connection to the host, we power off.
+bool deadman = false;
 
 // Flags to track when the IMU first becomes ready.
 // We track this separately from the IMU's direct flags, because those can turn false, as the fusion algorithm constantly recalibrates.
@@ -142,12 +145,12 @@ int accel_ready, gyro_ready, magnetometer_ready, imu_ready;
 //diagnostic_msgs::KeyValue status_keyvalue;
 
 //https://learn.adafruit.com/memories-of-an-arduino/measuring-free-memory
-int freeRam () 
-{
-  extern int __heap_start, *__brkval; 
-  int v; 
-  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval); 
-}
+//int freeRam () 
+//{
+//  extern int __heap_start, *__brkval; 
+//  int v; 
+//  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval); 
+//}
 
 /*
  * Begin sensor definitions.
@@ -250,6 +253,10 @@ ros::Publisher ultrasonic_publishers[3] = {
 
 ros::Publisher power_button_publisher = ros::Publisher("power/button", &bool_msg);
 
+// Simulate with:
+// rostopic pub --once /torso_arduino/power/shutdown std_msgs/Bool 1
+ros::Publisher shutdown_publisher = ros::Publisher("power/shutdown", &bool_msg);
+
 ros::Publisher motor_a_encoder_publisher = ros::Publisher("motor/encoder/a", &int16_msg);
 ros::Publisher motor_b_encoder_publisher = ros::Publisher("motor/encoder/b", &int16_msg);
 ros::Publisher motor_error_publisher = ros::Publisher("motor/error", &byte_msg);
@@ -336,6 +343,18 @@ void stop_motors() {
 /*
  * Begin subscribers.
  */
+
+// rostopic pub --once /torso_arduino/deadman/set std_msgs/Bool 1
+// rostopic pub --once /torso_arduino/deadman/set std_msgs/Bool 0
+void on_deadman(const std_msgs::Bool& msg) {
+    if (msg.data) {
+        nh.loginfo("Deadman set. If we lose connection, we will poweroff.");
+    } else {
+        nh.loginfo("Deadman unset. if we lose connection, we will stay powered.");
+    }
+    deadman = msg.data;
+}
+ros::Subscriber<std_msgs::Bool> deadman_sub("deadman/set", &on_deadman);
 
 // rostopic pub --once /torso_arduino/ultrasonics/enabled std_msgs/Bool 1
 // rostopic pub --once /torso_arduino/ultrasonics/enabled std_msgs/Bool 0
@@ -480,14 +499,15 @@ void setup() {
 //    pinMode(EXTERNAL_POWER_SENSE_1_PIN, INPUT);
 //    pinMode(EXTERNAL_POWER_SENSE_2_PIN, INPUT);
 
-    nh.getHardware()->setBaud(57600);
-    //nh.getHardware()->setBaud(115200); // loses connection after 5 minutes, causes ROS error "Lost sync with device, restarting..."?
+    //nh.getHardware()->setBaud(57600);
+    nh.getHardware()->setBaud(115200); // loses connection after 5 minutes, causes ROS error "Lost sync with device, restarting..."?
     nh.initNode();
 
     // Register subscriptions.
     nh.subscribe(toggle_led_sub);
     nh.subscribe(force_sensors_sub);
     nh.subscribe(halt_sub);
+    nh.subscribe(deadman_sub);
     nh.subscribe(ultrasonics_enabled_sub);
     nh.subscribe(motor_speed_sub);
     nh.subscribe(cmd_vel_sub);
@@ -498,6 +518,7 @@ void setup() {
     //nh.advertise(battery_charge_publisher);
     nh.advertise(battery_state_publisher);
     nh.advertise(power_button_publisher);
+    nh.advertise(shutdown_publisher);
     for (int i = 0; i < 3; i++) {
         nh.advertise(edge_publishers[i]);
     }
@@ -545,45 +566,46 @@ void send_diagnostics() {
     // Assumes you called `snprintf(buffer, MAX_OUT_CHARS, "key:value");` first
     string_msg.data = buffer;
     diagnostics_publisher.publish(&string_msg);
-    Serial.flush(); // hack to fix "Lost sync with device" error?
     
-    /*/ Send each character as a single smaller message.
-    snprintf(prebuffer, TEN_CHARS, "^");
-    string_msg.data = prebuffer;
-    diagnostics_publisher.publish(&string_msg);
-    Serial.flush(); // hack to fix "Lost sync with device" error?
+    // Send each character as a single smaller message.
+    //snprintf(prebuffer, TEN_CHARS, "^");
+    //string_msg.data = prebuffer;
+    //diagnostics_publisher.publish(&string_msg);
     
-    for(int i=0; i < strlen(buffer); i++){ //TODO:send 5 byte chunks?
-        strncpy(midbuffer, buffer + i, 1);
-        string_msg.data = midbuffer;
-        diagnostics_publisher.publish(&string_msg);
-        Serial.flush(); // hack to fix "Lost sync with device" error?
-    }
+    //for(int i=0; i < strlen(buffer); i+=5){ // send 5 byte chunks? note, chunk size should be -1 less than midbuffer size
+        //strncpy(midbuffer, buffer + i, min(5, strlen(buffer) - i));
+        //midbuffer[min(5, strlen(buffer) - i)] = '\0';
+        //string_msg.data = midbuffer;
+        //diagnostics_publisher.publish(&string_msg);
+    //}
+    //snprintf(prebuffer, TEN_CHARS, "$");
+    //string_msg.data = prebuffer;
+    //diagnostics_publisher.publish(&string_msg);
     
-    snprintf(prebuffer, TEN_CHARS, "$");
-    string_msg.data = prebuffer;
-    diagnostics_publisher.publish(&string_msg);
+    nh.spinOnce();
     Serial.flush(); // hack to fix "Lost sync with device" error?
-    */
 }
 
 void loop() {
 
-    // Report memory usage every 10 seconds.
-    if (millis() - last_memory_report >= 10000) { // 300000=5 minutes
-        last_memory_report = millis();
-
-        snprintf(buffer, MAX_OUT_CHARS, "freeMemory(): %d", freeMemory());
-        nh.loginfo(buffer);
-
-        snprintf(buffer, MAX_OUT_CHARS, "freeRam(): %d", freeRam());
-        nh.loginfo(buffer);
-    }
-
+    // Trigger diagnostic message every N seconds.
     report_diagnostics = false;
     if (millis() - last_diagnostic >= DIAGNOSTIC_REPORT_FREQ_MS) {
         last_diagnostic = millis();
         report_diagnostics = true;
+        snprintf(buffer, MAX_OUT_CHARS, "memory:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, freeMemory());
+        send_diagnostics();
+        if (!power_controller.is_powering_off()) {
+            toggle_led();
+        }
+    }
+
+    // Trigger a debugging count log every N seconds.
+    if (millis() - last_debug >= 5000) {
+        last_debug = millis();
+        cnt += 1;
+        snprintf(buffer, MAX_OUT_CHARS, "count:%d", cnt);
+        nh.loginfo(buffer);
     }
 
     //robot_status.name = "Robot";
@@ -617,6 +639,15 @@ void loop() {
 //        nh.loginfo(buffer);
 //    }
 
+    // Auto-set deadman if powerbutton held down long enough.
+    if (power_controller.is_shutdown_ready() && !deadman) {
+        deadman = true;
+        nh.loginfo("Deadman set by power button.");
+        bool_msg.data = true;
+        shutdown_publisher.publish(&bool_msg);
+        nh.spinOnce();
+    }
+
     // Track connection status with host.
     if (nh.connected()) {
         //digitalWrite(STATUS_LED_PIN, 1);
@@ -628,7 +659,19 @@ void loop() {
         delay(50);
         connected = false;
     }
-
+    
+    // Power down if we've disconnected and deadman switch is set.
+    if (!connected) {
+        if (deadman) {
+            power_controller.shutdown();
+        }
+        nh.spinOnce();
+        delay(100);
+        return;
+    }
+    
+    // CS 2018.1.18 Passed with slipring at count=7000
+    
     // Battery sensor.
     battery_voltage_sensor.update();
     if (battery_voltage_sensor.get_and_clear_changed() || force_sensors) {
@@ -641,6 +684,7 @@ void loop() {
         if (external_power_sensors[i].get_and_clear_changed() || force_sensors) {
             bool_msg.data = external_power_sensors[i].get_bool();
             external_power_publishers[i].publish(&bool_msg);
+            nh.spinOnce();
         }
     }
     if (report_diagnostics) {
@@ -660,6 +704,7 @@ void loop() {
         if (edge_sensors[i].get_and_clear_changed() || force_sensors) {
             bool_msg.data = edge_sensors[i].value.get();
             edge_publishers[i].publish(&bool_msg);
+            nh.spinOnce();
         }
         if (report_diagnostics) {
             snprintf(buffer, MAX_OUT_CHARS, "edge.%d:%d:%d", i, diagnostic_msgs::DiagnosticStatus::OK, edge_sensors[i].value.get_latest());
@@ -686,6 +731,7 @@ void loop() {
                 range_msg.max_range = 4; // meters
                 range_msg.range = ultrasonic_sensors[i].distance.get()/100.0; // meters
                 ultrasonic_publishers[i].publish(&range_msg);
+                nh.spinOnce();
             }
             if (report_diagnostics) {
                 snprintf(buffer, MAX_OUT_CHARS, "ultrasonic.%d.cm:%d:%d", i,
@@ -700,9 +746,11 @@ void loop() {
             }
         }
     }
+    
+    // CS 2018.1.18 Passed with slipring at count=1000
 
-    Serial.flush();
     nh.spinOnce();
+    Serial.flush();
 
     // Temperature.
     // CS 2017.2.1 Disabled because not supported by the chip in the Arduino Uno*Pro.
@@ -720,17 +768,20 @@ void loop() {
         a_encoder_last_change = millis();
         int16_msg.data = motion_controller.a_encoder.get_latest();
         motor_a_encoder_publisher.publish(&int16_msg);
+        nh.spinOnce();
         odometry_tracker.update_left(motion_controller.a_encoder.get_latest());
     }
     if (motion_controller.a_encoder.get_and_clear_changed() || motion_controller.b_encoder.get_and_clear_changed() || force_sensors) {
         b_encoder_last_change = millis();
         int16_msg.data = motion_controller.b_encoder.get_latest();
         motor_b_encoder_publisher.publish(&int16_msg);
+        nh.spinOnce();
         odometry_tracker.update_right(motion_controller.b_encoder.get_latest());
     }
     if (motion_controller.eflag.get_and_clear_changed() || force_sensors) {
         byte_msg.data = motion_controller.eflag.get_latest();
         motor_error_publisher.publish(&byte_msg);
+        nh.spinOnce();
     }
     if (report_diagnostics) {
         snprintf(buffer, MAX_OUT_CHARS, "motor.connection:%d", (motion_controller.eflag.get() & COMMOTION_ERROR_DISCONNECT));
@@ -760,8 +811,11 @@ void loop() {
         send_diagnostics();
     }
 
-    Serial.flush();
+    // CS 2018.1.18 Failed with slipring!!!
+    // CS 2018.1.19 Passed with true cable at 7000
+
     nh.spinOnce();
+    Serial.flush();
 
     // Odometry
     if (odometry_tracker.changed && millis() - odometry_tracker.last_report_time >= 1000) {
@@ -789,11 +843,13 @@ void loop() {
             ftol(odometry_tracker.x), ftol(odometry_tracker.y), ftol(odometry_tracker.z), ftol(odometry_tracker.th));
         string_msg.data = buffer;
         odometry_publisher.publish(&string_msg);
+        nh.spinOnce();
 
         snprintf(buffer, MAX_OUT_CHARS, "v1:%ld:%ld:%ld:%ld",
             ftol(odometry_tracker.vx), ftol(odometry_tracker.vy), ftol(odometry_tracker.vz), ftol(odometry_tracker.vth));
         string_msg.data = buffer;
         odometry_publisher.publish(&string_msg);
+        nh.spinOnce();
 
         /*
         // CS 2017.4.9 Disabled becaues this crashes the Arduino and/or overwhelms its serial port.
@@ -824,14 +880,15 @@ void loop() {
         */
     }
     
-    Serial.flush();
     nh.spinOnce();
+    Serial.flush();
 
     // IMU sensor.
     ag_sensor.update();
     if (ag_sensor.sys_calib.get_and_clear_changed() || force_sensors) {
         int16_msg.data = ag_sensor.sys_calib.get();
         imu_calibration_sys_publisher.publish(&int16_msg);
+        nh.spinOnce();
         imu_ready = max(imu_ready, int16_msg.data);
 
         // http://www.cplusplus.com/reference/cstdio/snprintf/
@@ -857,12 +914,16 @@ void loop() {
         }*/
     }
     
-    Serial.flush();
-    nh.spinOnce();
+    // CS 2018.1.19 Failed with true cable at 20!
+    // CS 2018.1.20 Passed with true cable and CONFIG2 at 8000
     
+    nh.spinOnce();
+    Serial.flush();
+
     if (ag_sensor.gyr_calib.get_and_clear_changed() || force_sensors) {
         int16_msg.data = ag_sensor.gyr_calib.get();
         imu_calibration_gyr_publisher.publish(&int16_msg);
+        nh.spinOnce();
         gyro_ready = max(gyro_ready, int16_msg.data);
 
         snprintf(buffer, MAX_OUT_CHARS, "imu_calib.gyr:%d", calib_to_status[gyro_ready]);
@@ -871,6 +932,7 @@ void loop() {
     if (ag_sensor.acc_calib.get_and_clear_changed() || force_sensors) {
         int16_msg.data = ag_sensor.acc_calib.get();
         imu_calibration_acc_publisher.publish(&int16_msg);
+        nh.spinOnce();
         accel_ready = max(accel_ready, int16_msg.data);
 
         //This never seems to calibrate, even after following Adafruit's instructions.
@@ -881,6 +943,7 @@ void loop() {
     if (ag_sensor.mag_calib.get_and_clear_changed() || force_sensors) {
         int16_msg.data = ag_sensor.mag_calib.get();
         imu_calibration_mag_publisher.publish(&int16_msg);
+        nh.spinOnce();
         magnetometer_ready = max(magnetometer_ready, int16_msg.data);
 
         snprintf(buffer, MAX_OUT_CHARS, "imu_calib.mag:%d", calib_to_status[magnetometer_ready]);
@@ -919,12 +982,14 @@ void loop() {
             ftol(ag_sensor.ex.get_latest()*PI/180.), ftol(ag_sensor.ey.get_latest()*PI/180.), ftol(ag_sensor.ez.get_latest()*PI/180.));
         string_msg.data = buffer;
         imu_publisher.publish(&string_msg);
+        nh.spinOnce();
 
         snprintf(buffer, MAX_OUT_CHARS, "g:%ld:%ld:%ld",
             // angular velocity in radians/second
             ftol(ag_sensor.gx.get_latest()*PI/180.), ftol(ag_sensor.gy.get_latest()*PI/180.), ftol(ag_sensor.gz.get_latest()*PI/180.));
         string_msg.data = buffer;
         imu_publisher.publish(&string_msg);
+        nh.spinOnce();
 
         snprintf(buffer, MAX_OUT_CHARS, "a:%ld:%ld:%ld",
             // linear acceleration in meters/second^2
@@ -932,6 +997,7 @@ void loop() {
             ftol(ag_sensor.ay.get_latest()), ftol(ag_sensor.ax.get_latest()), ftol(ag_sensor.az.get_latest()));
         string_msg.data = buffer;
         imu_publisher.publish(&string_msg);
+        nh.spinOnce();
 
     }
     
@@ -958,7 +1024,7 @@ void loop() {
             send_diagnostics();
         }
     }
-    
+
     Serial.flush();
     nh.spinOnce();
 
@@ -967,6 +1033,7 @@ void loop() {
     if (power_button_sensor.get_and_clear_changed() || force_sensors) {
         bool_msg.data = power_button_sensor.get_value();
         power_button_publisher.publish(&bool_msg);
+        nh.spinOnce();
     }
     if (report_diagnostics) {
         snprintf(buffer, MAX_OUT_CHARS, "power_button:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, !power_button_sensor.get_value());
@@ -987,23 +1054,25 @@ void loop() {
     if (battery_changed) {
         battery_changed = false;
 
+        battery_msg.percentage = battery_voltage_sensor.get_charge_ratio();       // Charge percentage on 0 to 1 range  (If unmeasured NaN)
+        battery_msg.present = is_battery_present();
+        battery_msg.voltage = battery_voltage_sensor.get_voltage();         // Voltage in Volts (Mandatory)
+        /* Causes send_node.py to crash?
         // http://docs.ros.org/kinetic/api/sensor_msgs/html/msg/BatteryState.html
         battery_msg.header.stamp = nh.now();
         battery_msg.header.frame_id = base_link;
-        battery_msg.voltage = battery_voltage_sensor.get_voltage();         // Voltage in Volts (Mandatory)
         //battery_msg.current = sqrt (-1); //NaN;          // Negative when discharging (A)  (If unmeasured NaN)
         //battery_msg.charge           // Current charge in Ah  (If unmeasured NaN)
         //battery_msg.capacity         // Capacity in Ah (last full capacity)  (If unmeasured NaN)
         battery_msg.design_capacity = 3; // Capacity in Ah (design capacity)  (If unmeasured NaN)
-        battery_msg.percentage = battery_voltage_sensor.get_charge_ratio();       // Charge percentage on 0 to 1 range  (If unmeasured NaN)
         battery_msg.power_supply_status = get_battery_supply_status();
         battery_msg.power_supply_health = sensor_msgs::BatteryState::POWER_SUPPLY_HEALTH_UNKNOWN;
         battery_msg.power_supply_technology = sensor_msgs::BatteryState::POWER_SUPPLY_TECHNOLOGY_LIPO;
-        battery_msg.present = is_battery_present();
         //battery_msg.cell_voltage   // An array of individual cell voltages for each cell in the pack
         //battery_msg.location          // The location into which the battery is inserted. (slot number or plug)
         //battery_msg.serial_number     // The best approximation of the battery serial number
         battery_state_publisher.publish(&battery_msg);
+        */
 
         // Report diagnostics.
         // Note, we can't render floats or doubles with snprintf because the Arduino implementation doesn't support this.
@@ -1035,9 +1104,14 @@ void loop() {
     force_sensors = false;
 
     Serial.flush();
-    nh.requestSyncTime();
-    Serial.flush();
     nh.spinOnce();
     delay(1);
+
+    // CS 2018.1.20 Passed with true cable and CONFIG3 at 1000
+
+    // Hard stop TODO:remove
+    //nh.spinOnce();
+    //delay(10);
+    //return;
 
 }

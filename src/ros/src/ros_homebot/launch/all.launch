@@ -6,7 +6,9 @@
     <include file="$(find ros_homebot)/launch/serial_head.launch" />
     
     <!-- Relays messages to/from the torso arduino. -->
-    <!--<include file="$(find ros_homebot)/launch/serial_torso.launch" /> TODO-->
+    <include file="$(find ros_homebot)/launch/serial_torso.launch" />
+    <!-- Relays messages to/from the torso arduino, and also allows forcibly resetting arduino. -->
+    <!--<include file="$(find ros_homebot)/launch/serial_torso_fix3.launch" />-->
     
     <!-- Relays complex messages from the arduinos. -->
     <include file="$(find ros_homebot)/launch/arduino_relay.launch" />

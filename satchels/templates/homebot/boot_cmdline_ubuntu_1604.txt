@@ -1,0 +1,1 @@
+net.ifnames=0 biosdevname=0 dwc_otg.lpm_enable=0 dwc_otg.fiq_fix_enable=1 dwc_otg.microframe_schedule=1 dwc_otg.nak_holdoff_enable=1 dwc_otg.fiq_enable=1 dwc_otg.fiq_fsm_enable=1 dwc_otg.fiq_fsm_mask=0x3 dwc_otg.speed=1 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline rootwait quiet splash
