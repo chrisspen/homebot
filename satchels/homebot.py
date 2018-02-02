@@ -456,7 +456,7 @@ class HomebotSatchel(ServiceSatchel):
     def upgrade_system_packages(self):
         """
         Does a full upgrade and cleanup of all apt packages. May require a reboot. Should be run like:
-        
+
             fab prod homebot.upgrade_system_packages
 
         """

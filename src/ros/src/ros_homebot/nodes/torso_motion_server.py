@@ -1,21 +1,23 @@
 #! /usr/bin/env python
 import time
-import sys
-import traceback
+# import sys
+# import traceback
 from threading import RLock
 
 #import roslib
 #roslib.load_manifest('ros_homebot')
 import rospy
-import actionlib
+from std_msgs.msg import UInt16MultiArray
+# import actionlib
 
-import ros_homebot.msg
+# import ros_homebot.msg
 from ros_homebot_python import constants as c
-from ros_homebot_python.node import (
-    subscribe_to_topic,
-    get_service_proxy,
-)
-from ros_homebot_python import utils
+# from ros_homebot_python.node import (
+    # subscribe_to_topic,
+    # get_service_proxy,
+# )
+# from ros_homebot_python import utils
+import ros_homebot_msgs
 
 class Buffer(object):
 
@@ -79,7 +81,7 @@ class TorsoMotionServer(object):
         # subscribe_to_topic(c.TORSO, c.ID_ULTRASONIC, self.on_ultrasonic_update)
         # subscribe_to_topic(c.TORSO, c.ID_STATUS_BUTTON, self.on_status_button_update)
         #TODO:accel/gyro?
-        
+
         self.motor_speed_pub = rospy.Publisher('/torso_arduino/motor/speed', UInt16MultiArray, queue_size=1)
 
         rospy.on_shutdown(self.shutdown)
@@ -115,23 +117,23 @@ class TorsoMotionServer(object):
                 self.on_move)
 
     def on_move(self, msg):
-        
+
         left_velocity = msg.left_velocity
         right_velocity = msg.right_velocity
         seconds = msg.seconds
-        
+
         #proxy = get_service_proxy(c.TORSO, c.ID_MOTOR_SPEED)
         #proxy(left=left_velocity, right=right_velocity)
         msg = UInt16MultiArray()
         msg.data = [left_velocity, right_velocity]
         self.motor_speed_pub.publish(msg)
-        
+
         time.sleep(seconds)
-        
+
         msg = UInt16MultiArray()
         msg.data = [0, 0]
         self.motor_speed_pub.publish(msg)
-        
+
         return 1
 
     # def cancel_all(self, exclude=None):

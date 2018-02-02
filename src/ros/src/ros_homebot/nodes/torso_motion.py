@@ -11,13 +11,13 @@ import time
 import rospy
 
 # Brings in the SimpleActionClient
-import actionlib
+# import actionlib
 
 # Brings in the messages used by the wander action, including the
 # goal message and the result message.
 import ros_homebot.msg
 
-from ros_homebot_python import constants as c
+# from ros_homebot_python import constants as c
 
 class TorsoMotionClient(object):
 
