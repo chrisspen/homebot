@@ -71,6 +71,7 @@ class ArduinoRelay:
         self._lock = threading.RLock()
 
         self.imu_calibration_loaded = False
+        self.imu_calibration_loaded_time = rospy.Time(0)
 
         self.diagnostics_msg_count = 0
 
@@ -137,6 +138,8 @@ class ArduinoRelay:
                 rospy.loginfo('Sending calibration:')
                 rospy.loginfo(msg)
                 self.imu_calibration_load_pub.publish(msg)
+                self.imu_calibration_loaded = True
+                self.imu_calibration_loaded_time = rospy.Time.now()
                 rospy.loginfo('Sent.')
             else:
                 rospy.loginfo('No saved imu calibration.')
@@ -211,9 +214,8 @@ class ArduinoRelay:
         #print('diagnostics.msg:', msg)
         self.diagnostics_msg_count += 1
 
-        if not self.imu_calibration_loaded:
+        if (rospy.Time.now() - self.imu_calibration_loaded_time).secs >= 300:
             self.load_imu_calibration()
-            self.imu_calibration_loaded = True
 
         # Aggregate single-character messages into a complete message.
         # if not msg.data:

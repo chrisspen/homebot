@@ -399,6 +399,10 @@ class MotionController: public Sensor
             float right_speed_out = (linear + angular*TORSO_TREAD_WIDTH_METERS/2) * VELOCITY_TO_SPEED;
             set(left_speed_out, right_speed_out);
         }
+        
+        bool is_moving_forward(){
+            return _motor_left.get_speed() > 0 && _motor_right.get_speed() > 0;
+        }
 
         bool is_executing_movement(){
             return MOVEMENT_ACTIVE == _movement_status;

@@ -1,6 +1,6 @@
 use <../electronics/mic.scad>;
-use <../openscad-extra/wedge.scad>;
-use <../openscad-extra/countersink.scad>;
+use <../openscad-extra/src/wedge.scad>;
+use <../openscad-extra/src/countersink.scad>;
 
 module mic_layout(){
     angle = 25;

@@ -6,6 +6,10 @@ stdout_logfile=/var/log/supervisor-homebot.log
 stderr_logfile=/var/log/supervisor-homebot.log
 stopasgroup=true
 autostart=true
-autorestart=true
+# http://supervisord.org/configuration.html?highlight=autorestart
+# Set autorestart to 1 to restart process if it crashes.
+# CS 2018-2-1 Don't do this. Causes ROS to get stuck in a restart loop.
+#autorestart=true
+autorestart=false
 startretries=3
 priority=998

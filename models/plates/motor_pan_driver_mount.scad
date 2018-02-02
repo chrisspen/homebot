@@ -1,6 +1,6 @@
 include <../settings.scad>;
 use <../electronics/pololu_drv8838.scad>;
-use <../openscad-extra/countersink.scad>;
+use <../openscad-extra/src/countersink.scad>;
 
 module make_motor_pan_driver_mount(){
 

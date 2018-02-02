@@ -11,6 +11,10 @@ bearings_slew_bearing_inner_top_20160214.stl,0.8,,,,,0
 bearings_slew_bearing_outer_20160214.stl,0.8,black,15,,,0
 bearings_slew_bearing_outer_mount_20160215.stl,0.8,,,,,0
 bnO055_mount.stl,,,,,,0
+caster_housing_bottom.stl,,,,,,0
+caster_housing_center.stl,,,,,,0
+caster_housing_top.stl,,,,,,0
+caster_housing_wheel.stl,,,,,,0
 collar_front.stl,0.8,,,,,0
 collar_side.stl,0.8,,,,,0
 commotion_switch.stl,,,,,,0
@@ -23,6 +27,7 @@ flexiTreads_idler.stl,0.8,,,,,0
 flexiTreads_tensioner_18_10_20160529.stl,0.8,,15,,,0
 flexiTreads_track_sprockets12_length228_20150920.stl,0.8,,,,,0
 gears_pan_gears_small_dh_20150906.stl,0.8,,,,,0
+head_arduino_mount_20171120.stl,,,,,,0
 head_bottom.stl,0.8,,,,,0
 head_face_laser_mount_20160214.stl,0.8,,,,,0
 head_face_led_mount_20160214.stl,0.8,,,,,0
@@ -61,11 +66,16 @@ lrf_calibration_nub_all.stl,0.8,,,,,0
 lrf_calibration_top.stl,0.8,,,,,0
 mic_mount.stl,0.8,,,,,0
 mock_tread.stl,0.8,,,,,0
+motor_gear_drive.stl,,,,,,0
 motor_mount_pan_bottom_20151224.stl,0.8,,,,,0
 motor_mount_pan_top_20151224.stl,0.8,,,,,0
 motor_pan_driver_mount.stl,0.8,,,,,0
 motor_unimount_2_a0_20160406.stl,0.8,,,,,0
 motor_unimount_2_b0_20160406.stl,0.8,,,,,0
+motor_wheel_axle.stl,,,,,,0
+motor_wheel_plate_inner.stl,,,,,,0
+motor_wheel_plate_outer.stl,,,,,,0
+motor_wheel_wheel.stl,,,,,,0
 mpu6050_mount_20160508.stl,0.8,,,,,0
 neck_sensor_mount.stl,,,,,,0
 neck_strut_open.stl,0.8,,,,,0

@@ -1,8 +1,8 @@
 include <../settings.scad>;
-use <../openscad-extra/countersink.scad>;
-use <../openscad-extra/torus.scad>;
-use <../openscad-extra/screw.scad>;
-use <../openscad-extra/fillet.scad>;
+use <../openscad-extra/src/countersink.scad>;
+use <../openscad-extra/src/torus.scad>;
+use <../openscad-extra/src/screw.scad>;
+use <../openscad-extra/src/fillet.scad>;
 use <mic_mount.scad>;
 
 module make_head_shell_bb($fn=100, contraction=0, neck=1){

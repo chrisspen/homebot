@@ -1,6 +1,6 @@
 include <../settings.scad>;
-use <../openscad-extra/countersink.scad>;
-use <../openscad-extra/fillet.scad>;
+use <../openscad-extra/src/countersink.scad>;
+use <../openscad-extra/src/fillet.scad>;
 
 module rpi_mount_holes2(d=screw_thread_diameter2, height=u){
     hole_d = 2.75;

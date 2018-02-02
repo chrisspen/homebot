@@ -54,6 +54,13 @@ After mapping a small group of rooms, the robot will be deactivated, manually re
 
     todo
 
+Baby duck
+---------
+
+Identify and track a target as they move around.
+
+    todo
+
 Hide and go seek
 ----------------
 

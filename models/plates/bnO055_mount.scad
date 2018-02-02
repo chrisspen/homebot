@@ -1,4 +1,4 @@
-use <../openscad-extra/countersink.scad>;
+use <../openscad-extra/src/countersink.scad>;
 
 module make_bnO055_holes(d=2.4){
     //color("blue")

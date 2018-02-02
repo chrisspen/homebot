@@ -7,7 +7,7 @@
 
 // This is the speed used when rotating the head to find the centermark.
 // Speed is in the range of [-255:+255].
-#define PM_CALIBRATION_SPEED 45
+#define PM_CALIBRATION_SPEED 60
 
 // The number of pulses the pan motor's encoder will give to rotate the head a full 360 degrees.
 // This number was calculated through the size of the neck gears, motor gearing, and encoder

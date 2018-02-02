@@ -2,7 +2,7 @@
 Countersink depression for screw heads.
 */
 include <../settings.scad>;
-use <../openscad-extra/countersink.scad>;
+use <../openscad-extra/src/countersink.scad>;
 
 /*
 module make_countersink(d1=0, d2=0, h=0, l=0, outer=100, inner=200, bt_extra=0, $fn=25){
@@ -18,13 +18,13 @@ module make_countersink(d1=0, d2=0, h=0, l=0, outer=100, inner=200, bt_extra=0, 
         cylinder(d=d1, h=l, center=true, $fn=$fn);
     
         // big top
-    	translate([0,0,(h+extra)/2])
-    	cylinder(d=d2+bt_extra, h=outer, center=false, $fn=$fn);
+        translate([0,0,(h+extra)/2])
+        cylinder(d=d2+bt_extra, h=outer, center=false, $fn=$fn);
 
-    	// lower bottom
-    	translate([0,0,-(h+extra)/2-inner])
-    	cylinder(d=d1, h=inner, center=false, $fn=$fn);
-	}
+        // lower bottom
+        translate([0,0,-(h+extra)/2-inner])
+        cylinder(d=d1, h=inner, center=false, $fn=$fn);
+    }
 }
 */
 

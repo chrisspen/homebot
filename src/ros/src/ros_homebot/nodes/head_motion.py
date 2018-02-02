@@ -14,7 +14,7 @@ from ros_homebot_python.node import (
     packet_to_service_type,
 )
 
-class SpinHeadServer:
+class HeadMotionServer:
     """
     Spins the head around in short increments indefinitely.
     """
@@ -89,6 +89,6 @@ class SpinHeadServer:
 
 
 if __name__ == '__main__':
-  rospy.init_node('spin_head')
-  server = SpinHeadServer(rospy.get_name())
+  rospy.init_node('head_motion')
+  server = HeadMotionServer(rospy.get_name())
   rospy.spin()

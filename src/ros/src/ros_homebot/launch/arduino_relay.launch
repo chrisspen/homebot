@@ -2,6 +2,6 @@
 Handles complex message generation from the Arduinos.
 -->
 <launch>
-    <node name="arduino_relay" pkg="ros_homebot" type="arduino_relay.py" output="screen" launch-prefix="nice -n -19">
+    <node name="arduino_relay" pkg="ros_homebot" type="arduino_relay.py" output="screen" clear_params="true">
     </node>
 </launch>

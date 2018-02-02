@@ -9,19 +9,19 @@
     <include file="$(find ros_homebot)/launch/serial_torso.launch" />
     <!-- Relays messages to/from the torso arduino, and also allows forcibly resetting arduino. -->
     <!--<include file="$(find ros_homebot)/launch/serial_torso_fix3.launch" />-->
-    
+
     <!-- Relays complex messages from the arduinos. -->
     <include file="$(find ros_homebot)/launch/arduino_relay.launch" />
-    
+
     <!-- Reads from the Pi camera and publishes it as compressed ROS image messages. -->
     <include file="$(find ros_homebot)/launch/raspicam_compressed_320.launch" />
-    
+
     <!-- Handles generating speech from text. -->
     <include file="$(find ros_homebot)/launch/sound.launch" />
-    
+
     <!-- Updates the external status LED to reflect diagnostic status. -->
     <include file="$(find ros_homebot)/launch/led_status.launch" />
-    
+
     <!-- Monitors system metrics (CPU/memory/disk) and reports them as diagnostic messages. -->
     <include file="$(find ros_homebot)/launch/system.launch" />
 
@@ -41,4 +41,5 @@
     <!--<include file="$(find ros_homebot)/launch/lrf_compressed_320.launch" />-->
     <!--<include file="$(find ros_homebot)/launch/power.launch" />-->
     <!--<include file="$(find ros_homebot)/launch/qr_tracker.launch" />-->
+
 </launch>

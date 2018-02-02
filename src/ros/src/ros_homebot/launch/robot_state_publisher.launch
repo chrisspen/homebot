@@ -10,7 +10,7 @@ If you get the error librobot_state_publisher_solver.so: cannot open shared obje
 make sure you're launching this from the src/ros directory and have sourced setup.bash.
 -->
 <launch>
-    <arg name="model" default="$(find ros_homebot_description)/urdf/homebot.urdf.xacro"/>
+    <arg name="model" default="$(find ros_homebot_description)/urdf/homebot.urdf.xacro" />
     <param name="robot_description" command="$(find xacro)/xacro --inorder $(arg model)" />
-    <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" clear_params="true" />
 </launch>

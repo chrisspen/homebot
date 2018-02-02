@@ -1,6 +1,6 @@
 include <../settings.scad>;
 use <battery_tray2.scad>;
-use <../openscad-extra/countersink.scad>;
+use <../openscad-extra/src/countersink.scad>;
 
 module make_head_torso_jack(){
     

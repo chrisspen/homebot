@@ -1,0 +1,8 @@
+# Define the goal
+geometry_msgs/Twist velocity
+int32 seconds
+---
+# Define the result
+---
+# Define a feedback message
+int32 percent

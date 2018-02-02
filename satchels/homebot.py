@@ -232,10 +232,7 @@ class HomebotSatchel(ServiceSatchel):
     @task
     def delete_logs(self):
         r = self.local_renderer
-        #r.sudo('rm -Rf /home/{user}/.ros/log/*')
-        prompts = {'(y/n)?': 'y'}
-        with self.settings(prompts=prompts):
-            r.run('cd {project_dir}/src/ros; . ./setup.bash; rosclean purge')
+        r.run('cd {project_dir}/src/ros; . ./setup.bash; rosclean purge -y')
 
     #DEPRECATED
     @task
@@ -454,6 +451,17 @@ class HomebotSatchel(ServiceSatchel):
     def test_sound(self):
         r = self.local_renderer
         r.sudo('aplay /usr/share/sounds/alsa/Front_Center.wav')
+
+    @task
+    def upgrade_system_packages(self):
+        """
+        Does a full upgrade and cleanup of all apt packages. May require a reboot. Should be run like:
+        
+            fab prod homebot.upgrade_system_packages
+
+        """
+        r = self.local_renderer
+        r.sudo('apt-get -yq update; apt-get -yq upgrade; apt-get -yq dist-upgrade; apt-get -yq autoremove')
 
     @task(precursors=['packager', 'user', 'ros', 'rpi', 'ntp', 'ntpclient'])
     def configure(self):

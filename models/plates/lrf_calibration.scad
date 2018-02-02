@@ -1,5 +1,5 @@
-use <../openscad-extra/countersink.scad>;
-use <../openscad-extra/strut.scad>;
+use <../openscad-extra/src/countersink.scad>;
+use <../openscad-extra/src/strut.scad>;
 
 module make_lrf_prop_base(d=100, r=7.14+0.5){
     

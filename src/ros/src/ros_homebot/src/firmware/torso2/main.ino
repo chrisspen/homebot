@@ -703,11 +703,21 @@ void loop() {
         edge_sensors[i].update();
         if (edge_sensors[i].get_and_clear_changed() || force_sensors) {
             bool_msg.data = edge_sensors[i].value.get();
+            // If we detect and edge forward of us, and we're moving forward, then stop!
+            if (bool_msg.data && motion_controller.is_moving_forward()) {
+                //motion_controller.set(0, 0); //TODO:halt?
+                motion_controller.stop();
+                nh.loginfo("Edge detected, stopping forward motion.");
+            }
             edge_publishers[i].publish(&bool_msg);
             nh.spinOnce();
         }
         if (report_diagnostics) {
-            snprintf(buffer, MAX_OUT_CHARS, "edge.%d:%d:%d", i, diagnostic_msgs::DiagnosticStatus::OK, edge_sensors[i].value.get_latest());
+            if (edge_sensors[i].value.get_latest()) {
+                snprintf(buffer, MAX_OUT_CHARS, "edge.%d:%d:%d", i, diagnostic_msgs::DiagnosticStatus::WARN, edge_sensors[i].value.get_latest());
+            } else {
+                snprintf(buffer, MAX_OUT_CHARS, "edge.%d:%d:%d", i, diagnostic_msgs::DiagnosticStatus::OK, edge_sensors[i].value.get_latest());
+            }
             send_diagnostics();
         }
         // CS 2017.6.3 Disabled because these have a poor mechanical design, are unreliable, and are largely unnecessary with the presence of ultrasonics.
@@ -889,7 +899,9 @@ void loop() {
         int16_msg.data = ag_sensor.sys_calib.get();
         imu_calibration_sys_publisher.publish(&int16_msg);
         nh.spinOnce();
-        imu_ready = max(imu_ready, int16_msg.data);
+        if (int16_msg.data > imu_ready) {
+            imu_ready = int16_msg.data;
+        }
 
         // http://www.cplusplus.com/reference/cstdio/snprintf/
         snprintf(buffer, MAX_OUT_CHARS, "imu_calib.sys:%d", calib_to_status[imu_ready]);

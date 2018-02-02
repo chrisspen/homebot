@@ -1,0 +1,2 @@
+#!/bin/bash
+rosrun ros_homebot torso_motion.py $1

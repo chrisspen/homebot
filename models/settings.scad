@@ -33,7 +33,7 @@ u = unit_thickness;
 shell_thickness = unit_thickness;
 
 // Show flags.
-show_platform = 0;
+show_platform = 1;
 show_head = 1;
 show_head_shell = 0;
 show_head_electronics_bb = 0;
@@ -42,6 +42,8 @@ show_battery = 1;
 show_foot_cube = 0;
 show_torso = 0;
 show_motor = 0;
+show_motor_wheeled_layout = 1;
+show_motor_treads = 0;
 show_motor_plates = 1;
 show_motor_inner_plates = 1;
 show_motor_outer_plates = 1;
@@ -59,7 +61,7 @@ show_edge_mount = 1;
 show_sonar_mount = 1;
 show_recharge_mount = 1;
 show_conduit = 1;
-show_torso_shell = 1;
+show_torso_shell = 0;
 show_recharge_dock = 0;
 show_head_tilt_axis = 0;
 show_rpi_camera_axis = 0;
@@ -79,6 +81,8 @@ head_offset_z = max_footprint/2;
 head_middle_cutout = 85;
 
 rpi_with_four_hats_and_clearance = 76;
+
+motor_gear_teeth = 26;
 
 qrd1114_w = 6.10;
 qrd1114_l = 4.39;

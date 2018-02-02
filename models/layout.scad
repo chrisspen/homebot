@@ -2,7 +2,7 @@ include <settings.scad>;
 
 use <wheel.scad>;
 use <electronics/battery.scad>;
-use <torso.scad>;
+//use <torso.scad>;
 use <head.scad>;
 use <casters/caster.scad>;
 use <plates/plate.scad>;
@@ -175,7 +175,7 @@ rotate([0,0,180]){
         rotate([0,0,90])
         translate([-12.5,0,battery_height/2+bottom_clearance+battery_offset_z+6])
         //make_battery();
-        //	make_battery_tray_1();
+        //  make_battery_tray_1();
         make_battery_dc12300();
         //make_battery_dc1298A();//too big
         */
@@ -334,67 +334,6 @@ rotate([0,0,180]){
 
     }
 
-    color("red")
-    if(show_track_wheels){
-
-        echo("wheel(lr).y:", -(motor_plate_width/2+wheel_hub_offset/2)-motor_arm_offset_y);
-        echo("wheel(lr).z:", -wheel_hub_offset/2+bottom_clearance);
-
-        // left 1
-            translate([
-                horizontal_plate_width/2+u*2 + track_wheel_width_buffer,
-                -(motor_plate_width/2+wheel_hub_offset/2)-motor_arm_offset_y,
-                -wheel_hub_offset/2+bottom_clearance
-            ])
-        rotate([0,90,0])
-        make_track_idler();
-        // left 2
-            translate([
-                -(horizontal_plate_width/2+u*2 + track_wheel_width_buffer +u*2),
-                -(motor_plate_width/2+wheel_hub_offset/2)-motor_arm_offset_y,
-                -wheel_hub_offset/2+bottom_clearance
-            ])
-        rotate([0,90,0])
-        make_track_idler();
-
-        // right 1
-            translate([
-            horizontal_plate_width/2+u*2 + track_wheel_width_buffer,
-                +(motor_plate_width/2+wheel_hub_offset/2+motor_arm_offset_y),
-                -wheel_hub_offset/2+bottom_clearance
-            ])
-        rotate([0,90,0])
-        make_track_idler();
-        // right 2
-            translate([
-            -(horizontal_plate_width/2+u*2 + track_wheel_width_buffer +u*2),
-                +(motor_plate_width/2+wheel_hub_offset/2+motor_arm_offset_y),
-                -wheel_hub_offset/2+bottom_clearance
-            ])
-        rotate([0,90,0])
-        make_track_idler();
-
-        echo("wheel(c).y:", -motor_offset_y);
-        echo("wheel(c).z:", bottom_clearance + motor_plate_height/2 + motor_hole_height_offset/2);
-
-        // center 1
-            translate([
-                horizontal_plate_width/2+u*2 + track_wheel_width_buffer,
-                -motor_offset_y,
-                bottom_clearance + motor_plate_height/2 + motor_hole_height_offset/2
-            ])
-        rotate([0,90,0])
-        make_track_driver();
-        // center 2
-            translate([
-                -(horizontal_plate_width/2+u*2 + track_wheel_width_buffer +u*2),
-                motor_offset_y,
-                bottom_clearance + motor_plate_height/2 + motor_hole_height_offset/2
-            ])
-        rotate([0,90,0])
-        make_track_driver();
-    }
-
     if(show_sonar_mount){
         translate([0,0,bottom_clearance+u*4 + u*8.5]){
             
@@ -457,7 +396,7 @@ rotate([0,0,180]){
     */
         }
     }
-
+/*
     if(show_motor_plates){
         
         if(show_motor_inner_plates){
@@ -504,6 +443,85 @@ rotate([0,0,180]){
             rotate([90,0,90])
             //make_motor_unimount_2_b();
             import("printable/motor_unimount_2_b0_20160406.stl");
+        }
+    }
+    */
+    
+    if(show_motor_wheeled_layout){
+        include <layout_motor_wheeled.scad>;
+    }
+    
+    if(show_motor_treads){
+        include <layout_motor_treads.scad>;
+
+        for(i=[0:1])
+        mirror([1*i, 0, 0])
+        color("black")
+        translate([.1,0,-1])
+        rotate([0,0,180])
+        rotate([0,90,0])
+        scale([1.1,1.01,1.01])
+        import("printable/mock_tread.stl");
+
+        color("red")
+        if(show_track_wheels){
+
+            echo("wheel(lr).y:", -(motor_plate_width/2+wheel_hub_offset/2)-motor_arm_offset_y);
+            echo("wheel(lr).z:", -wheel_hub_offset/2+bottom_clearance);
+
+            // left 1
+                translate([
+                    horizontal_plate_width/2+u*2 + track_wheel_width_buffer,
+                    -(motor_plate_width/2+wheel_hub_offset/2)-motor_arm_offset_y,
+                    -wheel_hub_offset/2+bottom_clearance
+                ])
+            rotate([0,90,0])
+            make_track_idler();
+            // left 2
+                translate([
+                    -(horizontal_plate_width/2+u*2 + track_wheel_width_buffer +u*2),
+                    -(motor_plate_width/2+wheel_hub_offset/2)-motor_arm_offset_y,
+                    -wheel_hub_offset/2+bottom_clearance
+                ])
+            rotate([0,90,0])
+            make_track_idler();
+
+            // right 1
+                translate([
+                horizontal_plate_width/2+u*2 + track_wheel_width_buffer,
+                    +(motor_plate_width/2+wheel_hub_offset/2+motor_arm_offset_y),
+                    -wheel_hub_offset/2+bottom_clearance
+                ])
+            rotate([0,90,0])
+            make_track_idler();
+            // right 2
+                translate([
+                -(horizontal_plate_width/2+u*2 + track_wheel_width_buffer +u*2),
+                    +(motor_plate_width/2+wheel_hub_offset/2+motor_arm_offset_y),
+                    -wheel_hub_offset/2+bottom_clearance
+                ])
+            rotate([0,90,0])
+            make_track_idler();
+
+            echo("wheel(c).y:", -motor_offset_y);
+            echo("wheel(c).z:", bottom_clearance + motor_plate_height/2 + motor_hole_height_offset/2);
+
+            // center 1
+                translate([
+                    horizontal_plate_width/2+u*2 + track_wheel_width_buffer,
+                    -motor_offset_y,
+                    bottom_clearance + motor_plate_height/2 + motor_hole_height_offset/2
+                ])
+            rotate([0,90,0])
+            make_track_driver();
+            // center 2
+                translate([
+                    -(horizontal_plate_width/2+u*2 + track_wheel_width_buffer +u*2),
+                    motor_offset_y,
+                    bottom_clearance + motor_plate_height/2 + motor_hole_height_offset/2
+                ])
+            rotate([0,90,0])
+            make_track_driver();
         }
     }
 
@@ -627,15 +645,6 @@ rotate([0,0,180]){
     translate([0,0,145+1.5])
     rotate([180,0,0])
     import("printable/torso_wire_restrainer.stl");
-
-    for(i=[0:1])
-    mirror([1*i, 0, 0])
-    color("black")
-    translate([.1,0,-1])
-    rotate([0,0,180])
-    rotate([0,90,0])
-    scale([1.1,1.01,1.01])
-    import("printable/mock_tread.stl");
 
 }
 

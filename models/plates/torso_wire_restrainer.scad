@@ -1,6 +1,6 @@
 
-use <../openscad-extra/countersink.scad>;
-use <../openscad-extra/rounded.scad>;
+use <../openscad-extra/src/countersink.scad>;
+use <../openscad-extra/src/rounded.scad>;
 
 module make_torso_wire_restrainer(){
     

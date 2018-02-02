@@ -1,5 +1,5 @@
 include <../settings.scad>;
-use <../openscad-extra/countersink.scad>;
+use <../openscad-extra/src/countersink.scad>;
 
 module make_front_collar($fn=100){
     difference(){

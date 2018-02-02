@@ -1,7 +1,7 @@
 include <../settings.scad>;
 
 use <../electronics/dfrobot_rpi_arduino_hat.scad>;
-use <../openscad-extra/countersink.scad>;
+use <../openscad-extra/src/countersink.scad>;
 
 module make_square_pipe_mount(w=10, h=10, d=5, length=5, thickness=1.5){
     
