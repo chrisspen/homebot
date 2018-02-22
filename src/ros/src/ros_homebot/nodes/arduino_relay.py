@@ -23,6 +23,7 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Quaternion, Point
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus#, KeyValue
 
+from ros_homebot_python.node import say
 from ros_homebot_python import constants as c
 #from ros_homebot_python.node import BaseArduinoNode
 
@@ -106,6 +107,19 @@ class ArduinoRelay:
 
         rospy.Subscriber('/torso_arduino/power/shutdown', Bool, self.on_power_shutdown)
 
+        self._odom_lock = threading.RLock()
+        self.pos = None
+        self.ori = None
+
+        # self._motor_target_left = None
+        # self._motor_target_right = None
+        # rospy.Subscriber('/torso_arduino/motor/target/a', Int16, partial(self.on_motor_target, side='left'))
+        # rospy.Subscriber('/torso_arduino/motor/target/b', Int16, partial(self.on_motor_target, side='right'))
+        # self._motor_encoder_left = None
+        # self._motor_encoder_right = None
+        # rospy.Subscriber('/torso_arduino/motor/encoder/a', Int16, partial(self.on_motor_encoder, side='left'))
+        # rospy.Subscriber('/torso_arduino/motor/encoder/b', Int16, partial(self.on_motor_encoder, side='right'))
+
         ## Begin IO.
 
         rospy.spin()
@@ -117,6 +131,37 @@ class ArduinoRelay:
             os.makedirs(cache_dir)
         fn = os.path.join(cache_dir, IMU_CALIBRATION_FN)
         return fn
+
+    # def motor_monitor(self):
+        # """
+        # Compares the motor encoders to the motor targets.
+        # If the motor targets are non-zero, yet the motor encoders register no movement, then raises a diagnostic error indicating the motors
+        # are stuck or the encoders have malfunctioned.
+        # """
+
+        # last_pos = self.pos
+        # last_ori = self.ori
+
+        # while 1:
+
+            # level = OK
+            # motor_free = True
+            # message = 'torso: motor'
+            # if self._motor_target_left or self._motor_target_left:
+                # motor_free = last_post != self.pos or last_ori != self.ori
+                # level = ERROR
+
+            # array = DiagnosticArray()
+            # array.status = [
+                # DiagnosticStatus(name=name, level=level, message=message)
+            # ]
+            # with self._lock:
+                # self.diagnostics_pub.publish(array)
+
+            # with self._odom_lock:
+                # last_pos = self.pos
+                # last_ori = self.ori
+            # time.sleep(1)
 
     def load_imu_calibration(self):
         """
@@ -150,8 +195,27 @@ class ArduinoRelay:
 
     def on_power_shutdown(self, msg):
         rospy.loginfo('Received shutdown signal. Issuing halt command in 3 seconds...')
+        try:
+            say(c.SYSTEM_SHUTDOWN_SPEECH)
+        except Exception as exc:
+            rospy.logerr('Unable to speak about shutdown: %s' % exc)
         time.sleep(3)
         os.system('sudo halt')
+        # After halt is performed, all ROS nodes will be killed.
+        # The torso Arduino will then wait a few seconds to allow Linux to clean up all processes, and then it will kill all system power.
+        # See the deadman flag that triggers the call to power_controller.shutdown().
+
+    # def on_motor_encoder(self, msg, side):
+        # if side == 'left':
+            # self._motor_encoder_left = msg.data
+        # elif side == 'right':
+            # self._motor_encoder_right = msg.data
+
+    # def on_motor_target(self, msg, side):
+        # if side == 'left':
+            # self._motor_target_left = msg.data
+        # elif side == 'right':
+            # self._motor_target_right = msg.data
 
     def on_imu_calibration_save(self, msg):
         #print('Received imu calibration:', msg)
@@ -171,7 +235,7 @@ class ArduinoRelay:
         typ = parts[0]
         assert typ in 'aeg', 'Invalid typ: %s' % typ
 
-        # Conver the integers to the original floats.
+        # Convert the integers to the original floats.
         nums = ltof(parts[1:])
         for num, axis in zip(nums, 'xyz'):
             self._imu_data['%s%s' % (typ, axis)] = num
@@ -268,7 +332,8 @@ class ArduinoRelay:
         array.status = [
             DiagnosticStatus(name=name, level=level, message=message)
         ]
-        self.diagnostics_pub.publish(array)
+        with self._lock:
+            self.diagnostics_pub.publish(array)
 
     def on_odometry_relay(self, msg):
 
@@ -321,18 +386,19 @@ class ArduinoRelay:
             # publish the odometry message
             self.odometry_pub.publish(msg)
 
-            pos = (
-                msg.pose.pose.position.x,
-                msg.pose.pose.position.y,
-                msg.pose.pose.position.z,
-            )
+            with self._odom_lock:
+                self.pos = (
+                    msg.pose.pose.position.x,
+                    msg.pose.pose.position.y,
+                    msg.pose.pose.position.z,
+                )
 
-            ori = (
-                msg.pose.pose.orientation.x,
-                msg.pose.pose.orientation.y,
-                msg.pose.pose.orientation.z,
-                msg.pose.pose.orientation.w,
-            )
+                self.ori = (
+                    msg.pose.pose.orientation.x,
+                    msg.pose.pose.orientation.y,
+                    msg.pose.pose.orientation.z,
+                    msg.pose.pose.orientation.w,
+                )
 
             # first, we'll publish the transform over tf
             #geometry_msgs::TransformStamped odom_trans;
@@ -346,7 +412,7 @@ class ArduinoRelay:
 #             odom_trans.transform.rotation = odom_quat
 
             # send the transform
-            self.tf_br.sendTransform(pos, ori, msg.header.stamp, msg.child_frame_id, msg.header.frame_id)
+            self.tf_br.sendTransform(self.pos, self.ori, msg.header.stamp, msg.child_frame_id, msg.header.frame_id)
             #self.tf2_br.sendTransform(odom_trans)
 
 if __name__ == '__main__':

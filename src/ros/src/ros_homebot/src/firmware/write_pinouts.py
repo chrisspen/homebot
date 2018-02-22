@@ -4,8 +4,8 @@ Writes the ArduinoPinout.h files.
 
 Usage:
 
-    write_pinouts.py head2
-    write_pinouts.py torso2
+    ./write_pinouts.py head2
+    ./write_pinouts.py torso2
 
 """
 from __future__ import print_function

@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 """
 Initiates the spin head action.
+
+Call like:
+
+    rosservice call /sound/say "hello"
+
 """
 import sys
 

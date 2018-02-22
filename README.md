@@ -11,4 +11,4 @@ Shortcuts:
 
 To deploy all code changes to the production robot, run:
 
-    fab prod deploy.run
+    fab prod deploy.push

@@ -89,7 +89,7 @@ char buffer[MAX_OUT_CHARS + 1];  //buffer used to format a line (+1 is for trail
 // Arduino Leonardo & Yun
 //#define digitalPinToInterrupt(p)  ( (p) == 0 ? 2 : ((p) == 1 ? 3 : ((p) == 2 ? 1 : ((p) == 3 ? 0 : ((p) == 7 ? 4 : -1)))) )
 
-//bool report_diagnostics = false;
+bool report_diagnostics = false;
 unsigned long last_diagnostic = 0;
 
 ros::Publisher diagnostics_publisher = ros::Publisher("diagnostics_relay", &string_msg);
@@ -121,6 +121,9 @@ void halt_all_activity() {
 // rostopic echo /head_arduino/pan/degrees
 ros::Publisher pan_angle_publisher = ros::Publisher("pan/degrees", &int16_msg);
 
+// rostopic echo /head_arduino/tilt/degrees
+ros::Publisher tilt_angle_publisher = ros::Publisher("tilt/degrees", &int16_msg);
+
 // rostopic pub --once /head_arduino/force_sensors std_msgs/Empty
 void on_force_sensors(const std_msgs::Empty& msg) {
     force_sensors = true;
@@ -137,9 +140,9 @@ void on_pan_angle_set(const std_msgs::Int16& msg) {
 }
 ros::Subscriber<std_msgs::Int16> on_pan_angle_set_sub("pan/set", &on_pan_angle_set);
 
-// rostopic pub --once /head_arduino/tilt/set std_msgs/Int16 180
+// rostopic pub --once /head_arduino/tilt/set std_msgs/Int16 90
 // 0=all the way down
-// 90=level
+// 90=level (-/+ 30 is safe range)
 // 180=all the way up
 void on_tilt_angle_set(const std_msgs::Int16& msg) {
     tilt_controller.set_target_degrees(msg.data, true);
@@ -219,6 +222,7 @@ void setup() {
     // Register publishers.
     nh.advertise(diagnostics_publisher);
     nh.advertise(pan_angle_publisher);
+    nh.advertise(tilt_angle_publisher);
 
     attachInterrupt(digitalPinToInterrupt(PAN_MOTOR_ENCODER_A), on_pan_encoder_change, CHANGE);
     attachInterrupt(digitalPinToInterrupt(PAN_MOTOR_POSITION_REF), on_pan_reference_change, CHANGE);
@@ -265,10 +269,10 @@ void send_diagnostics() {
 
 void loop() {
 
-    //report_diagnostics = false;
+    report_diagnostics = false;
     if (millis() - last_diagnostic >= DIAGNOSTIC_REPORT_FREQ_MS) {
         last_diagnostic = millis();
-        //report_diagnostics = true;
+        report_diagnostics = true;
         //snprintf(buffer, MAX_OUT_CHARS, "pan:%d", digitalRead(PAN_MOTOR_POSITION_REF));
         //nh.loginfo(buffer);
     }
@@ -286,9 +290,13 @@ void loop() {
     }
 
     // Output sensor readings.
-    if (pan_controller.actual_angle.get_and_clear_changed() || force_sensors) {
+    if (pan_controller.actual_angle.get_and_clear_changed() || force_sensors || report_diagnostics) {
         int16_msg.data = pan_controller.actual_angle.get_latest();
         pan_angle_publisher.publish(&int16_msg);
+    }
+    if (tilt_controller.actual_degrees.get_and_clear_changed() || force_sensors || report_diagnostics) {
+        int16_msg.data = tilt_controller.actual_degrees.get_latest();
+        tilt_angle_publisher.publish(&int16_msg);
     }
 
     force_sensors = false;

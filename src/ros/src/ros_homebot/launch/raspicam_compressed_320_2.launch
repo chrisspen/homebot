@@ -1,0 +1,23 @@
+<!--
+2018-2-21 CS
+Experimental version that uses the UbiquityRobotics raspicam_node.
+https://github.com/UbiquityRobotics/raspicam_node
+-->
+<launch>
+    <node type="raspicam_node" pkg="raspicam_node" name="raspicam_node" output="screen">
+        
+        <param name="framerate" type="int" value="30" />
+        <param name="exposure_mode" value="antishake" />
+        <param name="shutter_speed" value="0" />
+        <param name="quality" type="int" value="10" />
+        
+        <param name="width" type="int" value="320" />
+        <param name="height" type="int" value="240" />
+        
+        <param name="hFlip" type="bool" value="1" />
+        <param name="vFlip" type="bool" value="1" />
+        
+        <param name="camera_frame_id" value="raspicam" />
+        
+    </node>
+</launch>

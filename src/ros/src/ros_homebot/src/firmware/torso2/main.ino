@@ -50,9 +50,15 @@
 #define DIAGNOSTIC_REPORT_FREQ_MS 1000 // 1 seconds
 //#define DIAGNOSTIC_REPORT_FREQ_MS 10000 // 10 seconds
 
+#define HEALTHY_BLINK_PERIOD 1000
+#define DISCONNECTED_BLINK_PERIOD 500
+
 char base_link[] = "/base_link";
 const char * const ultrasonic_links[] = { "/base_link/ultrasonic0", "/base_link/ultrasonic1", "/base_link/ultrasonic2" };
 char odom_link[] = "/odom";
+
+unsigned long blink_period = DISCONNECTED_BLINK_PERIOD;
+unsigned long last_blink = 0;
 
 // Convert the BNO055's calibration code [0-3] to a diagnostics status.
 int calib_to_status[] = {
@@ -260,6 +266,8 @@ ros::Publisher shutdown_publisher = ros::Publisher("power/shutdown", &bool_msg);
 ros::Publisher motor_a_encoder_publisher = ros::Publisher("motor/encoder/a", &int16_msg);
 ros::Publisher motor_b_encoder_publisher = ros::Publisher("motor/encoder/b", &int16_msg);
 ros::Publisher motor_error_publisher = ros::Publisher("motor/error", &byte_msg);
+ros::Publisher motor_a_target_publisher = ros::Publisher("motor/target/a", &int16_msg);
+ros::Publisher motor_b_target_publisher = ros::Publisher("motor/target/b", &int16_msg);
 
 // https://learn.adafruit.com/adafruit-bno055-absolute-orientation-sensor/device-calibration
 // Directly from the bno.getCalibration(), 0=not calibrated, 3=fully calibrated
@@ -300,9 +308,19 @@ ros::Publisher odometry_publisher = ros::Publisher("odometry_relay", &string_msg
 
 ros::Publisher diagnostics_publisher = ros::Publisher("diagnostics_relay", &string_msg);
 
+int last_a_encoder = 0;
+int last_b_encoder = 0;
+
 /*
  * End publisher definitions.
- */
+ */ 
+
+void publish_motor_targets() {
+    int16_msg.data = motion_controller.get_left_speed_target();
+    motor_a_target_publisher.publish(&int16_msg);
+    int16_msg.data = motion_controller.get_right_speed_target();
+    motor_b_target_publisher.publish(&int16_msg);
+}
 
 uint8_t get_battery_supply_status() {
     if (external_power_sensors[0].get_bool() && external_power_sensors[1].get_bool()) {
@@ -337,7 +355,7 @@ void stop_motors() {
     nh.loginfo("Motors halted!");
     //motion_controller.stop();
     motion_controller.set(0, 0);
-    //TODO:publish motor state?
+    publish_motor_targets();
 }
 
 /*
@@ -391,6 +409,7 @@ ros::Subscriber<std_msgs::Empty> toggle_led_sub("toggle_led", &on_toggle_led);
 void on_cmd_vel(const geometry_msgs::Twist& msg) {
     nh.loginfo("Received cmd_vel.");
     motion_controller.set_cmd_vel(msg.linear.x, msg.angular.z);
+    publish_motor_targets();
 }
 ros::Subscriber<geometry_msgs::Twist> cmd_vel_sub("cmd_vel", &on_cmd_vel);
 
@@ -405,8 +424,10 @@ void on_motor_speed(const std_msgs::Int16MultiArray& msg) {
         nh.loginfo("Unable to set motor speed due to connection error.");
     } else {
         //set_motor_speeds(0, 0, msg.data[0], msg.data[1]);
-        motion_controller.set(msg.data[0], msg.data[1]);
+        //motion_controller.set(msg.data[0], msg.data[1]); // for treads
+        motion_controller.set(-msg.data[0], -msg.data[1]); // for reverse geared wheels
         nh.loginfo("Motor speed set.");
+        publish_motor_targets();
     }
 }
 ros::Subscriber<std_msgs::Int16MultiArray> motor_speed_sub("motor/speed", &on_motor_speed);
@@ -431,20 +452,6 @@ void on_imu_calibration_load(const std_msgs::UInt16MultiArray& msg) {
     nh.loginfo("IMU calibration loaded!");
 }
 ros::Subscriber<std_msgs::UInt16MultiArray> imu_calibration_load_sub("imu/calibration/load", &on_imu_calibration_load);
-
-//            case ID_TWIST:
-//                motion_controller.set_movement(
-//                    stf(packet.get_arg(0)),
-//                    stf(packet.get_arg(1)),
-//                    stf(packet.get_arg(2)),
-//                    packet.get_arg(3).toInt()
-//                );
-//                ack = true;
-//                break;
-//            case ID_MOTOR_ACCEL:
-//                motion_controller.set_acceleration(packet.get_arg(0).toInt());
-//                ack = true;
-//                break;
 
 //TODO:http://docs.ros.org/api/sensor_msgs/html/msg/BatteryState.html
 
@@ -533,6 +540,8 @@ void setup() {
     }
     nh.advertise(motor_a_encoder_publisher);
     nh.advertise(motor_b_encoder_publisher);
+    nh.advertise(motor_a_target_publisher);
+    nh.advertise(motor_b_target_publisher);
     nh.advertise(motor_error_publisher);
     nh.advertise(imu_calibration_sys_publisher);
     nh.advertise(imu_calibration_gyr_publisher);
@@ -553,6 +562,9 @@ void setup() {
     motion_controller.stop();
 
     ag_sensor.init();
+
+    blink_period = DISCONNECTED_BLINK_PERIOD;
+    last_blink = 0;
 
 }
 
@@ -595,9 +607,30 @@ void loop() {
         report_diagnostics = true;
         snprintf(buffer, MAX_OUT_CHARS, "memory:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, freeMemory());
         send_diagnostics();
-        if (!power_controller.is_powering_off()) {
-            toggle_led();
+
+        // Check for stalled left motor.
+        if (motion_controller.get_left_speed_target() && motion_controller.a_encoder.get_latest() == last_a_encoder) {
+            snprintf(buffer, MAX_OUT_CHARS, "motor.left.free:%d", diagnostic_msgs::DiagnosticStatus::ERROR);
+        } else {
+            snprintf(buffer, MAX_OUT_CHARS, "motor.left.free:%d", diagnostic_msgs::DiagnosticStatus::OK);
         }
+        send_diagnostics();
+        last_a_encoder = motion_controller.a_encoder.get_latest();
+
+        // Check for stalled left motor.
+        if (motion_controller.get_right_speed_target() && motion_controller.b_encoder.get_latest() == last_b_encoder) {
+            snprintf(buffer, MAX_OUT_CHARS, "motor.right.free:%d", diagnostic_msgs::DiagnosticStatus::ERROR);
+        } else {
+            snprintf(buffer, MAX_OUT_CHARS, "motor.right.free:%d", diagnostic_msgs::DiagnosticStatus::OK);
+        }
+        send_diagnostics();
+        last_b_encoder = motion_controller.b_encoder.get_latest();
+    }
+
+    // Managed the diagnostic blink.
+    if (millis() - last_blink >= blink_period && !power_controller.is_powering_off()) {
+        toggle_led();
+        last_blink = millis();
     }
 
     // Trigger a debugging count log every N seconds.
@@ -652,17 +685,26 @@ void loop() {
     if (nh.connected()) {
         //digitalWrite(STATUS_LED_PIN, 1);
         connected = true;
+        blink_period = HEALTHY_BLINK_PERIOD;
     } else if (connected) {
         // If we just became disconnected from the host, then immediately halt all motors as a safety precaution.
         //digitalWrite(STATUS_LED_PIN, 0);
         motion_controller.stop();
+        publish_motor_targets();
+        nh.spinOnce();
         delay(50);
         connected = false;
+        blink_period = DISCONNECTED_BLINK_PERIOD;
     }
 
     // Power down if we've disconnected and deadman switch is set.
     if (!connected) {
         if (deadman) {
+            // Wait long enough to ensure the Raspberry Pi has completely and safely killed all processes.
+            // If we don't do this wait, then it's possible we'll kill power immediately after the Pi kills the torso arduino node,
+            // but before the Pi has safely terminated other nodes and cleaned up the file system.
+            delay(10000);
+            // Kill all system power.
             power_controller.shutdown();
         }
         nh.spinOnce();
@@ -707,6 +749,7 @@ void loop() {
             if (bool_msg.data && motion_controller.is_moving_forward()) {
                 //motion_controller.set(0, 0); //TODO:halt?
                 motion_controller.stop();
+                publish_motor_targets();
                 nh.loginfo("Edge detected, stopping forward motion.");
             }
             edge_publishers[i].publish(&bool_msg);
@@ -828,7 +871,8 @@ void loop() {
     Serial.flush();
 
     // Odometry
-    if (odometry_tracker.changed && millis() - odometry_tracker.last_report_time >= 1000) {
+    //if ((odometry_tracker.changed && millis() - odometry_tracker.last_report_time >= 1000) || millis() - odometry_tracker.last_report_time >= 5000) {
+    if (millis() - odometry_tracker.last_report_time >= 1000) {
         odometry_tracker.changed = false;
         odometry_tracker.last_report_time = millis();
 
@@ -841,13 +885,13 @@ void loop() {
         //dtostrf(odometry_tracker.th, 2+6, 6, &buffer[strlen(buffer)]);
         //nh.loginfo(buffer);
 
-        strcpy(buffer, "v_left: ");
-        dtostrf(odometry_tracker.v_left, 2+6, 6, &buffer[strlen(buffer)]);
-        nh.loginfo(buffer);
+        //strcpy(buffer, "v_left: ");
+        //dtostrf(odometry_tracker.v_left, 2+6, 6, &buffer[strlen(buffer)]);
+        //nh.loginfo(buffer);
 
-        strcpy(buffer, "v_right: ");
-        dtostrf(odometry_tracker.v_right, 2+6, 6, &buffer[strlen(buffer)]);
-        nh.loginfo(buffer);
+        //strcpy(buffer, "v_right: ");
+        //dtostrf(odometry_tracker.v_right, 2+6, 6, &buffer[strlen(buffer)]);
+        //nh.loginfo(buffer);
 
         snprintf(buffer, MAX_OUT_CHARS, "v0:%ld:%ld:%ld:%ld",
             ftol(odometry_tracker.x), ftol(odometry_tracker.y), ftol(odometry_tracker.z), ftol(odometry_tracker.th));

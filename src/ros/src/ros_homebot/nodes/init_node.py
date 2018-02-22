@@ -5,6 +5,7 @@ import time
 import rospy
 
 import ros_homebot_msgs.srv
+from ros_homebot_python import constants as c
 
 class InitROS():
     """
@@ -18,7 +19,7 @@ class InitROS():
         say = rospy.ServiceProxy('/sound/say', ros_homebot_msgs.srv.TTS)
         while not rospy.is_shutdown():
             try:
-                say('System initialized.')
+                say(c.SYSTEM_STARTUP_SPEECH)
                 break
             except rospy.service.ServiceException as e:
                 print e

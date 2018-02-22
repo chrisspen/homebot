@@ -415,9 +415,12 @@ class HomebotSatchel(ServiceSatchel):
         """
         r = self.local_renderer
         #self.genv.shell = '/bin/bash'
+        # r.local(
+            # 'bash -c "cd src/ros; source ./setup.bash; export ROS_MASTER_URI=http://{host_string}:11311; '
+            # 'rosrun image_view image_view image:=/raspicam/image _image_transport:=compressed"')
         r.local(
             'bash -c "cd src/ros; source ./setup.bash; export ROS_MASTER_URI=http://{host_string}:11311; '
-            'rosrun image_view image_view image:=/raspicam/image _image_transport:=compressed"')
+            'rosrun rqt_image_view rqt_image_view image:=/raspicam/image _image_transport:=compressed"')
 
     @task
     def view_diagnostics(self):

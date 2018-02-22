@@ -42,37 +42,10 @@ You can test the mjpeg streaming server by viewing it at:
 You can access the web-UI at:
 
     http://rae:9000/
-
-Note, robot_upstart is irregularly maitained and no longer supports Kinetic, our current release.
-
-To install robot_upstart from source:
-
-    cd overlay/src
-    git clone https://github.com/clearpathrobotics/robot_upstart.git
-    cd ..
-    time catkin_make --pkg robot_upstart
-
-Install auto-start script with:
-
-    sudo su -
-    #rosrun robot_upstart install --setup /usr/local/homebot/src/ros/shell --user root --job homebot ros_homebot/launch/all.launch
-    sudo bash -c "source /usr/local/homebot/src/ros/setup.bash; rosrun robot_upstart install --setup /usr/local/homebot/src/ros/setup.bash --job homebot --user pi ros_homebot/launch/all.launch"
-    
-    exit
-    sudo service homebot status
-    sudo service homebot start
-    sudo tail -f /var/log/upstart/homebot.log
-    sudo service homebot stop
-
-To uninstall upstart:
-
-    sudo bash -c "source /usr/local/homebot/src/ros/setup.bash; rosrun robot_upstart uninstall homebot"
-
-Note, this has to run as root due to a bug/limitation in robot_upstart that prevents the user from running with their group permissions. See http://docs.ros.org/api/robot_upstart/html/install.html
     
 To kill everything:
 
-    sudo service homebot stop
+    sudo supervisorctl stop homebot
     
 or for forcifully:
     

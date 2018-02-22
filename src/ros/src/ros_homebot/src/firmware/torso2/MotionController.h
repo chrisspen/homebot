@@ -368,7 +368,15 @@ class MotionController: public Sensor
 
             return true;
         }
-        
+
+        int get_left_speed_target(){
+            return _motor_left.get_speed_instantly();
+        }
+
+        int get_right_speed_target(){
+            return _motor_right.get_speed_instantly();
+        }
+
         bool is_left_on(){
             return _motor_left.is_on();
         }
@@ -401,7 +409,8 @@ class MotionController: public Sensor
         }
         
         bool is_moving_forward(){
-            return _motor_left.get_speed() > 0 && _motor_right.get_speed() > 0;
+            //return _motor_left.get_speed() > 0 && _motor_right.get_speed() > 0; // for treads
+            return _motor_left.get_speed() < 0 && _motor_right.get_speed() < 0; // for reverse geared wheels
         }
 
         bool is_executing_movement(){

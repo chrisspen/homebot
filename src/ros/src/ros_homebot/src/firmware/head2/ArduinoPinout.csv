@@ -1,23 +1,23 @@
-"Arduino Pin","Supports ADC","Supports PWM","Supports Interrupt","Mode","Function","Label","Variable","Wire Color","Notes"
-"D0",,,,"NA","USB",,,,
-"D1",,,,"NA","USB",,,,
-"D2",,,1,"input","pan motor encoder A","PEA","PAN_MOTOR_ENCODER_A","white","SDA"
-"D3",,1,0,"input","pan motor encoder B","PEB","PAN_MOTOR_ENCODER_B","gray","SCL"
-"D4",,,,"output","pan motor phase","PPH","PAN_MOTOR_PHASE","blue",
-"D5",,0,,"output","Ultrabright 1","L1","ULTRABRIGHT_LED_1",,
-"D6",,0,1,"output","led blue","LB","STATUS_LED_BLUE","blue",
-"D7",,,1,"input","pan motor reference position","PGA","PAN_MOTOR_POSITION_REF",,
-"D8",,1,,"output","pan motor enable (pwm)","PEN","PAN_MOTOR_ENABLE","white",
-"D9",,1,,"output","tilt servo position set (pwm)","TS","TILT_SERVO_POS_SET",,
-"D10",,1,,"output","led green","LG","STATUS_LED_GREEN","brown",
-"D11",,0,,"input","tilt servo position get","TG","TILT_SERVO_POS_GET",,
-"D12",,1,,"output","led red","LR","STATUS_LED_RED","red",
-"D13",,1,,"output","line laser","LP","LINE_LASER_SET","yellow",
-"A0",1,,,,,,,,
-"A1",1,,,,,,,,
-"A2",1,,,,,,,,
-"A3",1,,,,,,,,
-"A4",1,,,,,,,,"On 12 way header."
-"A5",1,,,,,,,,"On 12 way header."
-"head2",,,,,,,,,"http://www.hobbytronics.co.uk/arduino-uno-pro"
-,,,,,,,,,"https://store.arduino.cc/arduino-uno-rev3"
+Arduino Pin,Supports ADC,Supports PWM,Supports Interrupt,Mode,Function,Label,Variable,Wire Color,Notes
+D0,,,,NA,USB,,,,
+D1,,,,NA,USB,,,,
+D2,,,1,input,pan motor encoder A,PEA,PAN_MOTOR_ENCODER_A,white,SDA
+D3,,1,0,input,pan motor encoder B,PEB,PAN_MOTOR_ENCODER_B,gray,SCL
+D4,,,,output,pan motor phase,PPH,PAN_MOTOR_PHASE,blue,
+D5,,0,,output,Ultrabright 1,L1,ULTRABRIGHT_LED_1,,
+D6,,0,1,output,led blue,LB,STATUS_LED_BLUE,blue,
+D7,,,1,input,pan motor reference position,PGA,PAN_MOTOR_POSITION_REF,,
+D8,,1,,output,pan motor enable (pwm),PEN,PAN_MOTOR_ENABLE,white,
+D9,,1,,output,tilt servo position set (pwm),TS,TILT_SERVO_POS_SET,,
+D10,,1,,output,led green,LG,STATUS_LED_GREEN,brown,
+D11,,0,,,,,,,
+D12,,1,,output,led red,LR,STATUS_LED_RED,red,
+D13,,1,,output,line laser,LP,LINE_LASER_SET,yellow,
+A0,1,,,input,tilt servo position get,TG,TILT_SERVO_POS_GET,,
+A1,1,,,,,,,,
+A2,1,,,,,,,,
+A3,1,,,,,,,,
+A4,1,,,,,,,,On 12 way header.
+A5,1,,,,,,,,On 12 way header.
+head2,,,,,,,,,http://www.hobbytronics.co.uk/arduino-uno-pro
+,,,,,,,,,https://store.arduino.cc/arduino-uno-rev3
