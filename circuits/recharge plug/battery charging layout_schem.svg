@@ -19,8 +19,8 @@
    inkscape:version="0.91 r13725"
    sodipodi:docname="battery charging layout_schem.svg"
    inkscape:export-filename="battery charging layout_schem.svg.png"
-   inkscape:export-xdpi="72"
-   inkscape:export-ydpi="72">
+   inkscape:export-xdpi="161.7"
+   inkscape:export-ydpi="161.7">
   <metadata
      id="metadata312">
     <rdf:RDF>
@@ -29,6 +29,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -41,15 +42,15 @@
      objecttolerance="10"
      gridtolerance="10"
      guidetolerance="10"
-     inkscape:pageopacity="0"
+     inkscape:pageopacity="1"
      inkscape:pageshadow="2"
-     inkscape:window-width="1282"
-     inkscape:window-height="581"
+     inkscape:window-width="1723"
+     inkscape:window-height="777"
      id="namedview308"
      showgrid="false"
      inkscape:zoom="2.083372"
-     inkscape:cx="169.91685"
-     inkscape:cy="62.062647"
+     inkscape:cx="1.4399765"
+     inkscape:cy="61.102665"
      inkscape:window-x="0"
      inkscape:window-y="27"
      inkscape:window-maximized="0"

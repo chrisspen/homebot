@@ -7,15 +7,28 @@
 
 // This is the speed used when rotating the head to find the centermark.
 // Speed is in the range of [-255:+255].
-#define PM_CALIBRATION_SPEED 60
+#define PM_CALIBRATION_SPEED 200
+
+#define PM_MAX_SPEED 255
 
 // The number of pulses the pan motor's encoder will give to rotate the head a full 360 degrees.
 // This number was calculated through the size of the neck gears, motor gearing, and encoder
 // and confirmed empirically.
 #define PM_FULL_REV_COUNT 1732
+//866=>180
+//24=>5
 
 // If we estimate we're in this number of degrees from target, we'll cut power.
 #define PM_FLEX_DEGREES 2
+
+// Waiting to clear the centermark sensor.
+#define VC_WAITING_TO_CLEAR 0
+
+// Waiting to see the centermark sensor.
+#define VC_WAITING_TO_SEE 1
+
+// Waiting to come to a complete stop.
+#define VC_WAITING_TO_STOP 2
 
 class PanController{
 
@@ -23,6 +36,8 @@ class PanController{
     
         // 0:255
         int _speed = 0;
+        
+        int _calibration_speed = PM_CALIBRATION_SPEED;
         
         // The direction we desire to go.
         // true=CW, false=CCW
@@ -41,9 +56,14 @@ class PanController{
         // Increments when moving clockwise.
         // Decrements when moving counter clockwise.
         long _count = 0;
-
-        // The last time we received an encoder count update.
+        
+        // The second to last time we received an encoder count update.
+        // This and the last will be used to estimate current velocity.
         unsigned long _time_count_last_updated = 0;
+        unsigned long _time_count_last_updated0 = 0;
+
+        // The time when we issued a stop command.
+        unsigned long _velocity_stop_time0 = 0;
         
         // The angle we want to get to.
         // -1=unset, should always be positive angle in degrees, 0:359
@@ -58,15 +78,41 @@ class PanController{
         // Set to false otherwise.
         bool _centermark_checked = false;
         
+        bool _max_velocity_checked = false;
+        
+        int _velocity_calibration_state = VC_WAITING_TO_CLEAR;
+        
         // If true, enforces position, false, goes limp, allows manual positioning.
         bool _power = false;
         
         // If true, the target angle is currently being sought. Otherwise false.
         // Used with _power to determine if we need to cut power after establishing position.
         bool _seeking = false;
+        
+        unsigned long _total_ticks_counter = 0;
+        
+        // The total milliseconds it takes to stop moving when at full speed.
+        unsigned long _total_time_to_stop = 0;
+        
+        // The total ticks that will be covered between issuing the stop command to fully stopping when at full speed.
+        unsigned long _total_ticks_to_stop = 0;
+        
+        // Tracks when we start a position seeking operation, so we know when to timeout.
+        unsigned long _seek_start_time = 0;
+        
+        int overshoot_compensation = 0;
 
     public:
     
+        // PID variables.
+        double kp=-10, kd=0.4, ki=0;
+        int pos_err = 0, td_err = 0, sum_err = 0;
+        float last_actual_angle = 0;
+        //unsigned long _td_last_count = 0, _td_last_time = 0;
+        //_td_last_count = _count, _td_last_time = millis();
+
+        bool error_pending = false;
+
         // Whether or not the sensor detects the centermark reference point.
         ChangeTracker<bool> centermark = ChangeTracker<bool>(false);
         
@@ -96,6 +142,19 @@ class PanController{
             
         }
         
+        unsigned long get_total_time_to_stop(){
+            return _total_time_to_stop;
+        }
+        
+        
+        unsigned long get_total_ticks_to_stop(){
+            return _total_ticks_to_stop;
+        }
+
+        bool is_seeking(){
+            return _seeking;
+        }
+        
         // Set/get power.
 
         void set_power(bool value){
@@ -116,9 +175,44 @@ class PanController{
             _target_angle = fmod(v, 360.);
 
             _seeking = true;
+            _seek_start_time = millis();
+            error_pending = true;
+            overshoot_compensation = 0;
+            
+            if(is_calibrated()){
+                //if actual=90 and target=0 => overshoot_comp=2
+                //if actual=0 and target=90 => overshoot_comp=88
+                if(abs(actual_angle.get_latest() - _target_angle) > 45){
+
+                    float change_angle = actual_angle.get_latest() - _target_angle;
+                    // 90-0 = 90
+                    // 0-90 = -90
+                    if(change_angle > 0 && abs(change_angle - 360) < abs(change_angle)){
+                        change_angle = change_angle - 360;
+                    }else if(change_angle < 0 && abs(change_angle + 360) < abs(change_angle)){
+                        change_angle = change_angle + 360;
+                    }
+                    
+                    // + => CCW
+                    // - => CW
+                    if(change_angle > 0){
+                        overshoot_compensation = 2;
+                    }else{
+                        overshoot_compensation = -2;
+                    }
+
+                }
+                
+            }
 
             // Reset the safety timeout clock.
-            _time_count_last_updated = millis();
+            _time_count_last_updated0 = _time_count_last_updated = millis();
+            
+            // Reset PID session variables.
+            pos_err = 0;
+            td_err = 0;
+            sum_err = 0;
+            last_actual_angle = 0;
         }
 
         // Set/get speed.
@@ -156,6 +250,7 @@ class PanController{
             //tick := number of encoder pulses, PM_FULL_REV_COUNT for 360 degrees
             float tmp_angle;
             _time_count_last_updated = millis();
+            _total_ticks_counter += ticks;
             if(actual_angle.get_latest() != -1 && is_calibrated()){
 
                 // Update the absolute pan angle in relation to our reference position.
@@ -166,11 +261,37 @@ class PanController{
                 }
                 actual_angle.set(tmp_angle);
 
+                // Auto-stop once we've reached the goal.
+                //if(_seeking){
+                    //if(int(actual_angle.get_latest()) == int(_target_angle)){
+                        //stop();
+                    //}
+                //}
+
             }
         }
 
-        bool is_calibrated(){
+        void calibrate(){
+            active = true;
+            
+            _centermark_checked = false;
+            
+            _max_velocity_checked = false;
+            _velocity_calibration_state = VC_WAITING_TO_CLEAR;
+            _velocity_stop_time0 = 0;
+            _time_count_last_updated0 = 0;
+        }
+        
+        bool is_center_calibrated(){
             return _centermark_checked;
+        }
+        
+        bool is_velocity_calibrated(){
+            return _max_velocity_checked;
+        }
+
+        bool is_calibrated(){
+            return is_center_calibrated();// && is_velocity_calibrated();
         }
 
         void go_to_center(){
@@ -204,6 +325,10 @@ class PanController{
                 _centermark_checked = true;
             }
         }
+        
+        float get_angle_error(){
+            return actual_angle.get_latest() - _target_angle;
+        }
 
         void update(){
 
@@ -213,19 +338,46 @@ class PanController{
             calibrated.set(is_calibrated());
 
             if(!active){
-            }else if(!is_calibrated()){
+                _calibration_speed = PM_CALIBRATION_SPEED;
+            }else if(!is_center_calibrated()){
                 // If we're uncalibrated, begin a dumb centermark search.
-                set_speed(PM_CALIBRATION_SPEED);
+                set_speed(_calibration_speed);
+            //}else if(!is_velocity_calibrated()){
+                //// Measure how long it takes us to stop after obtaining full speed.
+                //// We need this in order to time our deceleration so we don't overshoot our target angle when seeking.
+                //if(_velocity_calibration_state == VC_WAITING_TO_CLEAR){
+                    //if(!is_centermark()){
+                        //_velocity_calibration_state = VC_WAITING_TO_SEE;
+                    //}else{
+                        //set_speed(_calibration_speed);
+                    //}
+                //}else if(_velocity_calibration_state == VC_WAITING_TO_SEE){
+                    //if(is_centermark()){
+                        //_velocity_calibration_state = VC_WAITING_TO_STOP;
+                    //}else{
+                        //stop();
+                        //_total_ticks_counter = 0;
+                        //_velocity_stop_time0 = millis();
+                    //}
+                //}else if(_velocity_calibration_state == VC_WAITING_TO_STOP){
+                    //if(millis() - _time_count_last_updated >= 1000){
+                        //// We have stopped when the encoder registers no change for 1 second.
+                        //// Finalize velocity estimates.
+                        //_max_velocity_checked = true;
+                        //_total_time_to_stop = _time_count_last_updated - _velocity_stop_time0;
+                        //_total_ticks_to_stop = _total_ticks_counter;
+                    //}
+                //}
             }else if(_seeking){
                 // Otherwise update the current target angle using our calibrated positioning.
+                _calibration_speed = PM_CALIBRATION_SPEED;
 
-                float aa = actual_angle.get_latest();
-                float ta = _target_angle;
-
-                // CW, -dir
-                // CCW, +dir
+                float aa = actual_angle.get_latest(); // where we currently are
+                float ta = _target_angle + overshoot_compensation; // where we want to be
 
                 // Calculate shortest angle.
+                // CW, -dir
+                // CCW, +dir
                 float change_angle = aa - ta;
                 if(change_angle > 0 && abs(change_angle - 360) < abs(change_angle)){
                     change_angle = change_angle - 360;
@@ -233,19 +385,41 @@ class PanController{
                     change_angle = change_angle + 360;
                 }
 
-                int angle_dir;
-                if(change_angle > 0){
-                    angle_dir = +1;
-                }else{
-                    angle_dir = -1;
+                //int angle_dir;
+                //if(change_angle > 0){
+                //    angle_dir = +1;
+                //}else{
+                //    angle_dir = -1;
+                //}
+
+                // Update PID state variables.
+                pos_err = -change_angle; // negative is to compensate for opposite polarity in speed vs encoder direction
+                td_err = aa - last_actual_angle;
+                sum_err += pos_err;
+
+                // Calculate final PID output.
+                set_speed(constrain(kp*pos_err + kd*td_err + ki*sum_err, -254.0, +254.0));
+
+                // After 2 seconds of trying to move with no change in position, abort motor
+                // movement because we've probably stalled, either because we're real close
+                // to the goal or there's something block us.
+                if(millis() - _time_count_last_updated > 1000){
+                    stop();
+                }
+                
+                // If we're still moving after a long time, then assume something bad has happened and stop.
+                // This usually means the PID controller is oscillating without convergence.
+                // All pan movements should be very quick and complete in under a second.
+                if(millis() - _seek_start_time > 3000){
+                    stop();
                 }
 
                 // Primitive P controller.
+                /*
                 float final_angle = abs(change_angle);
-                int min_speed = 110; // too slow
-                //int max_speed = 175; // too slow
-                //int min_speed = 125; // too slow
-                int max_speed = 200;
+                //int min_speed = 110; // too slow
+                int min_speed = 175; // too slow
+                int max_speed = 250;
                 int min_angle = 0;
                 int max_angle = 180;
                 if(millis() - _time_count_last_updated > 2000){
@@ -262,7 +436,15 @@ class PanController{
                     // Use the top speed if we're far away, and slow down the closer we get.
                     set_speed(map(final_angle, min_angle, max_angle, min_speed, max_speed)*angle_dir);
                 }
+                */
+                
+                // Record last tick count and time, so we can compare it to the current tick count and time to estimate velocity.
+                //_td_last_count = _count;
+                //_td_last_time = millis();
+                last_actual_angle = aa;
+                
             }else{
+                _calibration_speed = PM_CALIBRATION_SPEED;
                 stop();
             }
 

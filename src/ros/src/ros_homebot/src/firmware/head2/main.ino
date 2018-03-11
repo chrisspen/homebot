@@ -16,7 +16,7 @@
 #include <std_msgs/Int16.h>
 #include <std_msgs/Int64.h>
 #include <std_msgs/Float32.h>
-//#include <std_msgs/Float32MultiArray.h>
+#include <std_msgs/Float32MultiArray.h>
 //#include <std_msgs/Int32MultiArray.h>
 //#include <std_msgs/Int16MultiArray.h>
 //#include <std_msgs/Int8MultiArray.h>
@@ -38,6 +38,12 @@
 
 //#define DIAGNOSTIC_STATUS_LENGTH 1
 #define DIAGNOSTIC_REPORT_FREQ_MS 1000
+
+long ftol(double v) {
+    // Assumes 3 places of decimal precision.
+    // Assumes the host interpreting this number will first divide by 1000.
+    return static_cast<long>(v*1000);
+}
 
 PanController pan_controller = PanController(PAN_MOTOR_ENABLE, PAN_MOTOR_PHASE, PAN_MOTOR_POSITION_REF);
 TiltController tilt_controller = TiltController(TILT_SERVO_POS_SET, TILT_SERVO_POS_GET);
@@ -72,6 +78,7 @@ std_msgs::Int16 int16_msg;
 //std_msgs::Bool bool_msg;
 //std_msgs::Float32 float_msg;
 std_msgs::String string_msg;
+//std_msgs::Float32MultiArray float32ma_msg;
 //std_msgs::UInt16MultiArray uint16ma_msg;
 //sensor_msgs::Range range_msg;
 //sensor_msgs::BatteryState battery_msg;
@@ -121,6 +128,9 @@ void halt_all_activity() {
 // rostopic echo /head_arduino/pan/degrees
 ros::Publisher pan_angle_publisher = ros::Publisher("pan/degrees", &int16_msg);
 
+// rostopic echo /head_arduino/pan/error
+ros::Publisher pan_error_publisher = ros::Publisher("pan/error", &int16_msg);
+
 // rostopic echo /head_arduino/tilt/degrees
 ros::Publisher tilt_angle_publisher = ros::Publisher("tilt/degrees", &int16_msg);
 
@@ -130,13 +140,38 @@ void on_force_sensors(const std_msgs::Empty& msg) {
 }
 ros::Subscriber<std_msgs::Empty> on_force_sensors_sub("force_sensors", &on_force_sensors);
 
+// rostopic pub --once /head_arduino/pan/calibrate std_msgs/Empty
+void on_pan_angle_calibrate(const std_msgs::Empty& msg) {
+    pan_controller.calibrate();
+}
+ros::Subscriber<std_msgs::Empty> on_pan_angle_calibrate_sub("pan/calibrate", &on_pan_angle_calibrate);
+
+// rostopic pub --once /head_arduino/pan/pid/set std_msgs/Float32MultiArray "{layout:{dim:[], data_offset: 0}, data:[0.95, 0.15, 0.1]}"
+// rostopic pub --once /head_arduino/pan/pid/set std_msgs/Float32MultiArray "{layout:{dim:[], data_offset: 0}, data:[1, 0, 0]}"
+void on_pan_pid_set(const std_msgs::Float32MultiArray& msg) {
+    pan_controller.kp = msg.data[0];
+    pan_controller.ki = msg.data[1];
+    pan_controller.kd = msg.data[2];
+    nh.loginfo("Pan PID parameters changed.");
+    snprintf(buffer, MAX_OUT_CHARS, "kp: %ld", ftol(pan_controller.kp));
+    nh.loginfo(buffer);
+    snprintf(buffer, MAX_OUT_CHARS, "ki: %ld", ftol(pan_controller.ki));
+    nh.loginfo(buffer);
+    snprintf(buffer, MAX_OUT_CHARS, "kd: %ld", ftol(pan_controller.kd));
+    nh.loginfo(buffer);
+}
+ros::Subscriber<std_msgs::Float32MultiArray> on_pan_pid_set_sub("pan/pid/set", &on_pan_pid_set);
+
 // rostopic pub --once /head_arduino/pan/set std_msgs/Int16 90
 // 0=origin/forward/center
 // 180=backwards
 // 360=origin/forward/center
+// 356=head facing true center
 void on_pan_angle_set(const std_msgs::Int16& msg) {
     pan_controller.active = true;
     pan_controller.set_target_angle(msg.data);
+    snprintf(buffer, MAX_OUT_CHARS, "Set pan angle: %d", msg.data);
+    nh.loginfo(buffer);
 }
 ros::Subscriber<std_msgs::Int16> on_pan_angle_set_sub("pan/set", &on_pan_angle_set);
 
@@ -218,11 +253,14 @@ void setup() {
     nh.subscribe(on_pan_angle_set_sub);
     nh.subscribe(on_tilt_angle_set_sub);
     nh.subscribe(on_halt_sub);
+    nh.subscribe(on_pan_angle_calibrate_sub);
+    nh.subscribe(on_pan_pid_set_sub);
 
     // Register publishers.
     nh.advertise(diagnostics_publisher);
     nh.advertise(pan_angle_publisher);
     nh.advertise(tilt_angle_publisher);
+    nh.advertise(pan_error_publisher);
 
     attachInterrupt(digitalPinToInterrupt(PAN_MOTOR_ENCODER_A), on_pan_encoder_change, CHANGE);
     attachInterrupt(digitalPinToInterrupt(PAN_MOTOR_POSITION_REF), on_pan_reference_change, CHANGE);
@@ -273,8 +311,19 @@ void loop() {
     if (millis() - last_diagnostic >= DIAGNOSTIC_REPORT_FREQ_MS) {
         last_diagnostic = millis();
         report_diagnostics = true;
-        //snprintf(buffer, MAX_OUT_CHARS, "pan:%d", digitalRead(PAN_MOTOR_POSITION_REF));
-        //nh.loginfo(buffer);
+        
+        snprintf(buffer, MAX_OUT_CHARS, "pan speed:%d", pan_controller.get_speed());
+        nh.loginfo(buffer);
+        snprintf(buffer, MAX_OUT_CHARS, "pan actual angle:%ld", ftol(pan_controller.actual_angle.get_latest()));
+        nh.loginfo(buffer);
+        snprintf(buffer, MAX_OUT_CHARS, "pan target angle:%ld", ftol(pan_controller.get_target_angle()));
+        nh.loginfo(buffer);
+        snprintf(buffer, MAX_OUT_CHARS, "pan pos_err:%d", pan_controller.pos_err);
+        nh.loginfo(buffer);
+        snprintf(buffer, MAX_OUT_CHARS, "pan td_err:%d", pan_controller.td_err);
+        nh.loginfo(buffer);
+        snprintf(buffer, MAX_OUT_CHARS, "pan sum_err:%d", pan_controller.sum_err);
+        nh.loginfo(buffer);
     }
 
     // Track connection status with host.
@@ -297,6 +346,13 @@ void loop() {
     if (tilt_controller.actual_degrees.get_and_clear_changed() || force_sensors || report_diagnostics) {
         int16_msg.data = tilt_controller.actual_degrees.get_latest();
         tilt_angle_publisher.publish(&int16_msg);
+    }
+    
+    // Output any pending pan angle error reports.
+    if(!pan_controller.is_seeking() && pan_controller.error_pending){
+        pan_controller.error_pending = false;
+        int16_msg.data = pan_controller.get_angle_error();
+        pan_error_publisher.publish(&int16_msg);
     }
 
     force_sensors = false;

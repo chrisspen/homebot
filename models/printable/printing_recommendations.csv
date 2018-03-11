@@ -6,6 +6,10 @@ battery_tray2_cartridge_bottom_20160522.stl,0.8,,,,,0
 battery_tray2_cartridge_top_20160522.stl,0.8,,,,,0
 battery_tray2_nub_20160522.stl,0.8,,,brim,,0
 battery_tray2_receiver_20160522.stl,0.8,,,,,0
+battery_tray3_cartridge_bottom.stl,,,,,,0
+battery_tray3_cartridge_top.stl,,,,,,0
+battery_tray3_holder.stl,,,,,,0
+battery_tray3_support.stl,,,,,,0
 bearings_slew_bearing_inner_bottom_20160214.stl,0.8,,,,,0
 bearings_slew_bearing_inner_top_20160214.stl,0.8,,,,,0
 bearings_slew_bearing_outer_20160214.stl,0.8,black,15,,,0
@@ -22,6 +26,13 @@ collar_side.stl,0.8,,,,,0
 commotion_switch.stl,,,,,,0
 conduit_beam_20151108.stl,0.8,,,,,0
 dc_converter_tray_20150917.stl,0.8,,,,,0
+dock_masthead.stl,,,,,,0
+dock_retainer.stl,,,,,,0
+dock_rim_part1.stl,,,,,,0
+dock_rim_part2.stl,,,,,,0
+dock_rim_part3.stl,,,,,,0
+dock_rim_part4.stl,,,,,,0
+dock_rim_part5.stl,,,,,,0
 edge_sensor_mount_20151110.stl,0.8,,,,,0
 edge_sensor_mount_cover_20151111b.stl,0.8,,,,,0
 flexiTreads_driver_20150801.stl,0.8,,,,,0

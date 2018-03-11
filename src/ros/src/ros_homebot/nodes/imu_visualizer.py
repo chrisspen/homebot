@@ -111,7 +111,7 @@ class IMUVisualizer(app.Canvas):
         rospy.init_node('imu_visualizer')
 #         assert_node_alive('torso_arduino')
 
-        rospy.Subscriber('imu/data_raw', Imu, self.on_imu)
+        rospy.Subscriber('/imu_data', Imu, self.on_imu)
 
         # Cleanup when termniating the node
         rospy.on_shutdown(self.shutdown)

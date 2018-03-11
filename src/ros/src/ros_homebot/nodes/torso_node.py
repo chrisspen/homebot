@@ -187,7 +187,7 @@ class TorsoNode(BaseArduinoNode):
     received_imu = False
 
     def create_publishers(self):
-        self.imu_pub = rospy.Publisher('imu/data_raw', Imu, queue_size=01)
+        self.imu_pub = rospy.Publisher('/imu_data', Imu, queue_size=01)
 
         self._imu_pub_lock = threading.RLock()
         self._imu_pub_thread = threading.Thread(target=self.publish_imu_thread)

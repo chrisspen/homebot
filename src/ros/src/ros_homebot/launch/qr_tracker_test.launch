@@ -1,0 +1,28 @@
+<!--
+
+    roscore
+    rosrun ros_qr_tracker webcam.py _start:=1
+    #rosrun rqt_image_view rqt_image_view image:=/webcam/image _image_transport:=compressed
+    rosrun ros_qr_tracker qr_tracker.py _topic:=/webcam/image/compressed _start:=1 _mode:=2
+    #rosrun rqt_image_view rqt_image_view image:=/qr_tracker/images _image_transport:=compressed
+
+-->
+<launch>
+
+    <node name="webcam" pkg="ros_qr_tracker" type="webcam.py" output="screen">
+        <param name="start" type="int" value="1" />
+    </node>
+    
+    <node name="qr_tracker" pkg="ros_qr_tracker" type="qr_tracker.py" output="screen">
+        <param name="topic" value="/webcam/image/compressed" />
+        <param name="start" type="int" value="1" />
+        <param name="mode" type="int" value="2" />
+    </node>
+
+    <node name="rqt_image_view" pkg="rqt_image_view" type="rqt_image_view" output="screen">
+        <param name="image" type="string" value="/qr_tracker/images" />
+        <param name="image_transport" type="string" value="compressed" />
+    </node>
+    <!-- rosrun rqt_image_view rqt_image_view image:=/raspicam/image _image_transport:=compressed -->
+
+</launch>

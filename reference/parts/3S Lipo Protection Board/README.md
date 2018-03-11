@@ -13,7 +13,8 @@ Product Features
 
 Product Description
     
-    This 3 cell lithium ion battery protection board is equiped with Japan battery control IC with over charging, over discharging, over current and short circuit protection. It is perfect for li-ion lipo battery cell pack such as 18650,18550, 14500 avoiding the damage during charging or discharge then prolong their lifetime.
+    This 3 cell lithium ion battery protection board is equiped with Japan battery control IC with over charging, over discharging, over current and short circuit protection.
+    It is perfect for li-ion lipo battery cell pack such as 18650,18550, 14500 avoiding the damage during charging or discharge then prolong their lifetime.
 
 Specifications:
 

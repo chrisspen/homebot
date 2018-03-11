@@ -1,9 +1,9 @@
 include <recharge_mount_settings.scad>;
-use <countersink.scad>;
-use <../rounded_cube.scad>;
+use <../openscad-extra/src/countersink.scad>;
+use <../openscad-extra/src/rounded.scad>;
 use <cross_plate.scad>;
-use <../openscad-extra/wedge.scad>;
-use <../openscad-extra/torus.scad>;
+use <../openscad-extra/src/wedge.scad>;
+use <../openscad-extra/src/torus.scad>;
 
 module make_recharge_shell(){
 

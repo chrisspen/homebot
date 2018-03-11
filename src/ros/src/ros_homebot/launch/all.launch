@@ -14,7 +14,7 @@
     <include file="$(find ros_homebot)/launch/arduino_relay.launch" />
 
     <!-- Reads from the Pi camera and publishes it as compressed ROS image messages. -->
-    <include file="$(find ros_homebot)/launch/raspicam_compressed_320.launch" />
+    <include file="$(find ros_homebot)/launch/raspicam_compressed_800.launch" />
 
     <!-- Handles generating speech from text. -->
     <include file="$(find ros_homebot)/launch/sound.launch" />

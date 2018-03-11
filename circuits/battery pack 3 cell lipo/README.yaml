@@ -1,0 +1,7 @@
+description: Circuit of the second third generation battery pack. Incorporates three 18650 3000mAh lipo batteries wired to a XINY 3S Li-ion Lithium Battery Charger Protection Board to create a 3S 12.6V 2A lipo battery. Interface is backwards compatible with the second generation. The physical case is virtually identical to the previous version.
+
+status: production
+
+parts:
+    battery_pack.fzz: Primary circuit.
+

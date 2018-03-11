@@ -1,0 +1,14 @@
+<launch>
+    <group ns="raspicam">
+        <node name="raspicam_node" pkg="raspicam" type="raspicam_node" output="screen">
+            <!-- these get ignored if set elsewhere? -->
+            <param name="framerate" type="int" value="20" />
+            <param name="quality" type="int" value="10" />
+            <param name="width" type="int" value="800" />
+            <param name="height" type="int" value="600" />
+            <param name="hflip" type="int" value="1" />
+            <param name="vflip" type="int" value="1" />
+            <param name="start" type="int" value="1" />
+        </node>
+    </group>
+</launch>

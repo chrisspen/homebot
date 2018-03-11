@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from __future__ import print_function
 #import time
+from math import pi
 import traceback
 import os
 import sys
@@ -17,7 +18,8 @@ import tf
 #http://docs.ros.org/api/sensor_msgs/html/msg/Imu.html
 from sensor_msgs.msg import Imu
 #http://wiki.ros.org/std_msgs
-from std_msgs.msg import Header, String, UInt16MultiArray, Bool
+from sensor_msgs.msg import JointState
+from std_msgs.msg import Header, String, UInt16MultiArray, Bool, Int16
 #from std_srvs.srv import Empty, EmptyResponse
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Quaternion, Point
@@ -92,11 +94,30 @@ class ArduinoRelay:
 
         self.imu_calibration_load_pub = rospy.Publisher('/torso_arduino/imu/calibration/load', UInt16MultiArray, queue_size=1)
 
-        self.imu_pub = rospy.Publisher('imu/data_raw', Imu, queue_size=10)
+        self.imu_pub = rospy.Publisher('/imu_data', Imu, queue_size=10)
 
-        ## Subscribers.
+        self.joint_pub = rospy.Publisher('joint_states', JointState, queue_size=10)
+
+        self._joint_pub_lock = threading.RLock()
+
+        self.last_pan_angle = None
+        self.last_tilt_angle = None
+        self.received_angles = False
+
+        self._joint_pub_thread = threading.Thread(target=self.publish_joints_thread)
+        self._joint_pub_thread.daemon = True
+        self._joint_pub_thread.start()
+
+        ## Head Subscribers.
 
         rospy.Subscriber('/head_arduino/diagnostics_relay', String, partial(self.on_diagnostics_relay, prefix='head'))
+
+        rospy.Subscriber('/head_arduino/pan/degrees', Int16, self.on_head_pan_degrees)
+
+        rospy.Subscriber('/head_arduino/tilt/degrees', Int16, self.on_head_tilt_degrees)
+
+        ## Torso Subscribers.
+
         rospy.Subscriber('/torso_arduino/diagnostics_relay', String, partial(self.on_diagnostics_relay, prefix='torso'))
 
         rospy.Subscriber('/torso_arduino/imu/calibration/save', UInt16MultiArray, self.on_imu_calibration_save)
@@ -132,37 +153,6 @@ class ArduinoRelay:
         fn = os.path.join(cache_dir, IMU_CALIBRATION_FN)
         return fn
 
-    # def motor_monitor(self):
-        # """
-        # Compares the motor encoders to the motor targets.
-        # If the motor targets are non-zero, yet the motor encoders register no movement, then raises a diagnostic error indicating the motors
-        # are stuck or the encoders have malfunctioned.
-        # """
-
-        # last_pos = self.pos
-        # last_ori = self.ori
-
-        # while 1:
-
-            # level = OK
-            # motor_free = True
-            # message = 'torso: motor'
-            # if self._motor_target_left or self._motor_target_left:
-                # motor_free = last_post != self.pos or last_ori != self.ori
-                # level = ERROR
-
-            # array = DiagnosticArray()
-            # array.status = [
-                # DiagnosticStatus(name=name, level=level, message=message)
-            # ]
-            # with self._lock:
-                # self.diagnostics_pub.publish(array)
-
-            # with self._odom_lock:
-                # last_pos = self.pos
-                # last_ori = self.ori
-            # time.sleep(1)
-
     def load_imu_calibration(self):
         """
         Automatically called once after the first diagnostic message is received.
@@ -193,6 +183,60 @@ class ArduinoRelay:
         finally:
             self.imu_calibration_loaded = True
 
+    def on_head_pan_degrees(self, msg):
+        """
+        Re-publishes the pan angle as a standard JointState message.
+        """
+        # rospy.loginfo('pan: %s' % msg.data)
+        with self._joint_pub_lock:
+            self.last_pan_angle = msg.data*pi/180.
+        self.received_angles = True
+        self.publish_joints()
+
+    def on_head_tilt_degrees(self, msg):
+        """
+        Re-publishes the tilt angle as a standard JointState message.
+        """
+        # rospy.loginfo('tilt: %s' % msg.data)
+        with self._joint_pub_lock:
+            self.last_tilt_angle = msg.data*pi/180.
+        self.received_angles = True
+        self.publish_joints()
+
+    def publish_joints_thread(self):
+        time.sleep(3)
+        while 1:
+            if self.received_angles:
+                self.publish_joints()
+            time.sleep(1)
+
+    def publish_joints(self):
+        if self.last_tilt_angle is None:
+            rospy.logwarn('No tilt angle, aborting joint publish.')
+            return
+        if self.last_pan_angle is None:
+            rospy.logwarn('No pan angle, aborting joint publish.')
+            return
+        with self._joint_pub_lock:
+            joint_state = JointState()
+            joint_state.header = Header()
+            joint_state.header.stamp = rospy.Time.now()
+            joint_state.name = [
+                c.FOOTPRINT_TO_TORSO_JOINT,
+                c.TORSO_TO_NECK_JOINT,
+                c.NECK_TO_HEAD_JOINT,
+                c.HEAD_TO_CAMERA_JOINT,
+            ]
+            joint_state.position = [
+                0,
+                self.last_pan_angle,
+                self.last_tilt_angle,
+                0,
+            ]
+            joint_state.velocity = []
+            joint_state.effort = []
+            self.joint_pub.publish(joint_state)
+
     def on_power_shutdown(self, msg):
         rospy.loginfo('Received shutdown signal. Issuing halt command in 3 seconds...')
         try:
@@ -205,18 +249,6 @@ class ArduinoRelay:
         # The torso Arduino will then wait a few seconds to allow Linux to clean up all processes, and then it will kill all system power.
         # See the deadman flag that triggers the call to power_controller.shutdown().
 
-    # def on_motor_encoder(self, msg, side):
-        # if side == 'left':
-            # self._motor_encoder_left = msg.data
-        # elif side == 'right':
-            # self._motor_encoder_right = msg.data
-
-    # def on_motor_target(self, msg, side):
-        # if side == 'left':
-            # self._motor_target_left = msg.data
-        # elif side == 'right':
-            # self._motor_target_right = msg.data
-
     def on_imu_calibration_save(self, msg):
         #print('Received imu calibration:', msg)
         if sum(msg.data) == 0:
@@ -228,7 +260,6 @@ class ArduinoRelay:
             pickle.dump(msg, fout)
 
     def on_imu_relay(self, msg):
-        #print('imu_relay.msg:', msg)
         parts = msg.data.split(':')
 
         # Validate type.
@@ -239,14 +270,14 @@ class ArduinoRelay:
         nums = ltof(parts[1:])
         for num, axis in zip(nums, 'xyz'):
             self._imu_data['%s%s' % (typ, axis)] = num
-        #print('imu_data:', self._imu_data)
 
         # If we've received the final segment, re-publish the complete IMU message.
         if typ == 'a':
+            # https://docs.ros.org/api/sensor_msgs/html/msg/Imu.html
             imu_msg = Imu()
             imu_msg.header = Header()
             imu_msg.header.stamp = rospy.Time.now()
-            imu_msg.header.frame_id = c.BASE_LINK
+            imu_msg.header.frame_id = c.BASE_LINK #TODO
 
             # Our sensor returns Euler angles in degrees, but ROS requires radians.
             # http://answers.ros.org/question/69754/quaternion-transformations-in-python/
@@ -258,14 +289,17 @@ class ArduinoRelay:
             imu_msg.orientation.y = quaternion[1]
             imu_msg.orientation.z = quaternion[2]
             imu_msg.orientation.w = quaternion[3]
+            imu_msg.orientation_covariance = [1, 0.001, 0.001, 0.001, 1, 0.001, 0.001, 0.001, 1]
 
             imu_msg.angular_velocity.x = self._imu_data['gx']
             imu_msg.angular_velocity.y = self._imu_data['gy']
             imu_msg.angular_velocity.z = self._imu_data['gz']
+            imu_msg.angular_velocity_covariance = [1, 0.001, 0.001, 0.001, 1, 0.001, 0.001, 0.001, 1]
 
             imu_msg.linear_acceleration.x = self._imu_data['ax']
             imu_msg.linear_acceleration.y = self._imu_data['ay']
             imu_msg.linear_acceleration.z = self._imu_data['az']
+            imu_msg.linear_acceleration_covariance = [1, 0.001, 0.001, 0.001, 1, 0.001, 0.001, 0.001, 1]
 
             self.imu_pub.publish(imu_msg)
 
@@ -337,8 +371,6 @@ class ArduinoRelay:
 
     def on_odometry_relay(self, msg):
 
-        # print('odometry.msg:', msg)
-
         parts = msg.data.split(':')
         if len(parts) < 5:
             rospy.logerr('Malformed odometry message.', file=sys.stderr)
@@ -373,15 +405,32 @@ class ArduinoRelay:
             #geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(th);
             odom_quat = Quaternion(*tf.transformations.quaternion_from_euler(0, 0, th))
 
+            # https://docs.ros.org/kinetic/api/nav_msgs/html/msg/Odometry.html
             msg = Odometry()
             msg.header.stamp = current_time
             msg.header.frame_id = c.ODOM
             msg.child_frame_id = c.BASE_LINK
             msg.pose.pose.position = Point(x, y, z)
             msg.pose.pose.orientation = odom_quat
+            msg.pose.covariance = [
+                1,0.001,0.001,0.001,0.001,0.001,
+                0.001,1,0.001,0.001,0.001,0.001,
+                0.001,0.001,1,0.001,0.001,0.001,
+                0.001,0.001,0.001,1,0.001,0.001,
+                0.001,0.001,0.001,0.001,1,0.001,
+                0.001,0.001,0.001,0.001,0.001,1,
+            ]
             msg.twist.twist.linear.x = vx
             msg.twist.twist.linear.y = vy
             msg.twist.twist.angular.z = vth
+            msg.twist.covariance = [
+                1,0.001,0.001,0.001,0.001,0.001,
+                0.001,1,0.001,0.001,0.001,0.001,
+                0.001,0.001,1,0.001,0.001,0.001,
+                0.001,0.001,0.001,1,0.001,0.001,
+                0.001,0.001,0.001,0.001,1,0.001,
+                0.001,0.001,0.001,0.001,0.001,1,
+            ]
 
             # publish the odometry message
             self.odometry_pub.publish(msg)

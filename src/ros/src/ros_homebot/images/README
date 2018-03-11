@@ -1,0 +1,14 @@
+Note, the QR code contains 5mm of white border.
+
+Note, you must print from Inkscape. Other image viewers will often scale up to cut off the white border, causing the code to print as the wrong size.
+
+./create_qr_code.py "{'domain':'homebot','subdomain':'dock','index':1,'subindex':1,'width_mm':25,'height_mm':25}" homebot_dock_1_1_25x25mm.jpg
+
+    This one was too verbose and tiny, making it difficult to recognize.
+
+./create_qr_code.py "d=homebot,sd=dock,w=25,h=25" homebot_dock_25x25mm_simple.jpg
+
+    Easier to recognize, but still too difficult.
+
+./create_qr_code.py "d=homebot,sd=dock,w=55,h=55" homebot_dock_55x55mm_simple.jpg
+

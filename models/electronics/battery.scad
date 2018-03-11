@@ -19,7 +19,7 @@ module make_powerboost_1000(){
 }
 
 module make_battery_18650(tab=0){
-    cylinder(d=18.5, h=65+(tab?1:0), center=true);
+    cylinder(d=18.5, h=65+(tab?tab:0), center=true, $fn=100);
 }
 
 module make_battery_tray_1(){
