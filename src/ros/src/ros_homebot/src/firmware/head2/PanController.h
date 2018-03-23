@@ -33,10 +33,7 @@
 class PanController{
 
     private:
-    
-        // 0:255
-        int _speed = 0;
-        
+
         int _calibration_speed = PM_CALIBRATION_SPEED;
         
         // The direction we desire to go.
@@ -88,7 +85,8 @@ class PanController{
         // If true, the target angle is currently being sought. Otherwise false.
         // Used with _power to determine if we need to cut power after establishing position.
         bool _seeking = false;
-        
+
+        // Count of the total ticks from the motor encoder.
         unsigned long _total_ticks_counter = 0;
         
         // The total milliseconds it takes to stop moving when at full speed.
@@ -102,8 +100,29 @@ class PanController{
         
         int overshoot_compensation = 0;
 
+        // Seeking variables.
+        float aa; // where we currently are
+        float ta; // where we want to be
+        float change_angle;
+
     public:
     
+        // The raw speed in PWM form that we send to the motor controller.
+        // 0:255
+        int _speed = 0;
+        
+        // Values used to maintain a specific angular speed, instead of going to a specific position.
+        bool _use_dps = false;
+        float _dps = 0;
+        float _dps_effective = 0;
+        unsigned long _dps_last_tick_count = 0;
+        unsigned long _dps_last_tick_time = 0;
+
+        // TODO:If set, the current position will be maintained.
+        bool _freeze = false;
+        int torso_imu_euler_z0 = 0; // z angle at time of freeze
+        int torso_imu_euler_z1 = 0; // current z angle
+        
         // PID variables.
         double kp=-10, kd=0.4, ki=0;
         int pos_err = 0, td_err = 0, sum_err = 0;
@@ -165,6 +184,10 @@ class PanController{
             return _power;
         }
         
+        bool get_seeking(){
+            return _seeking;
+        }
+        
         // Set/get target angle.
 
         float get_target_angle(){
@@ -178,13 +201,15 @@ class PanController{
             _seek_start_time = millis();
             error_pending = true;
             overshoot_compensation = 0;
+            _use_dps = false;
+            _dps = 0;
             
             if(is_calibrated()){
                 //if actual=90 and target=0 => overshoot_comp=2
                 //if actual=0 and target=90 => overshoot_comp=88
                 if(abs(actual_angle.get_latest() - _target_angle) > 45){
 
-                    float change_angle = actual_angle.get_latest() - _target_angle;
+                    change_angle = actual_angle.get_latest() - _target_angle;
                     // 90-0 = 90
                     // 0-90 = -90
                     if(change_angle > 0 && abs(change_angle - 360) < abs(change_angle)){
@@ -214,6 +239,23 @@ class PanController{
             sum_err = 0;
             last_actual_angle = 0;
         }
+        
+        bool get_freeze(){
+            return _freeze;
+        }
+        
+        void set_freeze(bool value){
+            // Causes the pan motor to update position relative to torso z-angle.
+            // If torso rotates, then the pan motor's target angle will be adjusted.
+            _freeze = value;
+            if(_freeze){
+                torso_imu_euler_z0 = torso_imu_euler_z1;
+                set_target_angle(_target_angle);
+            }else{
+                _target_angle += torso_imu_euler_z0 - torso_imu_euler_z1;
+                stop();
+            }
+        }
 
         // Set/get speed.
 
@@ -226,6 +268,25 @@ class PanController{
 
             analogWrite(_enable_pin, _speed);
             digitalWrite(PAN_MOTOR_PHASE, _direction);
+
+        }
+        
+        // 2018-3-12 Note this is experimental, and doesn't work very well because the pan motor gears are very sticky.
+        void set_target_dps(int dps){
+            // Give a degree/second angular velocity, set the corresponding raw speed.
+            // dps => -=CCW, +=CW
+            _use_dps = true;
+            _dps = -dps; // we negate to make it match polarity of our speed
+
+            _dps_last_tick_count = _total_ticks_counter;
+            _dps_last_tick_time = millis();
+            
+            // We know it takes about 1 second at a raw speed of 200 to go a full 360 degrees, or 1732 ticks, so use this to estimate starting speed
+            // that estimates the dps.
+            // Note, due to limitations in the motor and gearing, the practical lower-bound in the raw speed is around 100.
+            // Below that, the motor tends to stall.
+            // deg/sec * 200/(360deg/1sec) = raw speed
+            set_speed(_dps * 200/(360/1.));
 
         }
 
@@ -280,6 +341,9 @@ class PanController{
             _velocity_calibration_state = VC_WAITING_TO_CLEAR;
             _velocity_stop_time0 = 0;
             _time_count_last_updated0 = 0;
+            
+            _use_dps = false;
+            _dps = 0;
         }
         
         bool is_center_calibrated(){
@@ -307,6 +371,10 @@ class PanController{
         void stop(){
             // Halt pan motor.
             set_speed(0);
+            
+            _use_dps = false;
+            _dps = 0;
+            
             if(!_power){
                 // If power steering isn't enabled and we've achieved the target,
                 // then kill power and allow for manual repositioning.
@@ -328,6 +396,14 @@ class PanController{
         
         float get_angle_error(){
             return actual_angle.get_latest() - _target_angle;
+        }
+        
+        void update_torso_z(int v){
+            if(torso_imu_euler_z1 != v && _freeze){
+                // Wake up the controller, if it's already completed and is now sleeping.
+                set_target_angle(_target_angle);
+            }
+            torso_imu_euler_z1 = v;
         }
 
         void update(){
@@ -368,17 +444,45 @@ class PanController{
                         //_total_ticks_to_stop = _total_ticks_counter;
                     //}
                 //}
+            }else if(_use_dps){
+                // Move at a constant velocity, regardless of position.
+
+                // Estimate current actual DPS.
+                // tick/millis * 360deg/PM_FULL_REV_COUNTticks * 1millis/0.001sec = deg/sec
+                _dps_effective = ((float)(_total_ticks_counter - _dps_last_tick_count))/(millis() - _dps_last_tick_time) * (360./PM_FULL_REV_COUNT) * 1000;
+                
+                // Adjust _speed to better match dps.
+                if(labs(_dps_effective) < labs(_dps)){
+                    // We're going too slow so speed up.
+                    _speed = min(_speed + 1, 255);
+                }else{
+                    // We're going too fast so slow down.
+                    _speed = min(_speed - 1, 0);
+                }
+                analogWrite(_enable_pin, _speed);
+                
+                // Track ticks for next iteration.
+                _dps_last_tick_count = _total_ticks_counter;
+                _dps_last_tick_time = millis();
+                
             }else if(_seeking){
                 // Otherwise update the current target angle using our calibrated positioning.
                 _calibration_speed = PM_CALIBRATION_SPEED;
 
-                float aa = actual_angle.get_latest(); // where we currently are
-                float ta = _target_angle + overshoot_compensation; // where we want to be
+                // Find actual angle, where we currently are.
+                aa = actual_angle.get_latest();
+                
+                // Find target angle, where we want to be.
+                if(_freeze){
+                    ta = _target_angle + overshoot_compensation + torso_imu_euler_z0 - torso_imu_euler_z1;
+                }else{
+                    ta = _target_angle + overshoot_compensation;
+                }
 
                 // Calculate shortest angle.
                 // CW, -dir
                 // CCW, +dir
-                float change_angle = aa - ta;
+                change_angle = aa - ta;
                 if(change_angle > 0 && abs(change_angle - 360) < abs(change_angle)){
                     change_angle = change_angle - 360;
                 }else if(change_angle < 0 && abs(change_angle + 360) < abs(change_angle)){
@@ -400,17 +504,18 @@ class PanController{
                 // Calculate final PID output.
                 set_speed(constrain(kp*pos_err + kd*td_err + ki*sum_err, -254.0, +254.0));
 
-                // After 2 seconds of trying to move with no change in position, abort motor
+                // After N seconds of trying to move with no change in position, abort motor
                 // movement because we've probably stalled, either because we're real close
                 // to the goal or there's something block us.
-                if(millis() - _time_count_last_updated > 1000){
+                if(millis() - _time_count_last_updated > 500){
                     stop();
                 }
                 
                 // If we're still moving after a long time, then assume something bad has happened and stop.
                 // This usually means the PID controller is oscillating without convergence.
                 // All pan movements should be very quick and complete in under a second.
-                if(millis() - _seek_start_time > 3000){
+                // At full speed, we can do a complete 360 in about 1 second.
+                if(millis() - _seek_start_time > 2000){
                     stop();
                 }
 

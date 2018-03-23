@@ -7,7 +7,7 @@ rostopic pub /torso_arduino/force_sensors std_msgs/Empty -once
 rostopic echo 
 -->
 <launch>
-    <group ns="torso_arduino">a
+    <group ns="torso_arduino">
         <node pkg="ros_homebot" type="serial_node.py" name="serial_node" output="screen" launch-prefix="nice --19 ionice -c1 -n0">
             <param name="~port" command="list_arduinos.py torso" />
             <param name="~baud" value="57600" />

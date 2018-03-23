@@ -50,8 +50,12 @@
 #define DIAGNOSTIC_REPORT_FREQ_MS 1000 // 1 seconds
 //#define DIAGNOSTIC_REPORT_FREQ_MS 10000 // 10 seconds
 
-#define HEALTHY_BLINK_PERIOD 1000
-#define DISCONNECTED_BLINK_PERIOD 500
+#define HEALTHY_BLINK_PERIOD 3000
+#define DISCONNECTED_BLINK_PERIOD 250
+
+// Debug levels.
+#define ONLY_ERRORS 0 // default
+#define UP_TO_OK 1
 
 char base_link[] = "/base_link";
 const char * const ultrasonic_links[] = { "/base_link/ultrasonic0", "/base_link/ultrasonic1", "/base_link/ultrasonic2" };
@@ -92,6 +96,7 @@ bool halt = false;
 // If true, all sensors will push their current readings to the host, even if they haven't changed
 // since last polling.
 bool force_sensors = false;
+bool noticed_force_sensors = false;
 
 // Records when we last received a message from rosserial on the host.
 // This is used to detect a lost connection to the host and perform emergency shutdown of the motors.
@@ -136,6 +141,8 @@ unsigned long last_diagnostic = 0;
 unsigned long a_encoder_last_change = 0;
 unsigned long b_encoder_last_change = 0;
 
+int general_status = diagnostic_msgs::DiagnosticStatus::OK;
+
 // If false, stays on when it becomes disconneced.
 // If set to false, then if we lose connection to the host, we power off.
 bool deadman = false;
@@ -174,17 +181,22 @@ BatteryVoltageSensor battery_voltage_sensor = BatteryVoltageSensor(
     2
 );
 
-AnalogSensor external_power_sensors[2] = {
+//AnalogSensor external_power_sensors[2] = {
+BooleanSensor external_power_sensors[2] = {
     // EP1
+    // Measures the voltage of the charging dock connection.
     // The pin measuring immediately after the external connector but before the reed switch.
     // Reads high when the external power plug is connected and external power is present.
-    AnalogSensor(EXTERNAL_POWER_SENSE_1_PIN),
+    //AnalogSensor(EXTERNAL_POWER_SENSE_1_PIN),
+    BooleanSensor(EXTERNAL_POWER_SENSE_1_PIN),
     // EP2
+    // Measures presence of the magnets in the charging dock.
     // The pin measuring behind the reed switch.
     // Reads high when the external power plug is connected, regardless of whether or not
     // external power is present.
     // This lets the robot know if it's connected to a dead recharge station.
-    AnalogSensor(EXTERNAL_POWER_SENSE_2_PIN)
+    //AnalogSensor(EXTERNAL_POWER_SENSE_2_PIN)
+    BooleanSensor(EXTERNAL_POWER_SENSE_2_PIN)
     // We're only fully docked and charging when both EP1 and EP2 are high.
 };
 
@@ -289,6 +301,10 @@ ros::Publisher imu_calibration_gyr_publisher = ros::Publisher("imu/calibration/g
 // This also isn't necessary for the sys output to read 3, or fully calibrated.
 ros::Publisher imu_calibration_acc_publisher = ros::Publisher("imu/calibration/acc", &int16_msg);
 
+// Publishes the Z axis angle in degrees. Used by the head to maintain position while the torso rotates.
+// It's much more efficient to publish this single number than for the head to receive all odometry data.
+ros::Publisher imu_euler_z_publisher = ros::Publisher("imu/euler/z", &int16_msg);
+
 // To calibrate, the sensor must be moved in a 'figure 8' motion ideally, or at least some minimal movement.
 // Note, mag will remain at 0 until it's moved a little, then it will switch to 1 and then 2, and then after a few more seconds, fully to 3.
 // The lesson here is that simply waiting for the IMU to fully calibrate won't work. The robot needs to move itself around a little.
@@ -311,10 +327,16 @@ ros::Publisher diagnostics_publisher = ros::Publisher("diagnostics_relay", &stri
 int last_a_encoder = 0;
 int last_b_encoder = 0;
 
+bool undock = false;
+unsigned long undock_start = 0;
+unsigned long undocked_time = 0;
+int debug_level = ONLY_ERRORS; // 0=only errors, 1=OK messages
+
 /*
  * End publisher definitions.
  */ 
 
+// Announces what the new motor speeds are. Allows to the Pi to know when the motors have started or stopped.
 void publish_motor_targets() {
     int16_msg.data = motion_controller.get_left_speed_target();
     motor_a_target_publisher.publish(&int16_msg);
@@ -398,6 +420,19 @@ void on_force_sensors(const std_msgs::Empty& msg) {
 }
 ros::Subscriber<std_msgs::Empty> force_sensors_sub("force_sensors", &on_force_sensors);
 
+// rostopic pub --once /torso_arduino/undock std_msgs/Empty
+void on_undock(const std_msgs::Empty& msg) {
+    if(!is_battery_present()){
+        nh.loginfo("Unable to undock because battery is not present.");
+    }else{
+        nh.loginfo("Undocking...");
+        undock = true;
+        undock_start = millis();
+        undocked_time = 0;
+    }
+}
+ros::Subscriber<std_msgs::Empty> on_undock_sub("undock", &on_undock);
+
 // rostopic pub --once /torso_arduino/toggle_led std_msgs/Empty
 void on_toggle_led(const std_msgs::Empty& msg) {
     nh.loginfo("LED toggled.");
@@ -431,6 +466,33 @@ void on_motor_speed(const std_msgs::Int16MultiArray& msg) {
     }
 }
 ros::Subscriber<std_msgs::Int16MultiArray> motor_speed_sub("motor/speed", &on_motor_speed);
+
+bool is_docked(){
+    return external_power_sensors[0].get_bool() || external_power_sensors[1].get_bool();
+}
+
+// rostopic pub --once /torso_arduino/motor/rotate std_msgs/Int16 45
+// Rotates the torso by a precise number of degrees.
+// A positive degree is clockwise. A negative degree is counter-clockwise.
+void on_motor_rotate(const std_msgs::Int16& msg) {
+    if (is_docked()){
+        nh.loginfo("Unable to rotate because we are docked.");
+    }else if (motion_controller.connection_error) {
+        nh.loginfo("Unable to rotate due to connection error.");
+    } else {
+        nh.loginfo("Rotating...");
+        motion_controller.rotate(msg.data);
+    }
+}
+ros::Subscriber<std_msgs::Int16> on_motor_rotate_sub("motor/rotate", &on_motor_rotate);
+
+// rostopic pub --once /torso_arduino/debug_level std_msgs/Int16 1
+// 0 = only errors
+// 1 = OK messages
+void on_debug_level(const std_msgs::Int16& msg) {
+    debug_level = msg.data;
+}
+ros::Subscriber<std_msgs::Int16> on_debug_level_sub("debug_level", &on_debug_level);
 
 // rostopic pub --once /torso_arduino/imu/calibration/load std_msgs/UInt16MultiArray
 // "{layout:{dim:[], data_offset: 0}, data:[0, 0, 0, 65534, 65534, 0, 65438, 65370, 268, 1000, 750]}"
@@ -488,6 +550,9 @@ void setup() {
     //robot_status.values_length = DIAGNOSTIC_STATUS_LENGTH;
     //dia_array.status[0].values = (diagnostic_msgs::KeyValue*)malloc(DIAGNOSTIC_STATUS_LENGTH * sizeof(diagnostic_msgs::KeyValue));
     //dia_array.status[0].values_length = DIAGNOSTIC_STATUS_LENGTH;
+    
+    external_power_sensors[0].use_analog = true;
+    external_power_sensors[1].use_analog = true;
 
     accel_ready = gyro_ready = magnetometer_ready = imu_ready = 0;
 
@@ -507,7 +572,7 @@ void setup() {
 //    pinMode(EXTERNAL_POWER_SENSE_2_PIN, INPUT);
 
     //nh.getHardware()->setBaud(57600);
-    nh.getHardware()->setBaud(115200); // loses connection after 5 minutes, causes ROS error "Lost sync with device, restarting..."?
+    nh.getHardware()->setBaud(115200); // More likely to have connection issues causing ROS error "Lost sync with device, restarting..."?
     nh.initNode();
 
     // Register subscriptions.
@@ -519,6 +584,9 @@ void setup() {
     nh.subscribe(motor_speed_sub);
     nh.subscribe(cmd_vel_sub);
     nh.subscribe(imu_calibration_load_sub);
+    nh.subscribe(on_undock_sub);
+    nh.subscribe(on_motor_rotate_sub);
+    nh.subscribe(on_debug_level_sub);
 
     // Register publishers.
     //nh.advertise(battery_voltage_publisher);
@@ -551,6 +619,7 @@ void setup() {
     nh.advertise(imu_publisher);
     nh.advertise(odometry_publisher);
     nh.advertise(diagnostics_publisher);
+    nh.advertise(imu_euler_z_publisher);
 
     // Join I2C bus as Master with address #1
     Wire.begin(1);
@@ -599,32 +668,58 @@ void send_diagnostics() {
 }
 
 void loop() {
+    
+    general_status = diagnostic_msgs::DiagnosticStatus::OK;
+
+    if(force_sensors){
+        noticed_force_sensors = true;
+    }
 
     // Trigger diagnostic message every N seconds.
     report_diagnostics = false;
     if (millis() - last_diagnostic >= DIAGNOSTIC_REPORT_FREQ_MS) {
         last_diagnostic = millis();
         report_diagnostics = true;
-        snprintf(buffer, MAX_OUT_CHARS, "memory:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, freeMemory());
-        send_diagnostics();
+
+        if(debug_level >= UP_TO_OK){
+            snprintf(buffer, MAX_OUT_CHARS, "memory:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, freeMemory());
+            send_diagnostics();
+        }
 
         // Check for stalled left motor.
         if (motion_controller.get_left_speed_target() && motion_controller.a_encoder.get_latest() == last_a_encoder) {
+            general_status |= diagnostic_msgs::DiagnosticStatus::ERROR;
             snprintf(buffer, MAX_OUT_CHARS, "motor.left.free:%d", diagnostic_msgs::DiagnosticStatus::ERROR);
+            send_diagnostics();
         } else {
-            snprintf(buffer, MAX_OUT_CHARS, "motor.left.free:%d", diagnostic_msgs::DiagnosticStatus::OK);
+            if(debug_level >= UP_TO_OK){
+                snprintf(buffer, MAX_OUT_CHARS, "motor.left.free:%d", diagnostic_msgs::DiagnosticStatus::OK);
+                send_diagnostics();
+            }
         }
-        send_diagnostics();
         last_a_encoder = motion_controller.a_encoder.get_latest();
 
         // Check for stalled left motor.
         if (motion_controller.get_right_speed_target() && motion_controller.b_encoder.get_latest() == last_b_encoder) {
+            general_status |= diagnostic_msgs::DiagnosticStatus::ERROR;
             snprintf(buffer, MAX_OUT_CHARS, "motor.right.free:%d", diagnostic_msgs::DiagnosticStatus::ERROR);
+            send_diagnostics();
         } else {
-            snprintf(buffer, MAX_OUT_CHARS, "motor.right.free:%d", diagnostic_msgs::DiagnosticStatus::OK);
+            if(debug_level >= UP_TO_OK){
+                snprintf(buffer, MAX_OUT_CHARS, "motor.right.free:%d", diagnostic_msgs::DiagnosticStatus::OK);
+                send_diagnostics();
+            }
         }
-        send_diagnostics();
         last_b_encoder = motion_controller.b_encoder.get_latest();
+        
+        //TODO:remove
+        snprintf(buffer, MAX_OUT_CHARS, "z_degree_change:%d", motion_controller.get_z_degree_change());
+        nh.loginfo(buffer);
+        snprintf(buffer, MAX_OUT_CHARS, "z_degrees:%d", motion_controller.get_z_degrees());
+        nh.loginfo(buffer);
+
+        nh.spinOnce();
+        
     }
 
     // Managed the diagnostic blink.
@@ -639,6 +734,7 @@ void loop() {
         cnt += 1;
         snprintf(buffer, MAX_OUT_CHARS, "count:%d", cnt);
         nh.loginfo(buffer);
+        nh.spinOnce();
     }
 
     //robot_status.name = "Robot";
@@ -714,6 +810,22 @@ void loop() {
 
     // CS 2018.1.18 Passed with slipring at count=7000
 
+    // Process undock.
+    if(undock){
+        if(is_docked() && (millis() - undock_start < 3000)){
+            // Reverse at 1/4 speed until we no longer sense the dock or timeout after 3 seconds.
+            motion_controller.set(128, 128); // for reverse geared wheels
+        }else if(!undocked_time){
+            // We've undocked. Record time so we know how long to time our motor stop.
+            undocked_time = millis();
+            motion_controller.set(64, 64); // for reverse geared wheels
+        }else if(millis() - undocked_time > 250){
+            // After N seconds, we've completely reversed out of the dock.
+            motion_controller.stop();
+            undock = false;
+        }
+    }
+
     // Battery sensor.
     battery_voltage_sensor.update();
     if (battery_voltage_sensor.get_and_clear_changed() || force_sensors) {
@@ -724,20 +836,29 @@ void loop() {
     for (int i = 0; i < 2; i++) {
         external_power_sensors[i].update();
         if (external_power_sensors[i].get_and_clear_changed() || force_sensors) {
-            bool_msg.data = external_power_sensors[i].get_bool();
+            bool_msg.data = (int)(external_power_sensors[i].get_bool());
             external_power_publishers[i].publish(&bool_msg);
             nh.spinOnce();
         }
     }
+    
+    // If we've fully plugged in, then ensure we stop moving forward, so we don't damage the charging dock.
+    if (external_power_sensors[0].get_bool() && motion_controller.is_moving_forward()) {
+        motion_controller.stop();
+        publish_motor_targets();
+        nh.loginfo("Dock connected, stopping forward motion.");
+    }
+    
     if (report_diagnostics) {
         // OK if external power is unplugged or plugged in and we detect a voltage.
-        snprintf(buffer, MAX_OUT_CHARS, "ep.voltage.present:%d:%d",
-            !(!external_power_sensors[1].get_bool() || (external_power_sensors[1].get_bool() && external_power_sensors[0].get_bool())),
-            external_power_sensors[0].get_bool());
-        send_diagnostics();
-
-        snprintf(buffer, MAX_OUT_CHARS, "ep.magnet.present:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, external_power_sensors[1].get_bool());
-        send_diagnostics();
+        if(debug_level >= UP_TO_OK){
+            snprintf(buffer, MAX_OUT_CHARS, "ep.voltage.present:%d:%d",
+                !(!external_power_sensors[1].get_bool() || (external_power_sensors[1].get_bool() && external_power_sensors[0].get_bool())),
+                (int)(external_power_sensors[0].get_bool()));
+            send_diagnostics();
+            snprintf(buffer, MAX_OUT_CHARS, "ep.magnet.present:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, (int)(external_power_sensors[1].get_bool()));
+            send_diagnostics();
+        }
     }
 
     // Edge, bumper and ultrasonic sensors.
@@ -757,11 +878,15 @@ void loop() {
         }
         if (report_diagnostics) {
             if (edge_sensors[i].value.get_latest()) {
+                general_status |= diagnostic_msgs::DiagnosticStatus::WARN;
                 snprintf(buffer, MAX_OUT_CHARS, "edge.%d:%d:%d", i, diagnostic_msgs::DiagnosticStatus::WARN, edge_sensors[i].value.get_latest());
+                send_diagnostics();
             } else {
-                snprintf(buffer, MAX_OUT_CHARS, "edge.%d:%d:%d", i, diagnostic_msgs::DiagnosticStatus::OK, edge_sensors[i].value.get_latest());
+                if(debug_level >= UP_TO_OK){
+                    snprintf(buffer, MAX_OUT_CHARS, "edge.%d:%d:%d", i, diagnostic_msgs::DiagnosticStatus::OK, edge_sensors[i].value.get_latest());
+                    send_diagnostics();
+                }
             }
-            send_diagnostics();
         }
         // CS 2017.6.3 Disabled because these have a poor mechanical design, are unreliable, and are largely unnecessary with the presence of ultrasonics.
 //        bumper_sensors[i].update();
@@ -787,15 +912,18 @@ void loop() {
                 nh.spinOnce();
             }
             if (report_diagnostics) {
-                snprintf(buffer, MAX_OUT_CHARS, "ultrasonic.%d.cm:%d:%d", i,
-                    diagnostic_msgs::DiagnosticStatus::OK, static_cast<int>(ultrasonic_sensors[i].distance.get_latest()));
-                send_diagnostics();
+                if(debug_level >= UP_TO_OK){
+                    snprintf(buffer, MAX_OUT_CHARS, "ultrasonic.%d.cm:%d:%d", i, diagnostic_msgs::DiagnosticStatus::OK, static_cast<int>(ultrasonic_sensors[i].distance.get_latest()));
+                    send_diagnostics();
+                }
             }
             delay(ultrasonics_spacing);
         } else {
             if (report_diagnostics) {
-                snprintf(buffer, MAX_OUT_CHARS, "ultrasonic.%d.cm:%d:disabled", i, diagnostic_msgs::DiagnosticStatus::OK);
-                send_diagnostics();
+                if(debug_level >= UP_TO_OK){
+                    snprintf(buffer, MAX_OUT_CHARS, "ultrasonic.%d.cm:%d:disabled", i, diagnostic_msgs::DiagnosticStatus::OK);
+                    send_diagnostics();
+                }
             }
         }
     }
@@ -837,8 +965,14 @@ void loop() {
         nh.spinOnce();
     }
     if (report_diagnostics) {
-        snprintf(buffer, MAX_OUT_CHARS, "motor.connection:%d", (motion_controller.eflag.get() & COMMOTION_ERROR_DISCONNECT));
-        send_diagnostics();
+        
+        if(debug_level >= UP_TO_OK || (motion_controller.eflag.get() & COMMOTION_ERROR_DISCONNECT)){
+            if(motion_controller.eflag.get() & COMMOTION_ERROR_DISCONNECT){
+                general_status |= diagnostic_msgs::DiagnosticStatus::ERROR;
+            }
+            snprintf(buffer, MAX_OUT_CHARS, "motor.connection:%d", (motion_controller.eflag.get() & COMMOTION_ERROR_DISCONNECT));
+            send_diagnostics();
+        }
 
         // CS 2017.6.3 The first two motor ports are unused, so we don't care about their current readings.
         //snprintf(buffer, MAX_OUT_CHARS, "motor.1.current.limit:%d", (motion_controller.eflag.get() & COMMOTION_ERROR_M1_MAXCURRENT));
@@ -847,21 +981,45 @@ void loop() {
         //send_diagnostics();
 
         //M3=right
-        snprintf(buffer, MAX_OUT_CHARS, "motor.right.current.limit:%d", (motion_controller.eflag.get() & COMMOTION_ERROR_M3_MAXCURRENT));
-        send_diagnostics();
+        if(debug_level >= UP_TO_OK || (motion_controller.eflag.get() & COMMOTION_ERROR_M3_MAXCURRENT)){
+            if(motion_controller.eflag.get() & COMMOTION_ERROR_M3_MAXCURRENT){
+                general_status |= diagnostic_msgs::DiagnosticStatus::ERROR;
+            }
+            snprintf(buffer, MAX_OUT_CHARS, "motor.right.current.limit:%d", (motion_controller.eflag.get() & COMMOTION_ERROR_M3_MAXCURRENT));
+            send_diagnostics();
+        }
         //M4=left
-        snprintf(buffer, MAX_OUT_CHARS, "motor.left.current.limit:%d", (motion_controller.eflag.get() & COMMOTION_ERROR_M4_MAXCURRENT));
-        send_diagnostics();
+        if(debug_level >= UP_TO_OK || (motion_controller.eflag.get() & COMMOTION_ERROR_M4_MAXCURRENT)){
+            if(motion_controller.eflag.get() & COMMOTION_ERROR_M4_MAXCURRENT){
+                general_status |= diagnostic_msgs::DiagnosticStatus::ERROR;
+            }
+            snprintf(buffer, MAX_OUT_CHARS, "motor.left.current.limit:%d", (motion_controller.eflag.get() & COMMOTION_ERROR_M4_MAXCURRENT));
+            send_diagnostics();
+        }
 
         // Encoders are OK if motors are off or motors are on and the encoders have registered a change within the last second.
-        snprintf(buffer, MAX_OUT_CHARS, "motor.left.encoder:%d:%d",
-            !(!motion_controller.is_left_on() || (motion_controller.is_left_on() && millis() - a_encoder_last_change < 1000)),
-            motion_controller.a_encoder.get_latest());
-        send_diagnostics();
-        snprintf(buffer, MAX_OUT_CHARS, "motor.right.encoder:%d:%d",
-            !(!motion_controller.is_right_on() || (motion_controller.is_right_on() && millis() - b_encoder_last_change < 1000)),
-            motion_controller.b_encoder.get_latest());
-        send_diagnostics();
+        if(debug_level >= UP_TO_OK || !(!motion_controller.is_left_on() || (motion_controller.is_left_on() && millis() - a_encoder_last_change < 1000))){
+
+            if(!(!motion_controller.is_left_on() || (motion_controller.is_left_on() && millis() - a_encoder_last_change < 1000))){
+                general_status |= diagnostic_msgs::DiagnosticStatus::ERROR;
+            }
+            
+            snprintf(buffer, MAX_OUT_CHARS, "motor.left.encoder:%d:%d",
+                !(!motion_controller.is_left_on() || (motion_controller.is_left_on() && millis() - a_encoder_last_change < 1000)),
+                motion_controller.a_encoder.get_latest());
+            send_diagnostics();
+        }
+        if(debug_level >= UP_TO_OK || !(!motion_controller.is_right_on() || (motion_controller.is_right_on() && millis() - b_encoder_last_change < 1000))){
+            
+            if(!(!motion_controller.is_right_on() || (motion_controller.is_right_on() && millis() - b_encoder_last_change < 1000))){
+                general_status |= diagnostic_msgs::DiagnosticStatus::ERROR;
+            }
+            
+            snprintf(buffer, MAX_OUT_CHARS, "motor.right.encoder:%d:%d",
+                !(!motion_controller.is_right_on() || (motion_controller.is_right_on() && millis() - b_encoder_last_change < 1000)),
+                motion_controller.b_encoder.get_latest());
+            send_diagnostics();
+        }
     }
 
     // CS 2018.1.18 Failed with slipring!!!
@@ -948,8 +1106,15 @@ void loop() {
         }
 
         // http://www.cplusplus.com/reference/cstdio/snprintf/
-        snprintf(buffer, MAX_OUT_CHARS, "imu_calib.sys:%d", calib_to_status[imu_ready]);
-        send_diagnostics();
+        if(debug_level >= UP_TO_OK || calib_to_status[imu_ready]){
+            
+            if(calib_to_status[imu_ready]){
+                general_status |= diagnostic_msgs::DiagnosticStatus::ERROR;
+            }
+            
+            snprintf(buffer, MAX_OUT_CHARS, "imu_calib.sys:%d", calib_to_status[imu_ready]);
+            send_diagnostics();
+        }
 
         /*/TODO:re-enable, contributing to crash? message too big?
         if (int16_msg.data == 3) {
@@ -982,8 +1147,15 @@ void loop() {
         nh.spinOnce();
         gyro_ready = max(gyro_ready, int16_msg.data);
 
-        snprintf(buffer, MAX_OUT_CHARS, "imu_calib.gyr:%d", calib_to_status[gyro_ready]);
-        send_diagnostics();
+        if(debug_level >= UP_TO_OK || calib_to_status[gyro_ready]){
+            
+            if(calib_to_status[gyro_ready]){
+                general_status |= diagnostic_msgs::DiagnosticStatus::ERROR;
+            }
+            
+            snprintf(buffer, MAX_OUT_CHARS, "imu_calib.gyr:%d", calib_to_status[gyro_ready]);
+            send_diagnostics();
+        }
     }
     if (ag_sensor.acc_calib.get_and_clear_changed() || force_sensors) {
         int16_msg.data = ag_sensor.acc_calib.get();
@@ -993,8 +1165,10 @@ void loop() {
 
         //This never seems to calibrate, even after following Adafruit's instructions.
         //TODO:fixme
-        snprintf(buffer, MAX_OUT_CHARS, "imu_calib.acc:%d", 0);//calib_to_status[int16_msg.data]);
-        send_diagnostics();
+        //if(debug_level >= UP_TO_OK || calib_to_status[int16_msg.data]){
+            //snprintf(buffer, MAX_OUT_CHARS, "imu_calib.acc:%d", 0);//calib_to_status[int16_msg.data]);
+            //send_diagnostics();
+        //}
     }
     if (ag_sensor.mag_calib.get_and_clear_changed() || force_sensors) {
         int16_msg.data = ag_sensor.mag_calib.get();
@@ -1002,11 +1176,32 @@ void loop() {
         nh.spinOnce();
         magnetometer_ready = max(magnetometer_ready, int16_msg.data);
 
-        snprintf(buffer, MAX_OUT_CHARS, "imu_calib.mag:%d", calib_to_status[magnetometer_ready]);
-        send_diagnostics();
+        if(debug_level >= UP_TO_OK || calib_to_status[magnetometer_ready]){
+            
+            if(calib_to_status[magnetometer_ready]){
+                general_status |= diagnostic_msgs::DiagnosticStatus::ERROR;
+            }
+            
+            snprintf(buffer, MAX_OUT_CHARS, "imu_calib.mag:%d", calib_to_status[magnetometer_ready]);
+            send_diagnostics();
+        }
     }
+    
+    // Give motion controller non-buffered IMU z-axis updates so it can precisely react to rotation changes.
+    if(motion_controller.is_rotating()){
+        // Notify the motor controller about z-change, so it can update torso rotation.
+        motion_controller.set_z_degrees(ag_sensor.ez.get_latest());
+    }
+    
     if (ag_sensor.get_and_clear_changed_euler() || ag_sensor.get_and_clear_changed_accel() || ag_sensor.get_and_clear_changed_gyro() || force_sensors) {
         // http://docs.ros.org/api/sensor_msgs/html/msg/Imu.html
+
+        // Notify the Pi/head about z-change, so it can update head rotation.
+        int16_msg.data = ag_sensor.ez.get_latest();
+        imu_euler_z_publisher.publish(&int16_msg);
+
+        // Give controller less frequent updates when not rotating.
+        motion_controller.set_z_degrees(ag_sensor.ez.get_latest());
 
         //TODO:fix? IMU message too big, causes Arduino to crash?
 //        nh.loginfo("Sending IMU packet...");
@@ -1061,23 +1256,30 @@ void loop() {
     nh.spinOnce();
 
     if (report_diagnostics) {
-        snprintf(buffer, MAX_OUT_CHARS, "imu.euler.x:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, static_cast<int>(ag_sensor.ex.get_latest()));
-        send_diagnostics();
-        snprintf(buffer, MAX_OUT_CHARS, "imu.euler.y:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, static_cast<int>(ag_sensor.ey.get_latest()));
-        send_diagnostics();
-        snprintf(buffer, MAX_OUT_CHARS, "imu.euler.z:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, static_cast<int>(ag_sensor.ez.get_latest()));
-        send_diagnostics();
+        
+        if(debug_level >= UP_TO_OK){
+            snprintf(buffer, MAX_OUT_CHARS, "imu.euler.x:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, static_cast<int>(ag_sensor.ex.get_latest()));
+            send_diagnostics();
+            snprintf(buffer, MAX_OUT_CHARS, "imu.euler.y:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, static_cast<int>(ag_sensor.ey.get_latest()));
+            send_diagnostics();
+            snprintf(buffer, MAX_OUT_CHARS, "imu.euler.z:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, static_cast<int>(ag_sensor.ez.get_latest()));
+            send_diagnostics();
+        }
 
         // Register an error if we've fallen over.
         if (abs(ag_sensor.ex.get_latest()) >= 25 || abs(ag_sensor.ey.get_latest()) >= 25) {
+            general_status |= diagnostic_msgs::DiagnosticStatus::ERROR;
             snprintf(buffer, MAX_OUT_CHARS, "imu.upright:%d", diagnostic_msgs::DiagnosticStatus::ERROR);
             send_diagnostics();
         } else if (abs(ag_sensor.ex.get_latest()) >= 10 || abs(ag_sensor.ey.get_latest()) >= 10) {
+            general_status |= diagnostic_msgs::DiagnosticStatus::ERROR;
             snprintf(buffer, MAX_OUT_CHARS, "imu.upright:%d", diagnostic_msgs::DiagnosticStatus::WARN);
             send_diagnostics();
         } else {
-            snprintf(buffer, MAX_OUT_CHARS, "imu.upright:%d", diagnostic_msgs::DiagnosticStatus::OK);
-            send_diagnostics();
+            if(debug_level >= UP_TO_OK){
+                snprintf(buffer, MAX_OUT_CHARS, "imu.upright:%d", diagnostic_msgs::DiagnosticStatus::OK);
+                send_diagnostics();
+            }
         }
     }
 
@@ -1092,8 +1294,10 @@ void loop() {
         nh.spinOnce();
     }
     if (report_diagnostics) {
-        snprintf(buffer, MAX_OUT_CHARS, "power_button:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, !power_button_sensor.get_value());
-        send_diagnostics();
+        if(debug_level >= UP_TO_OK){
+            snprintf(buffer, MAX_OUT_CHARS, "power_button:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, !power_button_sensor.get_value());
+            send_diagnostics();
+        }
     }
 
     // Power shutoff controller.
@@ -1134,34 +1338,54 @@ void loop() {
         // Note, we can't render floats or doubles with snprintf because the Arduino implementation doesn't support this.
         // https://stackoverflow.com/a/24031003/247542
         //snprintf(buffer, MAX_OUT_CHARS, "battery.voltage:%d:%f", diagnostic_msgs::DiagnosticStatus::OK, battery_msg.voltage);
-        snprintf(buffer, MAX_OUT_CHARS, "battery.voltage:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, static_cast<int>(battery_msg.voltage));
-        send_diagnostics();
+        if(debug_level >= UP_TO_OK){
+            snprintf(buffer, MAX_OUT_CHARS, "battery.voltage:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, static_cast<int>(battery_msg.voltage));
+            send_diagnostics();
+        }
 
         if (battery_msg.percentage <= 0.10) {
-            snprintf(buffer, MAX_OUT_CHARS, "battery.percentage:%d:%d",
-                diagnostic_msgs::DiagnosticStatus::ERROR, static_cast<int>(battery_msg.percentage*100));
+            general_status |= diagnostic_msgs::DiagnosticStatus::ERROR;
+            snprintf(buffer, MAX_OUT_CHARS, "battery.percentage:%d:%d", diagnostic_msgs::DiagnosticStatus::ERROR, static_cast<int>(battery_msg.percentage*100));
+            send_diagnostics();
         } else if (battery_msg.percentage <= 0.25) {
-            snprintf(buffer, MAX_OUT_CHARS, "battery.percentage:%d:%d",
-                diagnostic_msgs::DiagnosticStatus::WARN, static_cast<int>(battery_msg.percentage*100));
+            general_status |= diagnostic_msgs::DiagnosticStatus::ERROR;
+            snprintf(buffer, MAX_OUT_CHARS, "battery.percentage:%d:%d", diagnostic_msgs::DiagnosticStatus::WARN, static_cast<int>(battery_msg.percentage*100));
+            send_diagnostics();
         } else {
-            snprintf(buffer, MAX_OUT_CHARS, "battery.percentage:%d:%d",
-                diagnostic_msgs::DiagnosticStatus::OK, static_cast<int>(battery_msg.percentage*100));
+            if(debug_level >= UP_TO_OK){
+                snprintf(buffer, MAX_OUT_CHARS, "battery.percentage:%d:%d", diagnostic_msgs::DiagnosticStatus::OK, static_cast<int>(battery_msg.percentage*100));
+                send_diagnostics();
+            }
         }
-        send_diagnostics();
 
         if (battery_msg.present) {
-            snprintf(buffer, MAX_OUT_CHARS, "battery.present:%d", diagnostic_msgs::DiagnosticStatus::OK);
+            if(debug_level >= UP_TO_OK){
+                snprintf(buffer, MAX_OUT_CHARS, "battery.present:%d", diagnostic_msgs::DiagnosticStatus::OK);
+                send_diagnostics();
+            }
         } else {
+            general_status |= diagnostic_msgs::DiagnosticStatus::ERROR;
             snprintf(buffer, MAX_OUT_CHARS, "battery.present:%d", diagnostic_msgs::DiagnosticStatus::ERROR);
+            send_diagnostics();
         }
-        send_diagnostics();
     }
+    
+    // Publish overall torso status.
+    if(general_status == diagnostic_msgs::DiagnosticStatus::OK){
+        snprintf(buffer, MAX_OUT_CHARS, "status:%d", diagnostic_msgs::DiagnosticStatus::OK);
+    }else{
+        snprintf(buffer, MAX_OUT_CHARS, "status:%d", diagnostic_msgs::DiagnosticStatus::ERROR);
+    }
+    send_diagnostics();
 
-    force_sensors = false;
+    if(noticed_force_sensors){
+        force_sensors = false;
+        noticed_force_sensors = false;
+    }
 
     Serial.flush();
     nh.spinOnce();
-    delay(1);
+    delay(10);
 
     // CS 2018.1.20 Passed with true cable and CONFIG3 at 1000
 

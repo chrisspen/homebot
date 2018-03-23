@@ -271,6 +271,12 @@ class HomebotSatchel(ServiceSatchel):
 
     @task
     def upload_rosserial(self):
+        """
+        To be run like:
+        
+            fab prod homebot.upload_rosserial
+
+        """
         # Uploads our custom rosserial branch for testing.
         r = self.local_renderer
         r.sudo('chown -R ubuntu:ubuntu /opt/ros/kinetic/lib/python2.7/dist-packages/rosserial_python')
@@ -464,7 +470,11 @@ class HomebotSatchel(ServiceSatchel):
 
         """
         r = self.local_renderer
+        # Since the Pi's resources are so limited, shutdown ROS is it doesn't slow down the update.
+        self.stop()
         r.sudo('apt-get -yq update; apt-get -yq upgrade; apt-get -yq dist-upgrade; apt-get -yq autoremove')
+        # Re-start ROS.
+        self.start()
 
     @task(precursors=['packager', 'user', 'ros', 'rpi', 'ntp', 'ntpclient'])
     def configure(self):

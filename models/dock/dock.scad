@@ -318,18 +318,29 @@ module make_dock_retainer(){
 module make_dock_mast_head(){
     
     color("purple")
-    for(i=[0:1])
-    mirror([i,0,0])
-    rotate([0,0,23])
-    translate([0,85,0])
+    
     difference(){
-        cylinder(d=10, h=5, center=true);
-        cylinder(d=7.3, h=10, center=true);
+        
+        for(j=[0:1])
+        translate([0,0,(-66.5+5)*j])
+        for(i=[0:1])
+        mirror([i,0,0])
+        rotate([0,0,23])
+        translate([0,85,0])
+        difference(){
+            cylinder(d=10, h=5, center=true);
+            cylinder(d=7.2, h=10, center=true);
+        }
+        
+        // ring stress cutouts
+        for(i=[-1:2:1])
+        translate([33*i,82,-30])
+        cube([2,5,100], center=true);
     }
 
     color("green")
-    translate([0,74-0.1,-66.5/2/2+5/2])
-    cube([66.5, 1.3, 66.5/2], center=true);
+    translate([0,74-0.1,-66.5/2+5/2])
+    cube([66.5, 1.3, 66.5], center=true);
 
 }
 

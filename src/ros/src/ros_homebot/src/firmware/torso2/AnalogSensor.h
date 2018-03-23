@@ -45,7 +45,7 @@ class AnalogSensor: public Sensor{
             return value.get();
         }
 
-        int get_bool(){
+        bool get_bool(){
             if (value.get() >= 512) {
                 return true;
             }else{
@@ -54,7 +54,7 @@ class AnalogSensor: public Sensor{
         }
 
         virtual bool get_and_clear_changed(){
-        	return value.get_and_clear_changed();
+            return value.get_and_clear_changed();
         }
         
 };

@@ -10,6 +10,7 @@ rostopic echo
     <group ns="torso_arduino">
         <node pkg="rosserial_python" type="serial_node.py" name="serial_node" output="screen" clear_params="true">
             <param name="~port" command="list_arduinos.py torso" />
+            <!--<param name="~baud" value="57600" />-->
             <param name="~baud" value="115200" />
         </node>
     </group>

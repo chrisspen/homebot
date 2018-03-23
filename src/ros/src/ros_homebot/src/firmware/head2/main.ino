@@ -146,6 +146,14 @@ void on_pan_angle_calibrate(const std_msgs::Empty& msg) {
 }
 ros::Subscriber<std_msgs::Empty> on_pan_angle_calibrate_sub("pan/calibrate", &on_pan_angle_calibrate);
 
+void on_torso_imu_euler_z(const std_msgs::Int16& msg) {
+    //pan_controller.torso_imu_euler_z1 = msg.data;
+    pan_controller.update_torso_z(msg.data);
+    snprintf(buffer, MAX_OUT_CHARS, "received torso z: %d", msg.data);//TODO
+    nh.loginfo(buffer);
+}
+ros::Subscriber<std_msgs::Int16> on_torso_imu_euler_z_sub("/torso_arduino/imu/euler/z", &on_torso_imu_euler_z);
+
 // rostopic pub --once /head_arduino/pan/pid/set std_msgs/Float32MultiArray "{layout:{dim:[], data_offset: 0}, data:[0.95, 0.15, 0.1]}"
 // rostopic pub --once /head_arduino/pan/pid/set std_msgs/Float32MultiArray "{layout:{dim:[], data_offset: 0}, data:[1, 0, 0]}"
 void on_pan_pid_set(const std_msgs::Float32MultiArray& msg) {
@@ -162,6 +170,7 @@ void on_pan_pid_set(const std_msgs::Float32MultiArray& msg) {
 }
 ros::Subscriber<std_msgs::Float32MultiArray> on_pan_pid_set_sub("pan/pid/set", &on_pan_pid_set);
 
+// Tells the pan motor to turn head to a specific position as quickly as possible.
 // rostopic pub --once /head_arduino/pan/set std_msgs/Int16 90
 // 0=origin/forward/center
 // 180=backwards
@@ -174,6 +183,28 @@ void on_pan_angle_set(const std_msgs::Int16& msg) {
     nh.loginfo(buffer);
 }
 ros::Subscriber<std_msgs::Int16> on_pan_angle_set_sub("pan/set", &on_pan_angle_set);
+
+// Tells the pan motor to move head at a specific constant speed indefinitely.
+// Speed is specified in degrees/sec.
+// A negative value is counter-clockwise.
+// A positive value is clockwise.
+void on_pan_speed_set(const std_msgs::Int16& msg) {
+    pan_controller.active = true;
+    pan_controller.set_target_dps(msg.data);
+    snprintf(buffer, MAX_OUT_CHARS, "Set pan speed degrees: %d", msg.data);
+    nh.loginfo(buffer);
+}
+ros::Subscriber<std_msgs::Int16> on_pan_speed_set_sub("pan/speed/set", &on_pan_speed_set);
+
+// rostopic pub --once /head_arduino/pan/freeze/set std_msgs/Bool 1
+// Tells the pan motor to freeze its position relative to the torso.
+// If the torso rotates, the head with counter-rotate to maintain its position.
+void on_pan_freeze_set(const std_msgs::Bool& msg) {
+    pan_controller.set_freeze(msg.data);
+    snprintf(buffer, MAX_OUT_CHARS, "Pan angle freeze set: %d", msg.data);
+    nh.loginfo(buffer);
+}
+ros::Subscriber<std_msgs::Bool> on_pan_freeze_set_sub("pan/freeze/set", &on_pan_freeze_set);
 
 // rostopic pub --once /head_arduino/tilt/set std_msgs/Int16 90
 // 0=all the way down
@@ -208,7 +239,7 @@ void on_line_laser_set(const std_msgs::Bool& msg) {
     nh.loginfo(buffer);
     digitalWrite(LINE_LASER_SET, msg.data);
 }
-ros::Subscriber<std_msgs::Bool> line_laser_set_sub("linelaser/set", &on_line_laser_set);
+ros::Subscriber<std_msgs::Bool> on_line_laser_set_sub("linelaser/set", &on_line_laser_set);
 
 // rostopic pub --once /head_arduino/ultrabright/set std_msgs/Int16 0
 // rostopic pub --once /head_arduino/ultrabright/set std_msgs/Int16 254
@@ -245,16 +276,23 @@ void setup() {
     nh.initNode();
 
     // Register subscriptions.
+    // Note, this will require editing ros.h to support more than 10 subscribers.
+    // Edit with: nano ./lib/ros_lib/ros.h
+    // typedef NodeHandle_<ArduinoHardware, 20, 20, 512, 512> NodeHandle;
+    // TODO: fix so this hacky manual edit isn't needed?
     nh.subscribe(toggle_led_sub);
     nh.subscribe(set_ultrabright_sub);
     nh.subscribe(set_rgb_sub);
     nh.subscribe(on_force_sensors_sub);
-    nh.subscribe(line_laser_set_sub);
+    nh.subscribe(on_line_laser_set_sub);
     nh.subscribe(on_pan_angle_set_sub);
     nh.subscribe(on_tilt_angle_set_sub);
     nh.subscribe(on_halt_sub);
     nh.subscribe(on_pan_angle_calibrate_sub);
+    nh.subscribe(on_pan_speed_set_sub);
+    nh.subscribe(on_pan_freeze_set_sub);
     nh.subscribe(on_pan_pid_set_sub);
+    nh.subscribe(on_torso_imu_euler_z_sub);
 
     // Register publishers.
     nh.advertise(diagnostics_publisher);
@@ -312,18 +350,34 @@ void loop() {
         last_diagnostic = millis();
         report_diagnostics = true;
         
-        snprintf(buffer, MAX_OUT_CHARS, "pan speed:%d", pan_controller.get_speed());
-        nh.loginfo(buffer);
-        snprintf(buffer, MAX_OUT_CHARS, "pan actual angle:%ld", ftol(pan_controller.actual_angle.get_latest()));
-        nh.loginfo(buffer);
-        snprintf(buffer, MAX_OUT_CHARS, "pan target angle:%ld", ftol(pan_controller.get_target_angle()));
-        nh.loginfo(buffer);
-        snprintf(buffer, MAX_OUT_CHARS, "pan pos_err:%d", pan_controller.pos_err);
-        nh.loginfo(buffer);
-        snprintf(buffer, MAX_OUT_CHARS, "pan td_err:%d", pan_controller.td_err);
-        nh.loginfo(buffer);
-        snprintf(buffer, MAX_OUT_CHARS, "pan sum_err:%d", pan_controller.sum_err);
-        nh.loginfo(buffer);
+        //snprintf(buffer, MAX_OUT_CHARS, "pan speed:%d", pan_controller.get_speed());
+        //nh.loginfo(buffer);
+        //snprintf(buffer, MAX_OUT_CHARS, "pan actual angle:%ld", ftol(pan_controller.actual_angle.get_latest()));
+        //nh.loginfo(buffer);
+        //snprintf(buffer, MAX_OUT_CHARS, "pan target angle:%ld", ftol(pan_controller.get_target_angle()));
+        //nh.loginfo(buffer);
+        //snprintf(buffer, MAX_OUT_CHARS, "pan pos_err:%d", pan_controller.pos_err);
+        //nh.loginfo(buffer);
+        //snprintf(buffer, MAX_OUT_CHARS, "pan td_err:%d", pan_controller.td_err);
+        //nh.loginfo(buffer);
+        //snprintf(buffer, MAX_OUT_CHARS, "pan sum_err:%d", pan_controller.sum_err);
+        //nh.loginfo(buffer);
+        
+        //snprintf(buffer, MAX_OUT_CHARS, "dps_target:%d", (int)pan_controller._dps);
+        //nh.loginfo(buffer);
+        //snprintf(buffer, MAX_OUT_CHARS, "dps_effective:%d", (int)pan_controller._dps_effective);
+        //nh.loginfo(buffer);
+        //snprintf(buffer, MAX_OUT_CHARS, "speed:%d", pan_controller._speed);
+        //nh.loginfo(buffer);
+        
+        //snprintf(buffer, MAX_OUT_CHARS, "torso_imu_euler_z0:%d", (int)pan_controller.torso_imu_euler_z0);
+        //nh.loginfo(buffer);
+        //snprintf(buffer, MAX_OUT_CHARS, "torso_imu_euler_z1:%d", (int)pan_controller.torso_imu_euler_z1);
+        //nh.loginfo(buffer);
+        //snprintf(buffer, MAX_OUT_CHARS, "freeze:%d", (int)pan_controller.get_freeze());
+        //nh.loginfo(buffer);
+        //snprintf(buffer, MAX_OUT_CHARS, "seeking:%d", (int)pan_controller.get_seeking());
+        //nh.loginfo(buffer);
     }
 
     // Track connection status with host.

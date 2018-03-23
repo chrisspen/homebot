@@ -1,14 +1,11 @@
 # http://wiki.ros.org/diagnostics/Tutorials/Configuring%20Diagnostic%20Aggregators
+# https://wiki.ros.org/diagnostics/Tutorials/Using%20the%20GenericAnalyzer
 # Run with: 
 #   roslaunch ros_homebot diagnostics.launch
 #   rosrun rqt_robot_monitor rqt_robot_monitor
 pub_rate: 1.0 # Optional
 base_path: '' # Optional, prepended to all diagnostic output
 analyzers:
-#  motors:
-#    type: GenericAnalyzer
-#    path: Motors
-#    startswith: 'motor'
   sensors:
     type: AnalyzerGroup
     path: Sensors
@@ -34,7 +31,8 @@ analyzers:
       imu_calibration:
         type: GenericAnalyzer
         path: IMU Calibration
-        timeout: 120.0
+        discard_stale: true
+        timeout: -1
         contains:
         -   imu_calib
 #  computers:

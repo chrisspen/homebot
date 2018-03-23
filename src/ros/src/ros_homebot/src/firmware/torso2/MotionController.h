@@ -33,6 +33,7 @@
 #define FULL_SPEED      255
 #define HALF_SPEED      128
 #define QUARTER_SPEED   64
+#define EIGHTH_SPEED    32
 
 #define COMMOTION_REQUEST_ENCODER B00000001
 #define COMMOTION_REQUEST_CURRENT B00000100
@@ -80,6 +81,10 @@ int16_t receive_wire_int16(){
     rxnum += read_byte() << 8;
 
     return rxnum;
+}
+
+int truemod(int v, int r){
+    return ((v % r) + r) % r;
 }
 
 void set_basic_config(byte mode, byte chassis, byte lowbat, byte maxcur1, byte maxcur2, byte maxcur3, byte maxcur4, byte i2coffset, byte i2cmaster)
@@ -275,6 +280,19 @@ class MotionController: public Sensor
         bool _movement_send_done = false;
         unsigned long _movement_start_millis = 0;
         unsigned int _movement_status = MOVEMENT_COMPLETE;
+        
+        // The current angle along the z-axis as given by the IMU.
+        int _z_degrees1 = 0;
+        
+        // Variables for performing a specific z-axis rotation.
+        int _z_degrees0 = 0; // Original z-axis degrees when rotation was initiated.
+        int _z_degree_change = 0;
+        int _z_rotate_enabled = false;
+        int _z_rotate_degrees = 0;
+        unsigned long _z_rotate_start_time = 0;
+        unsigned long _z_rotate_end_time = 0;
+        // Estimated angular velocity at 1/8 motor speed.
+        double _z_rotate_degrees_per_ms = 0;
 
     public:
 
@@ -345,6 +363,17 @@ class MotionController: public Sensor
 
             connect();
 
+        }
+        
+        void set_z_degrees(int degrees){
+            if (degrees != _z_degrees1){
+                _z_degrees1 = degrees;
+                //TODO:flag?
+            }
+        }
+        
+        int get_z_degrees(){
+            return _z_degrees1;
         }
         
         void reset_movement(){
@@ -514,6 +543,46 @@ class MotionController: public Sensor
 
                 checks += 1;
             }
+            
+            // Monitor amount of rotation and stop motors when movement is complete.
+            if(_z_rotate_enabled){
+
+                //_z_degree_change = _z_degrees1 - _z_degrees0;
+                //if(_z_degree_change > 360){
+                    //_z_degree_change -= 360;
+                //}
+                //if(_z_degree_change < -360){
+                    //_z_degree_change += 360;
+                //}
+                if(_z_rotate_degrees > 0){
+                    _z_degree_change = truemod(_z_degrees1 - _z_degrees0, 360);
+                }else{
+                    _z_degree_change = -truemod(_z_degrees0 - _z_degrees1, 360);
+                }
+
+                if(abs(_z_degree_change - _z_rotate_degrees) <= 1){
+                    // We're within the error margin of the target, so stop.
+                    stop();
+                }else if(_z_rotate_degrees > 0 && _z_degree_change >= _z_rotate_degrees){
+                    // We've overshoot going clockwise, so stop.
+                    stop();
+                }else if(_z_rotate_degrees < 0 && _z_degree_change <= _z_rotate_degrees){
+                    // We've overshoot going counter clockwise, so stop.
+                    stop();
+                //}else if(_z_rotate_end_time && millis() >= _z_rotate_end_time){
+                    // If there's an estimated rotation end time, and we're reached it, then stop.
+                //    stop();
+                }else if(millis() - _z_rotate_start_time >= 3000){
+                    // No rotation should take more than 3 seconds, so kill motors after timeout period.
+                    stop();
+                }
+            }
+            
+            
+        }
+        
+        int get_z_degree_change(){
+            return _z_degree_change;
         }
         
         void stop(){
@@ -527,7 +596,40 @@ class MotionController: public Sensor
             _motor_right.set_speed(0);
             //NA NA left right
             set_motor_speeds(0, 0, _motor_left.get_speed_instantly(), _motor_right.get_speed_instantly());
+
+            if(_z_rotate_enabled){
+                _z_rotate_enabled = false;
+                
+                // Record estimated degrees/millisecond velocity.
+                //_z_rotate_degrees_per_ms = abs(_z_degrees1 - _z_degrees0)/((double)(millis() - _z_rotate_start_time));
+                
+            }
             
+        }
+
+        bool is_rotating(){
+            return _z_rotate_enabled;
+        }
+        
+        void rotate(int degrees) {
+            // Initiates a fixed rotate between -360:+360 degrees.
+            _z_degrees0 = _z_degrees1;
+            _z_rotate_enabled = true;
+            _z_rotate_degrees = degrees;
+            _z_rotate_start_time = millis();
+            
+            //_z_rotate_end_time = 0;
+            //if(_z_rotate_degrees_per_ms){
+                //_z_rotate_end_time = millis() + (degrees / _z_rotate_degrees_per_ms);
+            //}
+            
+            if(degrees > 0){//-=forward
+                // CW
+                set(+EIGHTH_SPEED, -EIGHTH_SPEED);
+            }else{
+                // CCW
+                set(-EIGHTH_SPEED, +EIGHTH_SPEED);
+            }
         }
 
         virtual bool get_and_clear_changed(){

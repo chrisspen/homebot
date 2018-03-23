@@ -11,10 +11,14 @@ class BooleanSensor: public Sensor{
 
     private:
     
-        // The Arduino analog pin measuring the signal
+        // The Arduino digital pin measuring the signal
         int _pin;
         
     public:
+        
+        // If true, will read the pin using analogRead() instead of digitalRead().
+        // This is necessary on some chips, like the Arduino Uno*Pro, where the analog pins don't work properly with digitalRead().
+        bool use_analog = false;
     
         ChangeTracker<bool> value = ChangeTracker<bool>(false);
 
@@ -37,16 +41,23 @@ class BooleanSensor: public Sensor{
         }
 
         virtual void update(){
-            // Read the analog pin and update the moving average.
-            value.set(digitalRead(_pin));
+            if(use_analog){
+                value.set(analogRead(_pin) >= 512);
+            }else{
+                value.set(digitalRead(_pin));
+            }
         }
         
         bool get_value(){
             return value.get();
         }
+        
+        bool get_bool(){
+            return get_value();
+        }
 
         virtual bool get_and_clear_changed(){
-        	return value.get_and_clear_changed();
+            return value.get_and_clear_changed();
         }
         
 };

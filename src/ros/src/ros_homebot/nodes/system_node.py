@@ -5,6 +5,7 @@ import os
 import multiprocessing
 
 import rospy
+from std_msgs.msg import Int16
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
 
 from ros_homebot_msgs import msg as msgs
@@ -14,6 +15,10 @@ OK = DiagnosticStatus.OK
 WARN = DiagnosticStatus.WARN
 ERROR = DiagnosticStatus.ERROR
 STALE = DiagnosticStatus.STALE
+
+# Debug levels.
+ONLY_ERRORS = 0 # default
+UP_TO_OK = 1
 
 def to_float(v):
     try:
@@ -96,6 +101,10 @@ class SystemNode():
         self.memory_publisher = rospy.Publisher('~memory', msgs.MemoryUsage, queue_size=1)
         self.disk_publisher = rospy.Publisher('~disk', msgs.DiskUsage, queue_size=1)
         self.diagnostics_pub = rospy.Publisher('/diagnostics', DiagnosticArray, queue_size=10)
+
+        self.debug_level_sub = rospy.Subscriber('~debug_level', Int16, self.on_debug_level)
+
+        self.debug_level = ONLY_ERRORS
 
         self.drive_path = '/dev/root'
 
@@ -195,6 +204,7 @@ class SystemNode():
 
             # Publish standard diagnostics.
             array = DiagnosticArray()
+            statuses = []
 
             normalized_load_status = DiagnosticStatus(
                 name='Normalized System Load',
@@ -205,6 +215,8 @@ class SystemNode():
                 KeyValue(key='normalized load 5', value=str(normalized_load_5)),
                 KeyValue(key='normalized load 15', value=str(normalized_load_15)),
             ]
+            if self.debug_level >= UP_TO_OK or normalized_load_level != OK:
+                statuses.append(normalized_load_status)
 
             cpu_temperature_status = DiagnosticStatus(
                 name='CPU Temperature',
@@ -213,6 +225,8 @@ class SystemNode():
             cpu_temperature_status.values = [
                 KeyValue(key='celcius', value=str(cpu_temp)),
             ]
+            if self.debug_level >= UP_TO_OK or cpu_temp >= c.CPU_TEMP_ERROR:
+                statuses.append(cpu_temperature_status)
 
             cpu_usage_status = DiagnosticStatus(
                 name='CPU Usage',
@@ -221,6 +235,8 @@ class SystemNode():
             cpu_usage_status.values = [
                 KeyValue(key='percent', value=str(cpu_usage_percent)),
             ]
+            if self.debug_level >= UP_TO_OK or cpu_usage_percent_level != OK:
+                statuses.append(cpu_usage_status)
 
             cpu_clock_speed_status = DiagnosticStatus(
                 name='CPU Speed',
@@ -232,6 +248,8 @@ class SystemNode():
                 KeyValue(key='max clock speed (GHz)', value=str(max_ghz)),
                 KeyValue(key='clock speed (percent)', value=str(cpu_clock_speed_percent)),
             ]
+            if self.debug_level >= UP_TO_OK or cpu_clock_speed_percent_level != OK:
+                statuses.append(cpu_clock_speed_status)
 
             disk_usage_status = DiagnosticStatus(
                 name='Disk Usage',
@@ -243,6 +261,8 @@ class SystemNode():
                 KeyValue(key='used gb', value=str(disk_usage_used_gbytes)),
                 KeyValue(key='total gb', value=str(disk_usage_total_gbytes)),
             ]
+            if self.debug_level >= UP_TO_OK or disk_usage_level != OK:
+                statuses.append(disk_usage_status)
 
             memory_usage_status = DiagnosticStatus(
                 name='Memory Usage',
@@ -254,18 +274,25 @@ class SystemNode():
                 KeyValue(key='used gb', value=str(memory_usage_used_gbytes)),
                 KeyValue(key='total gb', value=str(memory_usage_total_gbytes)),
             ]
+            if self.debug_level >= UP_TO_OK or memory_usage_percent_level != OK:
+                statuses.append(memory_usage_status)
 
-            array.status = [
-                normalized_load_status,
-                cpu_temperature_status,
-                cpu_usage_status,
-                cpu_clock_speed_status,
-                disk_usage_status,
-                memory_usage_status,
-            ]
-            self.diagnostics_pub.publish(array)
+            if statuses:
+                array.status = statuses
+                # [
+                    # normalized_load_status,
+                    # cpu_temperature_status,
+                    # cpu_usage_status,
+                    # cpu_clock_speed_status,
+                    # disk_usage_status,
+                    # memory_usage_status,
+                # ]
+                self.diagnostics_pub.publish(array)
 
             r.sleep()
+
+    def on_debug_level(self, msg):
+        self.debug_level = msg.data
 
 if __name__ == '__main__':
     SystemNode()
