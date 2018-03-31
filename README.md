@@ -1,7 +1,7 @@
 Homebot
 ============================================================
 
-<img src="docs/img/bot/banner.png?raw=true" width="200" />
+<img src="docs/img/bot/banner.png?raw=true" />
 
 Homebot is a low cost open source robot designed for research and experimentation with [ROS](http://www.ros.org/).
 
