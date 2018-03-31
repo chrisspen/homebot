@@ -12,6 +12,7 @@ Basic features include:
 * IMU with magnetic compass for navigation
 * ultrasonic range finders and IR distance sensor for forward obstacle and cliff detection
 * Raspberry Pi 3 for running ROS and high-level control
+* charging dock
 
 [Click here for documentation](http://chrisspen.github.io/homebot).
 
