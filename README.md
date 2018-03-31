@@ -5,7 +5,7 @@ Homebot
 
 Text1=![exploded cad](docs/img/exploded.png?raw=true | width=200)
 
-Text2=![alt text](https://raw.githubusercontent.com/chrisspen/homebot/master/docs/img/exploded.png | width=200)
+Text2 ![alt text](https://raw.githubusercontent.com/chrisspen/homebot/master/docs/img/exploded.png)
 
 <img src="docs/img/layout.png?raw=true" alt="layout cad" style="max-width:512px;"/>
 <img src="docs/img/assembled_complete_20160612_105319.jpg?raw=true" alt="assembled" style="max-width:512px;"/>
