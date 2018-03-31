@@ -1,7 +1,12 @@
 This was initialized and built with:
 
-    . ./setup.bash
+    source /opt/ros/kinetic/setup.bash
+    mkdir src
     catkin_make
+    
+A custom setup.bash was then added to combine ROS's devel/setup.bash with our custom Python virtualenv.
+
+    . ./setup.bash
     echo $ROS_PACKAGE_PATH
 
 Note, the `overlay` folder stores all the third-party packages that we can't install via `apt-get`.
