@@ -21,3 +21,7 @@ Shortcuts:
 To deploy all code changes to the production robot, run:
 
     fab prod deploy.push
+
+To just quickly push up Python code changes, run:
+
+    fab prod homebot.deploy_code

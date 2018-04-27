@@ -1,63 +1,42 @@
 #!/usr/bin/env python
+"""
+2018-4-24 This manages navigating the robot to its docking station when it's a few feet away and in line of sight to the docking station.
+
+Usage:
+
+    export ROS_MASTER_URI=http://rae.local:11311;
+    rosrun ros_homebot dock.py
+
+This will begin the docking process, which is fully automated. The node will run until it arrives at one of the following terminal states:
+
+1. it successfully docks with a powered docking station
+2. it successfully docks with an unpowered docking station
+3. it is unable to dock after several failed attempts
+4. a safety measure is triggered, such as detection of a cliff or mechanical fault, or failure to detect the docking code
+
+You can cancel the docking procedure by sending the topic:
+
+"""
+from __future__ import print_function
+
 from functools import partial
-import importlib
-import time
 from commands import getoutput
+import time
+import re
 
 import rospy
 import roslaunch
+from std_srvs.srv import Empty, EmptyResponse
 
 from ros_qr_tracker.srv import SetTarget
 from ros_qr_tracker.msg import Percept
 
+import ros_homebot_msgs.srv
+
+from common import subscribe, publish # pylint: disable=relative-import
+
 class State(object):
     pass
-
-topic_definitions = {
-    '/head_arduino/tilt/set': 'std_msgs/Int16',
-    '/head_arduino/pan/set': 'std_msgs/Int16',
-}
-
-def get_published_topics():
-    topic_types = topic_definitions.copy()
-    topic_types.update(dict(rospy.get_published_topics()))
-    # print('topic_types:', topic_types)
-    raw_topics = getoutput('rostopic list').split('\n')
-    for raw_topic in raw_topics:
-        if raw_topic not in topic_types:
-            topic_types[raw_topic] = 'std_msgs/Empty'
-    return topic_types
-
-def subscribe(topic, cb):
-    """
-    Shortcut that dynamically looks up the subscriber for a topic, as well as the type class, and subscribes.
-    """
-    topic_types = get_published_topics()
-    assert topic in topic_types, 'Topic "%s" is not one of the valid published topics: %s' % (topic, ', '.join(sorted(topic_types)))
-    typ = topic_types[topic]
-    typ_module_name, typ_cls_name = typ.split('/')
-    typ_cls = getattr(importlib.import_module('%s.msg' % typ_module_name), typ_cls_name)
-    rospy.loginfo('subscribing to: %s %s %s' % (topic, typ_cls, cb))
-    return rospy.Subscriber(topic, typ_cls, cb)
-
-def publish(topic, data=None):
-    """
-    Shortcut that dynamically looks up the publisher for a topic, as well as the type class, wraps the data in the class, and then publishes it.
-    """
-    topic_types = get_published_topics()
-    assert topic in topic_types, 'Topic "%s" is not one of the valid published topics: %s' % (topic, ', '.join(sorted(topic_types)))
-    typ = topic_types[topic]
-    print('topic:', topic)
-    print('typ:', typ)
-    typ_module_name, typ_cls_name = typ.split('/')
-    typ_cls = getattr(importlib.import_module('%s.msg' % typ_module_name), typ_cls_name)
-    pub = rospy.Publisher(topic, typ_cls, queue_size=1)
-    if typ == 'std_msgs/Empty':
-        data = typ_cls()
-    else:
-        data = typ_cls(data)
-    rospy.loginfo('publishing %s to %s' % (data, topic))
-    pub.publish(data)
 
 class DockNode(object):
 
@@ -76,15 +55,21 @@ class DockNode(object):
     # We've failed to connect, probably because our approach was misaligned, so backup so we can retry our approach.
     RETREATING = 'retreating'
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         rospy.init_node('dock', log_level=rospy.DEBUG)
 
         self.state = State()
         self.state.index = self.SEARCHING
-        self.state.ep0 = None
-        self.state.ep1 = None
+        self.state.ep0 = None # External power voltage present.
+        self.state.ep1 = None # External power magnet present.
         self.state.pan_degrees = None
         self.state.qr_matches = None
+        self.state.motor_target_a = None
+        self.state.motor_target_b = None
+
+        self.cancelled = False
+
+        self.audible = kwargs.pop('audible')
 
         self.qr_tracker_process = None
 
@@ -108,29 +93,66 @@ class DockNode(object):
         subscribe('/torso_arduino/edge/1', partial(self._set_state, name='edge1'))
         subscribe('/torso_arduino/edge/2', partial(self._set_state, name='edge2'))
 
+        # Track main drive motor activity.
+        subscribe('/torso_arduino/motor/target/a', partial(self._set_state, name='motor_target_a'))
+        subscribe('/torso_arduino/motor/target/b', partial(self._set_state, name='motor_target_b'))
+
         # Track the position of the head's pan degree.
         subscribe('/head_arduino/pan/degrees', partial(self._set_state, name='pan_degrees'))
 
         # Track QR matches.
         subscribe('/qr_tracker/matches', partial(self._set_state, name='qr_matches'))
 
+        self.say = rospy.ServiceProxy('/sound/say_eventually', ros_homebot_msgs.srv.TTS)
+
+        rospy.Service('~cancel', Empty, self.on_cancel)
+
         self.force_sensors()
 
         dock_iter = self.dock_iter()
-        while not rospy.is_shutdown():
+        while not rospy.is_shutdown() and not self.cancelled:
             # time.sleep(1)
             try:
                 dock_iter.next()
             except StopIteration:
                 break
+        time.sleep(3)
+
+    def is_torso_moving(self):
+        return self.state.motor_target_a or self.state.motor_target_b
+
+    def is_torso_stopped(self):
+        return not self.is_torso_moving()
+
+    def halt_motors(self):
+        """
+        Tells our motors to immediately stop.
+        """
+        publish('/torso_arduino/halt')# std_msgs/Empty
+
+    def on_cancel(self, msg=None):
+        """
+        Terminates any running docking process and results in this node exiting.
+        """
+        self.cancelled = True
+        self.on_shutdown()
+        return EmptyResponse()
 
     def on_shutdown(self):
+        """
+        Called when the ROS master signals a shutdown, or our parent signals a cancellation of the docking process.
+        """
+        self.halt_motors()
         rospy.loginfo('Shutting down...')
         if self.qr_tracker_process:
             self.qr_tracker_process.stop()
         rospy.loginfo('Done.')
 
     def start_qr_tracker(self):
+        """
+        Launches a child node to detect the QR code from the primary camera video feed.
+        This code will tell us where the docking station is.
+        """
         if getoutput('rosnode list | grep /qr_tracker'):
             rospy.logwarn('QR tracker already running.')
             return
@@ -148,15 +170,21 @@ class DockNode(object):
         time.sleep(5)
 
     def _set_state(self, msg, name):
+        """
+        This is a helper routine to catch all the state change information, and update our local state cache accordingly.
+        """
         data = msg.data
         if isinstance(msg, Percept):
             data = msg
         rospy.loginfo('setting state: %s=%s(type=%s)' % (name, data, type(msg)))
-        assert hasattr(self.state, name)
+        assert hasattr(self.state, name), 'State cache has no attribute "%s".' % name
         setattr(self.state, name, data)
         setattr(self.state, name+'_update', time.time())
 
     def force_sensors(self):
+        """
+        Tells the embedded controllers to give us a full update of all sensor states, so we can update our local cache.
+        """
         # publish('/head_arduino/force_sensors')
         for _ in range(10):
             publish('/torso_arduino/force_sensors')
@@ -165,6 +193,9 @@ class DockNode(object):
             time.sleep(1)
 
     def center_head(self):
+        """
+        Causes the head to pan to its center position.
+        """
         publish('/head_arduino/tilt/set', 90)
         time.sleep(2)
         publish('/head_arduino/pan/set', 315)
@@ -173,10 +204,32 @@ class DockNode(object):
         time.sleep(2)
 
     def qr_code_found(self):
+        """
+        Returns true if we see a QR code matching that of our docking station.
+        Returns false otherwise.
+        """
         return self.state.qr_matches is not None
 
-    def is_dock_connected(self):
-        return self.state.ep0 and self.state.ep0
+    def is_docked(self):
+        """
+        Return true if we're docked to a powered docking station. Returns false otherwise.
+        """
+        return self.state.ep0 and self.state.ep1
+
+    def is_dead_docked(self):
+        """
+        Return true if we detect the docking station magnet, but we're not detecting power.
+
+        This may mean the docking station is not plugged in to a power supply, or the magnetic coupling has snagged
+        in such a way that an electrical connection is not being made.
+
+        In the later case, this can usually be fixed by using the motors to "wiggle" the robot slightly left and right.
+        If the robot is too of-center for this to work, the only other option is to completely abort the docking, reverse,
+        and retry the full docking procedure, hoping the next try will obtain better centering.
+
+        Returns false otherwise.
+        """
+        return not self.state.ep0 and self.state.ep1
 
     def center_qr_in_view(self):
         """
@@ -212,35 +265,83 @@ class DockNode(object):
             rospy.loginfo('new angle: %s' % new_angle)
             time.sleep(1)
 
-    def dock_iter(self):
-        rospy.loginfo('Beginning dock procedure.')
+    def announce_status(self, status):
+        rospy.loginfo(status)
+        if self.audible:
+            self.say(re.sub('[^a-zA-Z0-9]+', ' ', status))
 
-        rospy.loginfo('Step 1: Centering the head.')
+    def dock_iter(self):
+        """
+        This is the main docking procedure.
+        This will stop iterating once the docking procedure has succeeded or reached a failure condition.
+        """
+        self.announce_status('Beginning dock procedure.')
+
+        self.announce_status('Checking current state.')
+        if self.is_docked():
+            self.announce_status('We are already docked. Nothing to do.')
+            return
+
+        if self.is_dead_docked():
+            self.announce_status('We sense the docking magnet, but no power, possibly from a previous failed docking attempt.')
+            self.announce_status('Undocking to abort last attempt and retry.')
+            self.undock()
+            yield
+            time.sleep(5)
+            yield
+
+        self.announce_status('Centering head.')
         self.center_head()
         yield
 
-        rospy.loginfo('Step 2: Searching for QR code.')
+        self.announce_status('Searching for QR code.')
         angle = 356
         cnt = 0
         for _ in range(20):
             angle = (angle + 18) % 360
-            rospy.loginfo('Scanning angle %s.' % angle)
+            self.announce_status('Scanning angle %s.' % angle)
             publish('/head_arduino/pan/set', angle)
             time.sleep(1)
             if self.qr_code_found():
-                rospy.loginfo('QR code found.')
+                self.announce_status('QR code found.')
                 break
         if not self.qr_code_found():
-            rospy.loginfo('QR code could not be found. Procedure terminated.')
+            self.announce_status('QR code could not be found. Docking terminated.')
             return
 
-        rospy.loginfo('Centering QR code in view.')
+        self.announce_status('Centering QR code in view.')
         self.center_qr_in_view()
-        rospy.loginfo('View centered.')
+        yield
+        self.announce_status('View centered.')
 
-        rospy.loginfo('Angling body perpendicular.')
+        self.announce_status('Freezing head angle.')
+        publish('/head_arduino/pan/freeze/set', 1)
+        yield
 
-        rospy.loginfo('Body angled.')
+        self.announce_status('Angling body to be perpendicular to QR code.')
+        # Calculate torso angle rotation needed so that the front faces inward by 90 degrees to the head position.
+        # Note, a positive degree proceeds CW when looking down.
+        # e.g. if we're facing -10 degrees to the left == 350 degrees, then we need to rotate the torso by -10 degrees to center,
+        # and then another -90 degrees to be perpendicular.
+        #TODO:estimate angle of offset of QR code
+        if self.state.pan_degrees > 180:
+            # Need to rotate CCW.
+            head_angle_offset = self.state.pan_degrees - 360 -90
+        else:
+            # Need to rotate CW.
+            head_angle_offset = self.state.pan_degrees + 90
+        rospy.loginfo('head_angle_offset: %s' % head_angle_offset)
+        publish('/torso_arduino/motor/rotate', head_angle_offset)
+        yield
+
+        # Wait until torso stops rotating.
+        self.announce_status('Waiting until we have fully rotated.')
+        time.sleep(3)
+        while self.is_torso_moving():
+            yield
+            time.sleep(0.5)
+            rospy.loginfo('Waiting...')
+        self.announce_status('Body angled.')
 
         # rospy.loginfo('Moving body to be infront of QR code.')
         # rospy.loginfo('Body positioned in front.')
@@ -259,10 +360,14 @@ class DockNode(object):
         # elif self.state.index == self.RETREATING:
             # pass
         # time.sleep(1)
-        rospy.loginfo('Dock procedure terminated.')
+        self.announce_status('Dock procedure terminated.')
 
     def undock(self):
-        pass
+        publish('/torso_arduino/undock') # std_msgs/Empty
 
 if __name__ == '__main__':
-    DockNode()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--audible', default=False, action='store_true', help='If given audible status updates will be given.')
+    args = parser.parse_args()
+    DockNode(**args.__dict__)

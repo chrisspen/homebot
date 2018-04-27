@@ -42,6 +42,11 @@ class SoundServer:
                 self.say)
 
         rospy.Service(
+                '~say_eventually',
+                ros_homebot_msgs.srv.TTS,
+                self.say_eventually)
+
+        rospy.Service(
                 '~shutup',
                 std_srvs.srv.Empty,
                 self.say)
@@ -69,44 +74,52 @@ class SoundServer:
     def shutup(self, goal_or_srv):
         self.cancel_all()
 
+    def say_eventually(self, goal_or_srv):
+        """
+        Like say(), but waits until the current speech event is complete.
+        """
+        with self._lock:
+            return self.say(goal_or_srv)
+
     def say(self, goal_or_srv):
         """
         Speaks the given text.
         """
-        is_goal = not type(goal_or_srv).__name__.endswith('Request')
-        print 'received request to say:', goal_or_srv.text
-        self.cancel_all(exclude=c.SOUND_TTS)
-        success = True
-        try:
+        with self._lock:
+            is_goal = not type(goal_or_srv).__name__.endswith('Request')
+            print 'received request to say:', goal_or_srv.text
+            self.cancel_all(exclude=c.SOUND_TTS)
+            success = True
+            try:
 
-#             voice = goal_or_srv.voice.strip() or VOICE1
-            voice = VOICE1
-#             assert voice in VOICES
+    #             voice = goal_or_srv.voice.strip() or VOICE1
+                voice = VOICE1
+    #             assert voice in VOICES
 
-#             speed = goal_or_srv.speed #TODO
+    #             speed = goal_or_srv.speed #TODO
 
-#             volume = goal_or_srv.volume or 100
-#             assert 0 <= volume <= 100
-#             if self._last_volume is None or self._last_volume != volume:
-#                 os.system('amixer cset numid=1 {percent}%'.format(percent=volume))
-#                 self._last_volume = volume
+    #             volume = goal_or_srv.volume or 100
+    #             assert 0 <= volume <= 100
+    #             if self._last_volume is None or self._last_volume != volume:
+    #                 os.system('amixer cset numid=1 {percent}%'.format(percent=volume))
+    #                 self._last_volume = volume
 
-            lines = goal_or_srv.text.strip().split('\n')
-            for line in lines:
-#                 os.system('nice -n -19 espeak -v%s "%s"' % (voice, line))
-                os.system('sudo nice -n -19 espeak -v%s "%s" --stdout | aplay' % (voice, line))
+                lines = goal_or_srv.text.strip().split('\n')
+                for line in lines:
+    #                 os.system('nice -n -19 espeak -v%s "%s"' % (voice, line))
+                    os.system('sudo nice -n -19 espeak -v%s "%s" --stdout | aplay' % (voice, line))
 
-        except Exception as e:
-            success = False
-            traceback.print_exc(file=sys.stderr)
-        finally:
-            if is_goal:
-                result = ros_homebot.msg.TTSResult()
-                if success:
-                    self.tts_server.set_succeeded(result)
-                else:
-                    self.tts_server.set_aborted(result)
-        return ros_homebot_msgs.srv.TTSResponse()
+            except Exception as e:
+                success = False
+                traceback.print_exc(file=sys.stderr)
+            finally:
+                if is_goal:
+                    result = ros_homebot.msg.TTSResult()
+                    if success:
+                        self.tts_server.set_succeeded(result)
+                    else:
+                        self.tts_server.set_aborted(result)
+            return ros_homebot_msgs.srv.TTSResponse()
 
     def shutdown(self):
         print 'Shutting down...'

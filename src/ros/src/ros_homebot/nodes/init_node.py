@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 
 import time
+from commands import getoutput
 
 import rospy
 
 import ros_homebot_msgs.srv
 from ros_homebot_python import constants as c
+
+from .common import publish
 
 class InitROS():
     """
@@ -15,7 +18,14 @@ class InitROS():
 
         rospy.init_node('HomebotInit', log_level=rospy.DEBUG)
 
-        # Say something.
+        # By default, torso does not publish much debugging info, so conserve USB bandwidth and processing resources.
+        # Turn it on to aid in debugging.
+        while not getoutput('rosnode list | grep /torso_arduino/debug_level'):
+            print('Waiting for torso node to start...')
+            time.sleep(1)
+        publish('/torso_arduino/debug_level', 1) # std_msgs/Int16
+
+        # Say something to let the world know we're ready.
         say = rospy.ServiceProxy('/sound/say', ros_homebot_msgs.srv.TTS)
         while not rospy.is_shutdown():
             try:
