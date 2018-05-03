@@ -181,10 +181,22 @@ class HomebotSatchel(ServiceSatchel):
         return super(HomebotSatchel, self).reboot(*args, **kwargs)
 
     @task
-    def rebuild_messages(self):
+    def rebuild_messages(self, package=None):
+        """
+        Rebuilds ROS messages for one or more packages.
+
+        Should be run like:
+
+            fab prod homebot.rebuild_messages:package=ros_homebot_msgs
+
+        """
         r = self.local_renderer
-        r.run('cd /usr/local/homebot/src/ros; . ./setup.bash; time catkin_make '
-            '--pkg ros_homebot_msgs')
+        if package:
+            r.env.package = package # e.g. "ros_homebot_msgs"
+            # r.run('cd /usr/local/homebot/src/ros; . ./setup.bash; time catkin_make --pkg ros_homebot_msgs')
+            r.run('cd {project_dir}/src/ros; . ./setup.bash; time catkin_make --pkg ros_homebot_msgs')
+        else:
+            r.run('cd {project_dir}/src/ros; . ./setup.bash; time catkin_make')
 
     @task
     def install_upstart(self, force=0):
@@ -273,7 +285,7 @@ class HomebotSatchel(ServiceSatchel):
     def upload_rosserial(self):
         """
         To be run like:
-        
+
             fab prod homebot.upload_rosserial
 
         """
@@ -308,8 +320,10 @@ class HomebotSatchel(ServiceSatchel):
         r.sudo('chown -R root:root /opt/ros/kinetic/lib/rosserial_arduino')
 
     @task
-    def deploy_code(self):
+    def deploy_code(self, include_overlay=0):
         r = self.local_renderer
+
+        include_overlay = int(include_overlay)
 
         if not r.genv.key_filename:
             r.genv.key_filename = self.genv.host_original_key_filename
@@ -332,6 +346,19 @@ class HomebotSatchel(ServiceSatchel):
             '--delete --rsh "ssh -t -o StrictHostKeyChecking=no -i {key_filename}" '
             'src {user}@{host_string}:{project_dir}')
             #'--exclude=build-* '
+
+        if include_overlay:
+            r.local('rsync --recursive --verbose --perms --times --links --compress --copy-links '
+                '--log-file=./deloy_code.log '
+                '--exclude=.build --exclude=build --exclude=devel '
+                '--exclude=.build_ano '
+                '--exclude=build-uno_pro '
+                '--exclude=db.sqlite3 '
+                '--exclude=bags '
+                '--exclude=.env '
+                '--exclude=setup_local.bash '
+                '--delete --rsh "ssh -t -o StrictHostKeyChecking=no -i {key_filename}" '
+                'src/overlay/src {user}@{host_string}:{project_dir}/src/overlay')
 
         #TODO:remove once lib stable
 #         r.local('rsync --recursive --verbose --perms --times --links --compress --copy-links '

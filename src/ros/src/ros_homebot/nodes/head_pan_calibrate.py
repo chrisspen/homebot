@@ -99,11 +99,11 @@ class HeadPanCalibrateNode(object):
         rospy.init_node('head_pan_calibrate_node')
 
         print('Registering subscribers...')
-        rospy.Subscriber('/head_arduino/pan/error', Int16, self.on_pan_error_update)
+        rospy.Subscriber('/head_arduino/pan_error', Int16, self.on_pan_error_update)
 
         print('Registering publishers...')
-        pan_pid_pub = rospy.Publisher('/head_arduino/pan/pid/set', Float32MultiArray, queue_size=1)
-        pan_set_pub = rospy.Publisher('/head_arduino/pan/set', Int16, queue_size=1)
+        pan_pid_pub = rospy.Publisher('/head_arduino/pan_pid_set', Float32MultiArray, queue_size=1)
+        pan_set_pub = rospy.Publisher('/head_arduino/pan_set', Int16, queue_size=1)
 
         total = len(params)
         for i, param in enumerate(params):

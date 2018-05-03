@@ -43,6 +43,7 @@
 #include "ArduinoTemperatureSensor.h"
 #include "AnalogSensor.h"
 #include "OdometryTracker.h"
+#include "EEPROMAnything.h"
 
 //#define PING_TIMEOUT_MS 10000
 
@@ -56,6 +57,12 @@
 // Debug levels.
 #define ONLY_ERRORS 0 // default
 #define UP_TO_OK 1
+
+// Persistent variables.
+struct config_t
+{
+    adafruit_bno055_offsets_t imu_calib;
+} configuration;
 
 char base_link[] = "/base_link";
 const char * const ultrasonic_links[] = { "/base_link/ultrasonic0", "/base_link/ultrasonic1", "/base_link/ultrasonic2" };
@@ -243,53 +250,50 @@ BooleanSensor power_button_sensor = BooleanSensor(SIGNAL_BUTTON_PIN, true);
 ros::Publisher battery_state_publisher = ros::Publisher("battery", &battery_msg);
 
 ros::Publisher external_power_publishers[2] = {
-    ros::Publisher("power/external/0", &bool_msg), // external power voltage present
-    ros::Publisher("power/external/1", &bool_msg) // external power magnet present
+    ros::Publisher("power_external_0", &bool_msg), // external power voltage present
+    ros::Publisher("power_external_1", &bool_msg) // external power magnet present
 };
 
 ros::Publisher edge_publishers[3] = {
-    ros::Publisher("edge/0", &bool_msg),
-    ros::Publisher("edge/1", &bool_msg),
-    ros::Publisher("edge/2", &bool_msg)
+    ros::Publisher("edge_0", &bool_msg),
+    ros::Publisher("edge_1", &bool_msg),
+    ros::Publisher("edge_2", &bool_msg)
 };
 
 //TODO:enable once physical switches are improved, otherwise this is worthless
 //ros::Publisher bumper_publishers[3] = {
-//    ros::Publisher("bumper/0", &bool_msg),
-//    ros::Publisher("bumper/1", &bool_msg),
-//    ros::Publisher("bumper/2", &bool_msg)
+//    ros::Publisher("bumper_0", &bool_msg),
+//    ros::Publisher("bumper_1", &bool_msg),
+//    ros::Publisher("bumper_2", &bool_msg)
 //};
 
 ros::Publisher ultrasonic_publishers[3] = {
-//    ros::Publisher("ultrasonic/0", &int16_msg),
-//    ros::Publisher("ultrasonic/1", &int16_msg),
-//    ros::Publisher("ultrasonic/2", &int16_msg)
-    ros::Publisher("ultrasonic/0", &range_msg),
-    ros::Publisher("ultrasonic/1", &range_msg),
-    ros::Publisher("ultrasonic/2", &range_msg)
+    ros::Publisher("ultrasonic_0", &range_msg),
+    ros::Publisher("ultrasonic_1", &range_msg),
+    ros::Publisher("ultrasonic_2", &range_msg)
 };
 
-ros::Publisher power_button_publisher = ros::Publisher("power/button", &bool_msg);
+ros::Publisher power_button_publisher = ros::Publisher("power_button", &bool_msg);
 
 // Simulate with:
-// rostopic pub --once /torso_arduino/power/shutdown std_msgs/Bool 1
-ros::Publisher shutdown_publisher = ros::Publisher("power/shutdown", &bool_msg);
+// rostopic pub --once /torso_arduino/power_shutdown std_msgs/Bool 1
+ros::Publisher shutdown_publisher = ros::Publisher("power_shutdown", &bool_msg);
 
-ros::Publisher motor_a_encoder_publisher = ros::Publisher("motor/encoder/a", &int16_msg);
-ros::Publisher motor_b_encoder_publisher = ros::Publisher("motor/encoder/b", &int16_msg);
-ros::Publisher motor_error_publisher = ros::Publisher("motor/error", &byte_msg);
-ros::Publisher motor_a_target_publisher = ros::Publisher("motor/target/a", &int16_msg);
-ros::Publisher motor_b_target_publisher = ros::Publisher("motor/target/b", &int16_msg);
+ros::Publisher motor_a_encoder_publisher = ros::Publisher("motor_encoder_a", &int16_msg);
+ros::Publisher motor_b_encoder_publisher = ros::Publisher("motor_encoder_b", &int16_msg);
+ros::Publisher motor_error_publisher = ros::Publisher("motor_error", &byte_msg);
+ros::Publisher motor_a_target_publisher = ros::Publisher("motor_target_a", &int16_msg);
+ros::Publisher motor_b_target_publisher = ros::Publisher("motor_target_b", &int16_msg);
 
 // https://learn.adafruit.com/adafruit-bno055-absolute-orientation-sensor/device-calibration
 // Directly from the bno.getCalibration(), 0=not calibrated, 3=fully calibrated
 // The reason is that system cal '0' in NDOF mode means that the device has not yet found the 'north pole',
 // and orientation values will be off  The heading will jump to an absolute value once the BNO finds magnetic north
 // (the system calibration status jumps to 1 or higher).
-ros::Publisher imu_calibration_sys_publisher = ros::Publisher("imu/calibration/sys", &int16_msg);
+ros::Publisher imu_calibration_sys_publisher = ros::Publisher("imu_calibration_sys", &int16_msg);
 
 // To calibrate, the device must be standing still in any position.
-ros::Publisher imu_calibration_gyr_publisher = ros::Publisher("imu/calibration/gyr", &int16_msg);
+ros::Publisher imu_calibration_gyr_publisher = ros::Publisher("imu_calibration_gyr", &int16_msg);
 
 // This seems to take forever to calibrate, no matter how long you wait or move the sensor.
 // The BNO055 must be placed in 6 standing positions for +X, -X, +Y, -Y, +Z and -Z.
@@ -299,20 +303,20 @@ ros::Publisher imu_calibration_gyr_publisher = ros::Publisher("imu/calibration/g
 // You should still be able to get reasonable quality data from the BNO055, however, even if the accelerometer
 // isn't entirely or perfectly calibrated.
 // This also isn't necessary for the sys output to read 3, or fully calibrated.
-ros::Publisher imu_calibration_acc_publisher = ros::Publisher("imu/calibration/acc", &int16_msg);
+ros::Publisher imu_calibration_acc_publisher = ros::Publisher("imu_calibration_acc", &int16_msg);
 
 // Publishes the Z axis angle in degrees. Used by the head to maintain position while the torso rotates.
 // It's much more efficient to publish this single number than for the head to receive all odometry data.
-ros::Publisher imu_euler_z_publisher = ros::Publisher("imu/euler/z", &int16_msg);
+ros::Publisher imu_euler_z_publisher = ros::Publisher("imu_euler_z", &int16_msg);
 
 // To calibrate, the sensor must be moved in a 'figure 8' motion ideally, or at least some minimal movement.
 // Note, mag will remain at 0 until it's moved a little, then it will switch to 1 and then 2, and then after a few more seconds, fully to 3.
 // The lesson here is that simply waiting for the IMU to fully calibrate won't work. The robot needs to move itself around a little.
-ros::Publisher imu_calibration_mag_publisher = ros::Publisher("imu/calibration/mag", &int16_msg);
+ros::Publisher imu_calibration_mag_publisher = ros::Publisher("imu_calibration_mag", &int16_msg);
 
 // When the bno's sys calibration flag reads 3, or fully calibrated, this publishes the 11 ints
 // representing the calibration value to store in an adafruit_bno055_offsets_t.
-ros::Publisher imu_calibration_save_publisher = ros::Publisher("imu/calibration/save", &uint16ma_msg);
+ros::Publisher imu_calibration_save_publisher = ros::Publisher("imu_calibration_save", &uint16ma_msg);
 
 //ros::Publisher imu_publisher = ros::Publisher("imu", &imu_msg);
 //ros::Publisher imu_euler_publisher = ros::Publisher("imu/euler", &vec3_msg);
@@ -330,7 +334,7 @@ int last_b_encoder = 0;
 bool undock = false;
 unsigned long undock_start = 0;
 unsigned long undocked_time = 0;
-int debug_level = ONLY_ERRORS; // 0=only errors, 1=OK messages
+int debug_level = UP_TO_OK; //ONLY_ERRORS; // 0=only errors, 1=OK messages
 
 /*
  * End publisher definitions.
@@ -384,8 +388,8 @@ void stop_motors() {
  * Begin subscribers.
  */
 
-// rostopic pub --once /torso_arduino/deadman/set std_msgs/Bool 1
-// rostopic pub --once /torso_arduino/deadman/set std_msgs/Bool 0
+// rostopic pub --once /torso_arduino/deadman_set std_msgs/Bool 1
+// rostopic pub --once /torso_arduino/deadman_set std_msgs/Bool 0
 void on_deadman(const std_msgs::Bool& msg) {
     if (msg.data) {
         nh.loginfo("Deadman set. If we lose connection, we will poweroff.");
@@ -394,10 +398,10 @@ void on_deadman(const std_msgs::Bool& msg) {
     }
     deadman = msg.data;
 }
-ros::Subscriber<std_msgs::Bool> deadman_sub("deadman/set", &on_deadman);
+ros::Subscriber<std_msgs::Bool> deadman_sub("deadman_set", &on_deadman);
 
-// rostopic pub --once /torso_arduino/ultrasonics/enabled std_msgs/Bool 1
-// rostopic pub --once /torso_arduino/ultrasonics/enabled std_msgs/Bool 0
+// rostopic pub --once /torso_arduino/ultrasonics_enabled std_msgs/Bool 1
+// rostopic pub --once /torso_arduino/ultrasonics_enabled std_msgs/Bool 0
 void on_ultrasonics_enabled(const std_msgs::Bool& msg) {
     if (msg.data) {
         nh.loginfo("Ultrasonics enabled.");
@@ -406,7 +410,7 @@ void on_ultrasonics_enabled(const std_msgs::Bool& msg) {
     }
     ultrasonics_enabled = msg.data;
 }
-ros::Subscriber<std_msgs::Bool> ultrasonics_enabled_sub("ultrasonics/enabled", &on_ultrasonics_enabled);
+ros::Subscriber<std_msgs::Bool> ultrasonics_enabled_sub("ultrasonics_enabled", &on_ultrasonics_enabled);
 
 // rostopic pub --once /torso_arduino/halt std_msgs/Empty
 void on_halt(const std_msgs::Empty& msg) {
@@ -448,7 +452,7 @@ void on_cmd_vel(const geometry_msgs::Twist& msg) {
 }
 ros::Subscriber<geometry_msgs::Twist> cmd_vel_sub("cmd_vel", &on_cmd_vel);
 
-// rostopic pub --once /torso_arduino/motor/speed std_msgs/Int16MultiArray "{layout:{dim:[], data_offset: 0}, data:[64, 64]}"
+// rostopic pub --once /torso_arduino/motor_speed std_msgs/Int16MultiArray "{layout:{dim:[], data_offset: 0}, data:[64, 64]}"
 // Note, if you get a connection error, that probably means main battery power was not on when you connected to the Arduino,
 // and so the ComMotion didn't initialize properly.
 // Fix this by turning on main battery power and then resetting the Arduino.
@@ -465,13 +469,13 @@ void on_motor_speed(const std_msgs::Int16MultiArray& msg) {
         publish_motor_targets();
     }
 }
-ros::Subscriber<std_msgs::Int16MultiArray> motor_speed_sub("motor/speed", &on_motor_speed);
+ros::Subscriber<std_msgs::Int16MultiArray> motor_speed_sub("motor_speed", &on_motor_speed);
 
 bool is_docked(){
     return external_power_sensors[0].get_bool() || external_power_sensors[1].get_bool();
 }
 
-// rostopic pub --once /torso_arduino/motor/rotate std_msgs/Int16 45
+// rostopic pub --once /torso_arduino/motor_rotate std_msgs/Int16 45
 // Rotates the torso by a precise number of degrees.
 // A positive degree is clockwise. A negative degree is counter-clockwise.
 void on_motor_rotate(const std_msgs::Int16& msg) {
@@ -484,7 +488,7 @@ void on_motor_rotate(const std_msgs::Int16& msg) {
         motion_controller.rotate(msg.data);
     }
 }
-ros::Subscriber<std_msgs::Int16> on_motor_rotate_sub("motor/rotate", &on_motor_rotate);
+ros::Subscriber<std_msgs::Int16> on_motor_rotate_sub("motor_rotate", &on_motor_rotate);
 
 // rostopic pub --once /torso_arduino/debug_level std_msgs/Int16 1
 // 0 = only errors
@@ -494,7 +498,7 @@ void on_debug_level(const std_msgs::Int16& msg) {
 }
 ros::Subscriber<std_msgs::Int16> on_debug_level_sub("debug_level", &on_debug_level);
 
-// rostopic pub --once /torso_arduino/imu/calibration/load std_msgs/UInt16MultiArray
+// rostopic pub --once /torso_arduino/imu_calibration_load std_msgs/UInt16MultiArray
 // "{layout:{dim:[], data_offset: 0}, data:[0, 0, 0, 65534, 65534, 0, 65438, 65370, 268, 1000, 750]}"
 void on_imu_calibration_load(const std_msgs::UInt16MultiArray& msg) {
     nh.loginfo("Loading IMU calibration...");
@@ -513,7 +517,7 @@ void on_imu_calibration_load(const std_msgs::UInt16MultiArray& msg) {
     ag_sensor.bno.setSensorOffsets(newCalib);
     nh.loginfo("IMU calibration loaded!");
 }
-ros::Subscriber<std_msgs::UInt16MultiArray> imu_calibration_load_sub("imu/calibration/load", &on_imu_calibration_load);
+ros::Subscriber<std_msgs::UInt16MultiArray> imu_calibration_load_sub("imu_calibration_load", &on_imu_calibration_load);
 
 //TODO:http://docs.ros.org/api/sensor_msgs/html/msg/BatteryState.html
 
@@ -540,6 +544,8 @@ static geometry_msgs::Quaternion createQuaternionFromRPY(double roll, double pit
 */
 
 void setup() {
+
+    EEPROM_readAnything(0, configuration);
 
     // Initialize diagnostic status array.
     //http://docs.ros.org/diamondback/api/rosserial_arduino/html/classdiagnostic__msgs_1_1DiagnosticArray.html
@@ -732,7 +738,7 @@ void loop() {
     if (millis() - last_debug >= 5000) {
         last_debug = millis();
         cnt += 1;
-        snprintf(buffer, MAX_OUT_CHARS, "count:%d", cnt);
+        snprintf(buffer, MAX_OUT_CHARS, "count:%ld", cnt);
         nh.loginfo(buffer);
         nh.spinOnce();
     }

@@ -1,3 +1,6 @@
+# Install with:
+# fab local packager.install_apt:roles/all/apt-requirements.txt
+
 # Python
 python-dev
 python-pip
@@ -43,7 +46,7 @@ ninja-build
 # Needed by tf/robot-state-publisher.
 libtf2-*
 
-ros-kinetic-robot-upstart
+#ros-kinetic-robot-upstart
 
 # Needed by Arduino firmware.
 arduino-mk
@@ -62,3 +65,6 @@ ros-kinetic-camera-info-manager
 ros-kinetic-diagnostics
 #ros-kinetic-diagnostics-msgs
 ros-kinetic-robot-model
+
+# Needed for raspicam
+g++-arm-linux-gnueabihf

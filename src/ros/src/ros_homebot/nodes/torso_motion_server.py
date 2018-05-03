@@ -82,7 +82,7 @@ class TorsoMotionServer(object):
         # subscribe_to_topic(c.TORSO, c.ID_STATUS_BUTTON, self.on_status_button_update)
         #TODO:accel/gyro?
 
-        self.motor_speed_pub = rospy.Publisher('/torso_arduino/motor/speed', UInt16MultiArray, queue_size=1)
+        self.motor_speed_pub = rospy.Publisher('/torso_arduino/motor_speed', UInt16MultiArray, queue_size=1)
 
         rospy.on_shutdown(self.shutdown)
 

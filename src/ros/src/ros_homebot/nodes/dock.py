@@ -23,8 +23,10 @@ from functools import partial
 from commands import getoutput
 import time
 import re
+from math import pi
 
 import rospy
+from rospy.service import ServiceException
 import roslaunch
 from std_srvs.srv import Empty, EmptyResponse
 
@@ -66,6 +68,9 @@ class DockNode(object):
         self.state.qr_matches = None
         self.state.motor_target_a = None
         self.state.motor_target_b = None
+        self.state.edge0 = None
+        self.state.edge1 = None
+        self.state.edge2 = None
 
         self.cancelled = False
 
@@ -80,25 +85,31 @@ class DockNode(object):
         # Launch qr tracker
         self.start_qr_tracker()
         self.qr_tracker_set_target_srv = rospy.ServiceProxy('/qr_tracker/set_target', SetTarget)
-        self.qr_tracker_set_target_srv(self.qr_code)
+        for _ in range(10):
+            try:
+                self.qr_tracker_set_target_srv(self.qr_code)
+                break
+            except ServiceException as exc:
+                rospy.logerr('Unable to connect to qr_tracker: %s', exc)
+                time.sleep(1)
 
         # Track external power voltage present.
-        subscribe('/torso_arduino/power/external/0', partial(self._set_state, name='ep0'))
+        subscribe('/torso_arduino/power_external_0', partial(self._set_state, name='ep0'))
 
         # Track external power magnet present.
-        subscribe('/torso_arduino/power/external/1', partial(self._set_state, name='ep1'))
+        subscribe('/torso_arduino/power_external_1', partial(self._set_state, name='ep1'))
 
         # Track edge sensors, to track emergency abort when user lifts us up.
-        subscribe('/torso_arduino/edge/0', partial(self._set_state, name='edge0'))
-        subscribe('/torso_arduino/edge/1', partial(self._set_state, name='edge1'))
-        subscribe('/torso_arduino/edge/2', partial(self._set_state, name='edge2'))
+        subscribe('/torso_arduino_edge_0', partial(self._set_state, name='edge0'))
+        subscribe('/torso_arduino_edge_1', partial(self._set_state, name='edge1'))
+        subscribe('/torso_arduino_edge_2', partial(self._set_state, name='edge2'))
 
         # Track main drive motor activity.
-        subscribe('/torso_arduino/motor/target/a', partial(self._set_state, name='motor_target_a'))
-        subscribe('/torso_arduino/motor/target/b', partial(self._set_state, name='motor_target_b'))
+        subscribe('/torso_arduino/motor_target_a', partial(self._set_state, name='motor_target_a'))
+        subscribe('/torso_arduino/motor_target_b', partial(self._set_state, name='motor_target_b'))
 
         # Track the position of the head's pan degree.
-        subscribe('/head_arduino/pan/degrees', partial(self._set_state, name='pan_degrees'))
+        subscribe('/head_arduino/pan_degrees', partial(self._set_state, name='pan_degrees'))
 
         # Track QR matches.
         subscribe('/qr_tracker/matches', partial(self._set_state, name='qr_matches'))
@@ -108,6 +119,11 @@ class DockNode(object):
         rospy.Service('~cancel', Empty, self.on_cancel)
 
         self.force_sensors()
+
+        while 1:
+            print('rotating...')
+            publish('/torso_arduino/motor_rotate', 90)
+            time.sleep(5)
 
         dock_iter = self.dock_iter()
         while not rospy.is_shutdown() and not self.cancelled:
@@ -166,7 +182,7 @@ class DockNode(object):
         launch = roslaunch.scriptapi.ROSLaunch()
         launch.start()
         process = launch.launch(node)
-        rospy.loginfo('qr_tracker.py is_alive: %s' % process.is_alive())
+        rospy.loginfo('qr_tracker.py is_alive: %s', process.is_alive())
         time.sleep(5)
 
     def _set_state(self, msg, name):
@@ -176,7 +192,7 @@ class DockNode(object):
         data = msg.data
         if isinstance(msg, Percept):
             data = msg
-        rospy.loginfo('setting state: %s=%s(type=%s)' % (name, data, type(msg)))
+        # rospy.loginfo('setting state: %s=%s(type=%s)', name, data, type(msg))
         assert hasattr(self.state, name), 'State cache has no attribute "%s".' % name
         setattr(self.state, name, data)
         setattr(self.state, name+'_update', time.time())
@@ -196,11 +212,11 @@ class DockNode(object):
         """
         Causes the head to pan to its center position.
         """
-        publish('/head_arduino/tilt/set', 90)
+        publish('/head_arduino/tilt_set', 90)
         time.sleep(2)
-        publish('/head_arduino/pan/set', 315)
+        publish('/head_arduino/pan_set', 315)
         time.sleep(2)
-        publish('/head_arduino/pan/set', 356)
+        publish('/head_arduino/pan_set', 356)
         time.sleep(2)
 
     def qr_code_found(self):
@@ -251,18 +267,18 @@ class DockNode(object):
             # Ideally, this should be 0.5, indicating the QR code is exactly in the center of the horizontal view.
             # In practice, we'll likely never accomplish this, but we'll try to get it within [0.4:0.6]
             position_ratio = x/float(width)
-            rospy.loginfo('position_ratio: %s' % position_ratio)
+            rospy.loginfo('position_ratio: %s', position_ratio)
             if 0.4 <= position_ratio <= 0.6:
                 break
             elif position_ratio < 0.4:
                 # QR code is too far left of screen, so move head counter-clockwise to center it.
                 new_angle = (self.state.pan_degrees - angle_of_adjustment) % 360
-                publish('/head_arduino/pan/set', new_angle)
+                publish('/head_arduino/pan_set', new_angle)
             elif position_ratio > 0.6:
                 # QR code is too far right of screen, so move head clockwise to center it.
                 new_angle = (self.state.pan_degrees + angle_of_adjustment) % 360
-                publish('/head_arduino/pan/set', new_angle)
-            rospy.loginfo('new angle: %s' % new_angle)
+                publish('/head_arduino/pan_set', new_angle)
+            rospy.loginfo('new angle: %s', new_angle)
             time.sleep(1)
 
     def announce_status(self, status):
@@ -275,7 +291,7 @@ class DockNode(object):
         This is the main docking procedure.
         This will stop iterating once the docking procedure has succeeded or reached a failure condition.
         """
-        self.announce_status('Beginning dock procedure.')
+        self.announce_status('Beginning docking procedure.')
 
         self.announce_status('Checking current state.')
         if self.is_docked():
@@ -290,24 +306,25 @@ class DockNode(object):
             time.sleep(5)
             yield
 
-        self.announce_status('Centering head.')
-        self.center_head()
-        yield
-
-        self.announce_status('Searching for QR code.')
-        angle = 356
-        cnt = 0
-        for _ in range(20):
-            angle = (angle + 18) % 360
-            self.announce_status('Scanning angle %s.' % angle)
-            publish('/head_arduino/pan/set', angle)
-            time.sleep(1)
-            if self.qr_code_found():
-                self.announce_status('QR code found.')
-                break
         if not self.qr_code_found():
-            self.announce_status('QR code could not be found. Docking terminated.')
-            return
+            self.announce_status('Centering head.')
+            self.center_head()
+            yield
+
+            self.announce_status('Searching for QR code.')
+            angle = 356
+            cnt = 0
+            for _ in range(20):
+                angle = (angle + 18) % 360
+                self.announce_status('Scanning angle %s.' % angle)
+                publish('/head_arduino/pan_set', angle)
+                time.sleep(1)
+                if self.qr_code_found():
+                    self.announce_status('QR code found.')
+                    break
+            if not self.qr_code_found():
+                self.announce_status('QR code could not be found. Docking terminated.')
+                return
 
         self.announce_status('Centering QR code in view.')
         self.center_qr_in_view()
@@ -315,7 +332,8 @@ class DockNode(object):
         self.announce_status('View centered.')
 
         self.announce_status('Freezing head angle.')
-        publish('/head_arduino/pan/freeze/set', 1)
+        #rostopic pub --once /head_arduino/pan_freeze_set std_msgs/Bool 1
+        publish('/head_arduino/pan_freeze_set', 1)
         yield
 
         self.announce_status('Angling body to be perpendicular to QR code.')
@@ -324,14 +342,21 @@ class DockNode(object):
         # e.g. if we're facing -10 degrees to the left == 350 degrees, then we need to rotate the torso by -10 degrees to center,
         # and then another -90 degrees to be perpendicular.
         #TODO:estimate angle of offset of QR code
+        deflection_angle_degrees = self.state.qr_matches.deflection_angle * 180. / pi
+        print('deflection_angle_degrees:', deflection_angle_degrees)
+        theta2 = 180 - (90 + deflection_angle_degrees)
+        print('theta2:', theta2)
+        print('self.state.pan_degrees:', self.state.pan_degrees)
         if self.state.pan_degrees > 180:
             # Need to rotate CCW.
-            head_angle_offset = self.state.pan_degrees - 360 -90
+            torso_rotation = theta2 - (self.state.pan_degrees - 360)
         else:
             # Need to rotate CW.
-            head_angle_offset = self.state.pan_degrees + 90
-        rospy.loginfo('head_angle_offset: %s' % head_angle_offset)
-        publish('/torso_arduino/motor/rotate', head_angle_offset)
+            torso_rotation = theta2 - self.state.pan_degrees
+        print('torso_rotation:', torso_rotation)
+        rospy.loginfo('torso_rotation: %s', torso_rotation)
+        self.announce_status('Rotating torso by %s.' % int(torso_rotation))
+        publish('/torso_arduino/motor_rotate', torso_rotation)
         yield
 
         # Wait until torso stops rotating.
@@ -360,7 +385,7 @@ class DockNode(object):
         # elif self.state.index == self.RETREATING:
             # pass
         # time.sleep(1)
-        self.announce_status('Dock procedure terminated.')
+        self.announce_status('Docking procedure terminated.')
 
     def undock(self):
         publish('/torso_arduino/undock') # std_msgs/Empty

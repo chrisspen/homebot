@@ -59,37 +59,8 @@ class ArduinoSatchel(Satchel):
         }
 
     @task
-    def install(self):
+    def install_uno_pro_support(self):
         r = self.local_renderer
-
-        # Setup the Arduino IDE.
-        # http://wiki.ros.org/rosserial_arduino/Tutorials/Arduino%20IDE%20Setup
-        # Do this instead in each Arduino project's ./lib directory.
-        #r.run('. {ros_source_path}; '
-            #'cd {sketchbook_path}; mkdir libraries; cd libraries; rm -rf ros_lib; '
-            #'rosrun rosserial_arduino make_libraries.py .')
-
-        # Clear the old Arduino IDE installed by the obsolete arduino package, which is unfortunately required by the rosserial-arduino package.
-        r.sudo('rm -Rf /usr/share/arduino/*')
-
-        # Install Arduino-Makefile
-        r.run('cd /tmp; [ -d Arduino-Makefile ] && rm -Rf Arduino-Makefile || true; '
-            'git clone https://github.com/sudar/Arduino-Makefile.git; '
-            'sudo mkdir -p /usr/share/arduino; sudo cp -R ./Arduino-Makefile/* /usr/share/arduino/')
-
-        # Determine target architecture.
-        arch = (r.run('uname -m') or '').strip() or 'x86_64'
-        if arch == 'x86_64':
-            r.env.fname = 'linux64'
-        elif 'arm' in arch:
-            r.env.fname = 'linuxarm'
-        else:
-            raise NotImplementedError('Unknown architecture: %s' % arch)
-
-        # Download and install Arduino IDE.
-        r.run('cd /tmp; wget https://www.arduino.cc/download.php?f=/arduino-{version}-{fname}.tar.xz -O arduino.tar.xz; tar -xJf arduino.tar.xz')
-        r.sudo('cp -R /tmp/arduino-{version}/* /usr/share/arduino')
-
         # Install Arduino IDE support files for Arduino Uno*Pro.
         if not r.file_contains(r.env.boards_path, 'Arduino Uno*Pro'):
             r.append(filename=r.env.boards_path, text='''
@@ -122,6 +93,40 @@ uno_pro.build.variant=uno_pro
         r.sudo('mkdir -p {base_variants_dir}/uno_pro')
         path = self.find_template('arduino/pins_arduino.h')
         r.put(local_path=path, remote_path='{base_variants_dir}/uno_pro/pins_arduino.h', use_sudo=True)
+
+    @task
+    def install(self):
+        r = self.local_renderer
+
+        # Setup the Arduino IDE.
+        # http://wiki.ros.org/rosserial_arduino/Tutorials/Arduino%20IDE%20Setup
+        # Do this instead in each Arduino project's ./lib directory.
+        #r.run('. {ros_source_path}; '
+            #'cd {sketchbook_path}; mkdir libraries; cd libraries; rm -rf ros_lib; '
+            #'rosrun rosserial_arduino make_libraries.py .')
+
+        # Clear the old Arduino IDE installed by the obsolete arduino package, which is unfortunately required by the rosserial-arduino package.
+        r.sudo('rm -Rf /usr/share/arduino/*')
+
+        # Install Arduino-Makefile
+        r.run('cd /tmp; [ -d Arduino-Makefile ] && rm -Rf Arduino-Makefile || true; '
+            'git clone https://github.com/sudar/Arduino-Makefile.git; '
+            'sudo mkdir -p /usr/share/arduino; sudo cp -R ./Arduino-Makefile/* /usr/share/arduino/')
+
+        # Determine target architecture.
+        arch = (r.run('uname -m') or '').strip() or 'x86_64'
+        if arch == 'x86_64':
+            r.env.fname = 'linux64'
+        elif 'arm' in arch:
+            r.env.fname = 'linuxarm'
+        else:
+            raise NotImplementedError('Unknown architecture: %s' % arch)
+
+        # Download and install Arduino IDE.
+        r.run('cd /tmp; wget https://www.arduino.cc/download.php?f=/arduino-{version}-{fname}.tar.xz -O arduino.tar.xz; tar -xJf arduino.tar.xz')
+        r.sudo('cp -R /tmp/arduino-{version}/* /usr/share/arduino')
+
+        self.install_uno_pro_support()
 
         # Symlink our custom libraries to the sketchbook.
         # Note, our sketchbook path must match USER_LIB_PATH in the Makefile.

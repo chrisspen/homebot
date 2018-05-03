@@ -1,7 +1,7 @@
 #!/bin/bash
 # Builds the overlay workspace for containing third-party code
 # we don't want to commit locally.
-# This can be run on the physical robot.
+# This version is for running on the deployment host, which doesn't need to build ARM-only packages. e.g. raspicam
 set -e
 
 _CURRENT_DIR=$(builtin cd "`dirname "${BASH_SOURCE[0]}"`" > /dev/null && pwd)
@@ -23,5 +23,8 @@ cd overlay/src
 
 #source /opt/ros/kinetic/setup.bash
 cd ..
-catkin_make
-#catkin_make --pkg rpi_gpio
+# 2018-4-27 CS By default, catkin_make builds everything in our overlay, but we want to exclude certain packages.
+# The only way to do this is by specifying on the packages to build.
+#catkin_make
+catkin_make --pkg ros_qr_tracker
+catkin_make --pkg rpi_gpio

@@ -58,13 +58,13 @@ class Robot(object):
     @property
     def head_rgb_set_pub(self):
         if self._head_rgb_set_pub is None:
-            self._head_rgb_set_pub = rospy.Publisher('/head_arduino/rgb/set', UInt8MultiArray, queue_size=1)
+            self._head_rgb_set_pub = rospy.Publisher('/head_arduino/rgb_set', UInt8MultiArray, queue_size=1)
         return self._head_rgb_set_pub
 
     @property
     def head_ultrabright_set_pub(self):
         if self._head_ultrabright_set_pub is None:
-            self._head_ultrabright_set_pub = rospy.Publisher('/head_arduino/ultrabright/set', Int16, queue_size=1)
+            self._head_ultrabright_set_pub = rospy.Publisher('/head_arduino/ultrabright_set', Int16, queue_size=1)
         return self._head_ultrabright_set_pub
 
     def is_shutdown(self):

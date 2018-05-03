@@ -13,3 +13,7 @@ Build the code with:
 Attach the Arduino and upload the code with:
 
     make upload
+
+or both at once with:
+
+    make && make upload

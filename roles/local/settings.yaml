@@ -5,6 +5,7 @@ hosts: ['localhost']
 is_local: true
 
 project_home: .
+homebot_project_dir: .
 
 ros_update_bash: false
 

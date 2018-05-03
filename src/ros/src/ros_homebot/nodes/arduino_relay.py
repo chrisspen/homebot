@@ -2,12 +2,12 @@
 from __future__ import print_function
 #import time
 from math import pi
-import traceback
+# import traceback
 import os
 import sys
 import time
 import threading
-import cPickle as pickle
+# import cPickle as pickle
 from functools import partial
 #from math import pi, sin, cos
 
@@ -92,7 +92,7 @@ class ArduinoRelay:
 
         self.odometry_pub = rospy.Publisher('/odom', Odometry, queue_size=10)
 
-        self.imu_calibration_load_pub = rospy.Publisher('/torso_arduino/imu/calibration/load', UInt16MultiArray, queue_size=1)
+        self.imu_calibration_load_pub = rospy.Publisher('/torso_arduino/imu_calibration_load', UInt16MultiArray, queue_size=1)
 
         self.imu_pub = rospy.Publisher('/imu_data', Imu, queue_size=10)
 
@@ -112,21 +112,21 @@ class ArduinoRelay:
 
         rospy.Subscriber('/head_arduino/diagnostics_relay', String, partial(self.on_diagnostics_relay, prefix='head'))
 
-        rospy.Subscriber('/head_arduino/pan/degrees', Int16, self.on_head_pan_degrees)
+        rospy.Subscriber('/head_arduino/pan_degrees', Int16, self.on_head_pan_degrees)
 
-        rospy.Subscriber('/head_arduino/tilt/degrees', Int16, self.on_head_tilt_degrees)
+        rospy.Subscriber('/head_arduino/tilt_degrees', Int16, self.on_head_tilt_degrees)
 
         ## Torso Subscribers.
 
         rospy.Subscriber('/torso_arduino/diagnostics_relay', String, partial(self.on_diagnostics_relay, prefix='torso'))
 
-        rospy.Subscriber('/torso_arduino/imu/calibration/save', UInt16MultiArray, self.on_imu_calibration_save)
+        # rospy.Subscriber('/torso_arduino/imu_calibration_save', UInt16MultiArray, self.on_imu_calibration_save)
 
         rospy.Subscriber('/torso_arduino/imu_relay', String, self.on_imu_relay)
 
         rospy.Subscriber('/torso_arduino/odometry_relay', String, self.on_odometry_relay)
 
-        rospy.Subscriber('/torso_arduino/power/shutdown', Bool, self.on_power_shutdown)
+        rospy.Subscriber('/torso_arduino/power_shutdown', Bool, self.on_power_shutdown)
 
         self._odom_lock = threading.RLock()
         self.pos = None
@@ -134,12 +134,12 @@ class ArduinoRelay:
 
         # self._motor_target_left = None
         # self._motor_target_right = None
-        # rospy.Subscriber('/torso_arduino/motor/target/a', Int16, partial(self.on_motor_target, side='left'))
-        # rospy.Subscriber('/torso_arduino/motor/target/b', Int16, partial(self.on_motor_target, side='right'))
+        # rospy.Subscriber('/torso_arduino/motor_target_a', Int16, partial(self.on_motor_target, side='left'))
+        # rospy.Subscriber('/torso_arduino/motor_target_b', Int16, partial(self.on_motor_target, side='right'))
         # self._motor_encoder_left = None
         # self._motor_encoder_right = None
-        # rospy.Subscriber('/torso_arduino/motor/encoder/a', Int16, partial(self.on_motor_encoder, side='left'))
-        # rospy.Subscriber('/torso_arduino/motor/encoder/b', Int16, partial(self.on_motor_encoder, side='right'))
+        # rospy.Subscriber('/torso_arduino/motor_encoder_a', Int16, partial(self.on_motor_encoder, side='left'))
+        # rospy.Subscriber('/torso_arduino/motor_encoder_b', Int16, partial(self.on_motor_encoder, side='right'))
 
         ## Begin IO.
 
@@ -153,35 +153,35 @@ class ArduinoRelay:
         fn = os.path.join(cache_dir, IMU_CALIBRATION_FN)
         return fn
 
-    def load_imu_calibration(self):
-        """
-        Automatically called once after the first diagnostic message is received.
+    # def load_imu_calibration(self):
+        # """
+        # Automatically called once after the first diagnostic message is received.
 
-        Per Adafruit's documentation:
+        # Per Adafruit's documentation:
 
-        "One thing to keep in mind though is that the sensor isn't necessarily 'plug and play' with
-        loading the calibration data, in particular the magnetometer needs to be recalibrated even if
-        the offsets are loaded. The magnetometer calibration is very dynamic so saving the values
-        once might"
-        """
-        try:
-            fn = self.imu_calibration_filename
-            if os.path.isfile(fn):
-                rospy.loginfo('Loading imu calibration %s...' % fn)
-                with open(fn, 'r') as fin:
-                    msg = pickle.load(fin)
-                rospy.loginfo('Sending calibration:')
-                rospy.loginfo(msg)
-                self.imu_calibration_load_pub.publish(msg)
-                self.imu_calibration_loaded = True
-                self.imu_calibration_loaded_time = rospy.Time.now()
-                rospy.loginfo('Sent.')
-            else:
-                rospy.loginfo('No saved imu calibration.')
-        except Exception as exc:
-            traceback.print_exc()
-        finally:
-            self.imu_calibration_loaded = True
+        # "One thing to keep in mind though is that the sensor isn't necessarily 'plug and play' with
+        # loading the calibration data, in particular the magnetometer needs to be recalibrated even if
+        # the offsets are loaded. The magnetometer calibration is very dynamic so saving the values
+        # once might"
+        # """
+        # try:
+            # fn = self.imu_calibration_filename
+            # if os.path.isfile(fn):
+                # rospy.loginfo('Loading imu calibration %s...' % fn)
+                # with open(fn, 'r') as fin:
+                    # msg = pickle.load(fin)
+                # rospy.loginfo('Sending calibration:')
+                # rospy.loginfo(msg)
+                # self.imu_calibration_load_pub.publish(msg)
+                # self.imu_calibration_loaded = True
+                # self.imu_calibration_loaded_time = rospy.Time.now()
+                # rospy.loginfo('Sent.')
+            # else:
+                # rospy.loginfo('No saved imu calibration.')
+        # except Exception as exc:
+            # traceback.print_exc()
+        # finally:
+            # self.imu_calibration_loaded = True
 
     def on_head_pan_degrees(self, msg):
         """
@@ -242,22 +242,22 @@ class ArduinoRelay:
         try:
             say(c.SYSTEM_SHUTDOWN_SPEECH)
         except Exception as exc:
-            rospy.logerr('Unable to speak about shutdown: %s' % exc)
+            rospy.logerr('Unable to speak about shutdown: %s', exc)
         time.sleep(3)
         os.system('sudo halt')
         # After halt is performed, all ROS nodes will be killed.
         # The torso Arduino will then wait a few seconds to allow Linux to clean up all processes, and then it will kill all system power.
         # See the deadman flag that triggers the call to power_controller.shutdown().
 
-    def on_imu_calibration_save(self, msg):
-        #print('Received imu calibration:', msg)
-        if sum(msg.data) == 0:
-            rospy.logwarn('Ignoring blank calibration.')
-            self.load_imu_calibration()
-            return
-        fn = self.imu_calibration_filename
-        with open(fn, 'w') as fout:
-            pickle.dump(msg, fout)
+    # def on_imu_calibration_save(self, msg):
+        # #print('Received imu calibration:', msg)
+        # if sum(msg.data) == 0:
+            # rospy.logwarn('Ignoring blank calibration.')
+            # self.load_imu_calibration()
+            # return
+        # fn = self.imu_calibration_filename
+        # with open(fn, 'w') as fout:
+            # pickle.dump(msg, fout)
 
     def on_imu_relay(self, msg):
         parts = msg.data.split(':')
@@ -312,8 +312,8 @@ class ArduinoRelay:
         #print('diagnostics.msg:', msg)
         self.diagnostics_msg_count += 1
 
-        if (rospy.Time.now() - self.imu_calibration_loaded_time).secs >= 300:
-            self.load_imu_calibration()
+        # if (rospy.Time.now() - self.imu_calibration_loaded_time).secs >= 300:
+            # self.load_imu_calibration()
 
         # Aggregate single-character messages into a complete message.
         # if not msg.data:
@@ -347,7 +347,7 @@ class ArduinoRelay:
             level = int(parts[1]) # OK|WARN|ERROR|STALE
             assert level in range(4)
         except (TypeError, ValueError, AssertionError) as exc:
-            rospy.logerr('Malformed level: "%s"' % parts[1])
+            rospy.logerr('Malformed level: "%s"', parts[1])
             return
 
         # Complete message part.
@@ -413,23 +413,23 @@ class ArduinoRelay:
             msg.pose.pose.position = Point(x, y, z)
             msg.pose.pose.orientation = odom_quat
             msg.pose.covariance = [
-                1,0.001,0.001,0.001,0.001,0.001,
-                0.001,1,0.001,0.001,0.001,0.001,
-                0.001,0.001,1,0.001,0.001,0.001,
-                0.001,0.001,0.001,1,0.001,0.001,
-                0.001,0.001,0.001,0.001,1,0.001,
-                0.001,0.001,0.001,0.001,0.001,1,
+                1, 0.001, 0.001, 0.001, 0.001, 0.001,
+                0.001, 1, 0.001, 0.001, 0.001, 0.001,
+                0.001, 0.001, 1, 0.001, 0.001, 0.001,
+                0.001, 0.001, 0.001, 1, 0.001, 0.001,
+                0.001, 0.001, 0.001, 0.001, 1, 0.001,
+                0.001, 0.001, 0.001, 0.001, 0.001, 1,
             ]
             msg.twist.twist.linear.x = vx
             msg.twist.twist.linear.y = vy
             msg.twist.twist.angular.z = vth
             msg.twist.covariance = [
-                1,0.001,0.001,0.001,0.001,0.001,
-                0.001,1,0.001,0.001,0.001,0.001,
-                0.001,0.001,1,0.001,0.001,0.001,
-                0.001,0.001,0.001,1,0.001,0.001,
-                0.001,0.001,0.001,0.001,1,0.001,
-                0.001,0.001,0.001,0.001,0.001,1,
+                1, 0.001, 0.001, 0.001, 0.001, 0.001,
+                0.001, 1, 0.001, 0.001, 0.001, 0.001,
+                0.001, 0.001, 1, 0.001, 0.001, 0.001,
+                0.001, 0.001, 0.001, 1, 0.001, 0.001,
+                0.001, 0.001, 0.001, 0.001, 1, 0.001,
+                0.001, 0.001, 0.001, 0.001, 0.001, 1,
             ]
 
             # publish the odometry message

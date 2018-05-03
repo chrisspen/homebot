@@ -125,14 +125,14 @@ void halt_all_activity() {
     tilt_controller.stop();
 }
 
-// rostopic echo /head_arduino/pan/degrees
-ros::Publisher pan_angle_publisher = ros::Publisher("pan/degrees", &int16_msg);
+// rostopic echo /head_arduino/pan_degrees
+ros::Publisher pan_angle_publisher = ros::Publisher("pan_degrees", &int16_msg);
 
-// rostopic echo /head_arduino/pan/error
-ros::Publisher pan_error_publisher = ros::Publisher("pan/error", &int16_msg);
+// rostopic echo /head_arduino/pan_error
+ros::Publisher pan_error_publisher = ros::Publisher("pan_error", &int16_msg);
 
-// rostopic echo /head_arduino/tilt/degrees
-ros::Publisher tilt_angle_publisher = ros::Publisher("tilt/degrees", &int16_msg);
+// rostopic echo /head_arduino/tilt_degrees
+ros::Publisher tilt_angle_publisher = ros::Publisher("tilt_degrees", &int16_msg);
 
 // rostopic pub --once /head_arduino/force_sensors std_msgs/Empty
 void on_force_sensors(const std_msgs::Empty& msg) {
@@ -140,11 +140,11 @@ void on_force_sensors(const std_msgs::Empty& msg) {
 }
 ros::Subscriber<std_msgs::Empty> on_force_sensors_sub("force_sensors", &on_force_sensors);
 
-// rostopic pub --once /head_arduino/pan/calibrate std_msgs/Empty
+// rostopic pub --once /head_arduino/pan_calibrate std_msgs/Empty
 void on_pan_angle_calibrate(const std_msgs::Empty& msg) {
     pan_controller.calibrate();
 }
-ros::Subscriber<std_msgs::Empty> on_pan_angle_calibrate_sub("pan/calibrate", &on_pan_angle_calibrate);
+ros::Subscriber<std_msgs::Empty> on_pan_angle_calibrate_sub("pan_calibrate", &on_pan_angle_calibrate);
 
 void on_torso_imu_euler_z(const std_msgs::Int16& msg) {
     //pan_controller.torso_imu_euler_z1 = msg.data;
@@ -152,10 +152,10 @@ void on_torso_imu_euler_z(const std_msgs::Int16& msg) {
     snprintf(buffer, MAX_OUT_CHARS, "received torso z: %d", msg.data);//TODO
     nh.loginfo(buffer);
 }
-ros::Subscriber<std_msgs::Int16> on_torso_imu_euler_z_sub("/torso_arduino/imu/euler/z", &on_torso_imu_euler_z);
+ros::Subscriber<std_msgs::Int16> on_torso_imu_euler_z_sub("/torso_arduino/imu_euler_z", &on_torso_imu_euler_z);
 
-// rostopic pub --once /head_arduino/pan/pid/set std_msgs/Float32MultiArray "{layout:{dim:[], data_offset: 0}, data:[0.95, 0.15, 0.1]}"
-// rostopic pub --once /head_arduino/pan/pid/set std_msgs/Float32MultiArray "{layout:{dim:[], data_offset: 0}, data:[1, 0, 0]}"
+// rostopic pub --once /head_arduino/pan_pid_set std_msgs/Float32MultiArray "{layout:{dim:[], data_offset: 0}, data:[0.95, 0.15, 0.1]}"
+// rostopic pub --once /head_arduino/pan_pid_set std_msgs/Float32MultiArray "{layout:{dim:[], data_offset: 0}, data:[1, 0, 0]}"
 void on_pan_pid_set(const std_msgs::Float32MultiArray& msg) {
     pan_controller.kp = msg.data[0];
     pan_controller.ki = msg.data[1];
@@ -168,10 +168,10 @@ void on_pan_pid_set(const std_msgs::Float32MultiArray& msg) {
     snprintf(buffer, MAX_OUT_CHARS, "kd: %ld", ftol(pan_controller.kd));
     nh.loginfo(buffer);
 }
-ros::Subscriber<std_msgs::Float32MultiArray> on_pan_pid_set_sub("pan/pid/set", &on_pan_pid_set);
+ros::Subscriber<std_msgs::Float32MultiArray> on_pan_pid_set_sub("pan_pid_set", &on_pan_pid_set);
 
 // Tells the pan motor to turn head to a specific position as quickly as possible.
-// rostopic pub --once /head_arduino/pan/set std_msgs/Int16 90
+// rostopic pub --once /head_arduino/pan_set std_msgs/Int16 90
 // 0=origin/forward/center
 // 180=backwards
 // 360=origin/forward/center
@@ -182,7 +182,7 @@ void on_pan_angle_set(const std_msgs::Int16& msg) {
     snprintf(buffer, MAX_OUT_CHARS, "Set pan angle: %d", msg.data);
     nh.loginfo(buffer);
 }
-ros::Subscriber<std_msgs::Int16> on_pan_angle_set_sub("pan/set", &on_pan_angle_set);
+ros::Subscriber<std_msgs::Int16> on_pan_angle_set_sub("pan_set", &on_pan_angle_set);
 
 // Tells the pan motor to move head at a specific constant speed indefinitely.
 // Speed is specified in degrees/sec.
@@ -194,9 +194,9 @@ void on_pan_speed_set(const std_msgs::Int16& msg) {
     snprintf(buffer, MAX_OUT_CHARS, "Set pan speed degrees: %d", msg.data);
     nh.loginfo(buffer);
 }
-ros::Subscriber<std_msgs::Int16> on_pan_speed_set_sub("pan/speed/set", &on_pan_speed_set);
+ros::Subscriber<std_msgs::Int16> on_pan_speed_set_sub("pan_speed_set", &on_pan_speed_set);
 
-// rostopic pub --once /head_arduino/pan/freeze/set std_msgs/Bool 1
+// rostopic pub --once /head_arduino/pan_freeze_set std_msgs/Bool 1
 // Tells the pan motor to freeze its position relative to the torso.
 // If the torso rotates, the head with counter-rotate to maintain its position.
 void on_pan_freeze_set(const std_msgs::Bool& msg) {
@@ -204,16 +204,16 @@ void on_pan_freeze_set(const std_msgs::Bool& msg) {
     snprintf(buffer, MAX_OUT_CHARS, "Pan angle freeze set: %d", msg.data);
     nh.loginfo(buffer);
 }
-ros::Subscriber<std_msgs::Bool> on_pan_freeze_set_sub("pan/freeze/set", &on_pan_freeze_set);
+ros::Subscriber<std_msgs::Bool> on_pan_freeze_set_sub("pan_freeze_set", &on_pan_freeze_set);
 
-// rostopic pub --once /head_arduino/tilt/set std_msgs/Int16 90
+// rostopic pub --once /head_arduino/tilt_set std_msgs/Int16 90
 // 0=all the way down
 // 90=level (-/+ 30 is safe range)
 // 180=all the way up
 void on_tilt_angle_set(const std_msgs::Int16& msg) {
     tilt_controller.set_target_degrees(msg.data, true);
 }
-ros::Subscriber<std_msgs::Int16> on_tilt_angle_set_sub("tilt/set", &on_tilt_angle_set);
+ros::Subscriber<std_msgs::Int16> on_tilt_angle_set_sub("tilt_set", &on_tilt_angle_set);
 
 // rostopic pub --once /head_arduino/halt std_msgs/Empty
 void on_halt(const std_msgs::Empty& msg) {
@@ -232,17 +232,17 @@ void on_toggle_led(const std_msgs::Empty& msg) {
 }
 ros::Subscriber<std_msgs::Empty> toggle_led_sub("toggle_led", &on_toggle_led);
 
-// rostopic pub --once /head_arduino/linelaser/set std_msgs/Bool 1
-// rostopic pub --rate 1 /head_arduino/linelaser/set std_msgs/Bool
+// rostopic pub --once /head_arduino/linelaser_set std_msgs/Bool 1
+// rostopic pub --rate 1 /head_arduino/linelaser_set std_msgs/Bool
 void on_line_laser_set(const std_msgs::Bool& msg) {
-    snprintf(buffer, MAX_OUT_CHARS, "linelaser/set:%d", msg.data);
+    snprintf(buffer, MAX_OUT_CHARS, "linelaser_set:%d", msg.data);
     nh.loginfo(buffer);
     digitalWrite(LINE_LASER_SET, msg.data);
 }
-ros::Subscriber<std_msgs::Bool> on_line_laser_set_sub("linelaser/set", &on_line_laser_set);
+ros::Subscriber<std_msgs::Bool> on_line_laser_set_sub("linelaser_set", &on_line_laser_set);
 
-// rostopic pub --once /head_arduino/ultrabright/set std_msgs/Int16 0
-// rostopic pub --once /head_arduino/ultrabright/set std_msgs/Int16 254
+// rostopic pub --once /head_arduino/ultrabright_set std_msgs/Int16 0
+// rostopic pub --once /head_arduino/ultrabright_set std_msgs/Int16 254
 void on_set_ultrabright(const std_msgs::Int16& msg) {
     // msg.data should be between [0-255]
     //SoftPWMSet(ULTRABRIGHT_LED_1, msg.data);
@@ -252,16 +252,16 @@ void on_set_ultrabright(const std_msgs::Int16& msg) {
     //digitalWrite(ULTRABRIGHT_LED_2, msg.data);
     //digitalWrite(ULTRABRIGHT_LED_3, msg.data);
 }
-ros::Subscriber<std_msgs::Int16> set_ultrabright_sub("ultrabright/set", &on_set_ultrabright);
+ros::Subscriber<std_msgs::Int16> set_ultrabright_sub("ultrabright_set", &on_set_ultrabright);
 
-// rostopic pub --once /head_arduino/rgb/set std_msgs/UInt8MultiArray "{layout:{dim:[], data_offset: 0}, data:[1, 0, 0]}"
+// rostopic pub --once /head_arduino/rgb_set std_msgs/UInt8MultiArray "{layout:{dim:[], data_offset: 0}, data:[1, 0, 0]}"
 void on_set_rgb(const std_msgs::UInt8MultiArray& msg) {
     // msg.data should be between [0-1]
     digitalWrite(STATUS_LED_RED, msg.data[0]);
     digitalWrite(STATUS_LED_GREEN, msg.data[1]);
     digitalWrite(STATUS_LED_BLUE, msg.data[2]);
 }
-ros::Subscriber<std_msgs::UInt8MultiArray> set_rgb_sub("rgb/set", &on_set_rgb);
+ros::Subscriber<std_msgs::UInt8MultiArray> set_rgb_sub("rgb_set", &on_set_rgb);
 
 void setup() {
 
