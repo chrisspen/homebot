@@ -42,8 +42,7 @@ class SerialClient(_SerialClient):
                     read_current = time.time()
 
                 if bytes_remaining != 0:
-                    rospy.logwarn("Serial Port read returned short (expected %d bytes, received %d instead)."
-                                  % (length, length - bytes_remaining))
+                    rospy.logwarn("Serial Port read returned short (expected %d bytes, received %d instead).", length, length - bytes_remaining)
                     raise IOError()
 
                 return bytes(result)
@@ -91,7 +90,7 @@ class SerialClient(_SerialClient):
                         found_ver_msg = 'Protocol version of client is ' + protocol_ver_msgs[flag[1]]
                     else:
                         found_ver_msg = "Protocol version of client is unrecognized"
-                    rospy.loginfo("%s, expected %s" % (found_ver_msg, protocol_ver_msgs[self.protocol_ver]))
+                    rospy.loginfo("%s, expected %s", found_ver_msg, protocol_ver_msgs[self.protocol_ver])
                     continue
 
                 msg_len_bytes = self.tryRead(2)
@@ -101,8 +100,8 @@ class SerialClient(_SerialClient):
                 msg_len_checksum = sum(map(ord, msg_len_bytes)) + ord(msg_len_chk)
 
                 if msg_len_checksum % 256 != 255:
-                    rospy.loginfo("wrong checksum for msg length, length %d" %(msg_length))
-                    rospy.loginfo("chk is %d" % ord(msg_len_chk))
+                    rospy.loginfo("wrong checksum for msg length, length %d", (msg_length))
+                    rospy.loginfo("chk is %d", ord(msg_len_chk))
                     continue
 
                 # topic id (2 bytes)
@@ -126,7 +125,7 @@ class SerialClient(_SerialClient):
                     try:
                         self.callbacks[topic_id](msg)
                     except KeyError:
-                        rospy.logerr("Tried to publish before configured, topic id %d" % topic_id)
+                        rospy.logerr("Tried to publish before configured, topic id %d", topic_id)
                         self.requestTopics()
                     rospy.sleep(0.001)
                 else:
@@ -182,7 +181,7 @@ if __name__ == "__main__":
 
     if port_name == "tcp":
         server = RosSerialServer(tcp_portnum, fork_server)
-        rospy.loginfo("Waiting for socket connections on port %d" % tcp_portnum)
+        rospy.loginfo("Waiting for socket connections on port %d", tcp_portnum)
         try:
             server.listen()
         except KeyboardInterrupt:
@@ -197,7 +196,7 @@ if __name__ == "__main__":
 
     else:          # Use serial port
         while not rospy.is_shutdown():
-            rospy.loginfo("Connecting to %s at %d baud" % (port_name, baud))
+            rospy.loginfo("Connecting to %s at %d baud", port_name, baud)
             try:
                 client = SerialClient(port_name, baud, fix_pyserial_for_test=fix_pyserial_for_test)
                 client.run()

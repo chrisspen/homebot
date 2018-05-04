@@ -349,7 +349,7 @@ void loop() {
     if (millis() - last_diagnostic >= DIAGNOSTIC_REPORT_FREQ_MS) {
         last_diagnostic = millis();
         report_diagnostics = true;
-        
+
         //snprintf(buffer, MAX_OUT_CHARS, "pan speed:%d", pan_controller.get_speed());
         //nh.loginfo(buffer);
         //snprintf(buffer, MAX_OUT_CHARS, "pan actual angle:%ld", ftol(pan_controller.actual_angle.get_latest()));
@@ -362,14 +362,14 @@ void loop() {
         //nh.loginfo(buffer);
         //snprintf(buffer, MAX_OUT_CHARS, "pan sum_err:%d", pan_controller.sum_err);
         //nh.loginfo(buffer);
-        
+
         //snprintf(buffer, MAX_OUT_CHARS, "dps_target:%d", (int)pan_controller._dps);
         //nh.loginfo(buffer);
         //snprintf(buffer, MAX_OUT_CHARS, "dps_effective:%d", (int)pan_controller._dps_effective);
         //nh.loginfo(buffer);
         //snprintf(buffer, MAX_OUT_CHARS, "speed:%d", pan_controller._speed);
         //nh.loginfo(buffer);
-        
+
         //snprintf(buffer, MAX_OUT_CHARS, "torso_imu_euler_z0:%d", (int)pan_controller.torso_imu_euler_z0);
         //nh.loginfo(buffer);
         //snprintf(buffer, MAX_OUT_CHARS, "torso_imu_euler_z1:%d", (int)pan_controller.torso_imu_euler_z1);
@@ -401,9 +401,9 @@ void loop() {
         int16_msg.data = tilt_controller.actual_degrees.get_latest();
         tilt_angle_publisher.publish(&int16_msg);
     }
-    
+
     // Output any pending pan angle error reports.
-    if(!pan_controller.is_seeking() && pan_controller.error_pending){
+    if (!pan_controller.is_seeking() && pan_controller.error_pending) {
         pan_controller.error_pending = false;
         int16_msg.data = pan_controller.get_angle_error();
         pan_error_publisher.publish(&int16_msg);

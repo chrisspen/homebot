@@ -6,5 +6,4 @@ pylint --rcfile=pylint.rc \
     src/ros/src/ros_homebot_lrf/src/ros_homebot_lrf \
     src/ros/src/ros_homebot_python/src/ros_homebot_python \
     src/ros/src/ros_homebot_teleop/nodes \
-    src/ros/src/ros_homebot_teleop/src \
-    src/overlay/src/ros_qr_tracker/nodes
+    src/ros/src/ros_homebot_teleop/src

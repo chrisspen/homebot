@@ -73,8 +73,8 @@ class ArduinoRelay:
 
         self._lock = threading.RLock()
 
-        self.imu_calibration_loaded = False
-        self.imu_calibration_loaded_time = rospy.Time(0)
+        # self.imu_calibration_loaded = False
+        # self.imu_calibration_loaded_time = rospy.Time(0)
 
         self.diagnostics_msg_count = 0
 
