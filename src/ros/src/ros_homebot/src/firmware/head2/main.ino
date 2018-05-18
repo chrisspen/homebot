@@ -261,10 +261,10 @@ void on_set_ultrabright(const std_msgs::Int16& msg) {
 }
 ros::Subscriber<std_msgs::Int16> set_ultrabright_sub("ultrabright_set", &on_set_ultrabright);
 
-void toggle_led(bool default_r=true, bool default_g=false, bool default_b=false) {
+void toggle_led(bool default_r = true, bool default_g = false, bool default_b = false) {
     rgb_led_state = !rgb_led_state;
-    if(rgb_led_state) {
-        if(rgb_led_r_value || rgb_led_g_value || rgb_led_b_value) {
+    if (rgb_led_state) {
+        if (rgb_led_r_value || rgb_led_g_value || rgb_led_b_value) {
             digitalWrite(STATUS_LED_RED, rgb_led_r_value);
             digitalWrite(STATUS_LED_GREEN, rgb_led_g_value);
             digitalWrite(STATUS_LED_BLUE, rgb_led_b_value);
@@ -294,7 +294,7 @@ void on_set_rgb(const std_msgs::UInt8MultiArray& msg) {
     rgb_led_r_value = msg.data[0];
     rgb_led_g_value = msg.data[1];
     rgb_led_b_value = msg.data[2];
-    if(rgb_led_state) {
+    if (rgb_led_state) {
         digitalWrite(STATUS_LED_RED, rgb_led_r_value);
         digitalWrite(STATUS_LED_GREEN, rgb_led_g_value);
         digitalWrite(STATUS_LED_BLUE, rgb_led_b_value);
@@ -372,7 +372,7 @@ void setup() {
 
     pinMode(LINE_LASER_SET, OUTPUT);
     digitalWrite(LINE_LASER_SET, 0);
-    
+
     blink_period = DISCONNECTED_BLINK_PERIOD;
     last_blink = 0;
 }
