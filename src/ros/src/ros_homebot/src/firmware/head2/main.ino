@@ -39,6 +39,9 @@
 //#define DIAGNOSTIC_STATUS_LENGTH 1
 #define DIAGNOSTIC_REPORT_FREQ_MS 1000
 
+#define HEALTHY_BLINK_PERIOD 3000
+#define DISCONNECTED_BLINK_PERIOD 250
+
 long ftol(double v) {
     // Assumes 3 places of decimal precision.
     // Assumes the host interpreting this number will first divide by 1000.
@@ -59,6 +62,9 @@ TiltController tilt_controller = TiltController(TILT_SERVO_POS_SET, TILT_SERVO_P
 // If set to true, all motors will be stopped immediately.
 //bool halt = false;
 
+unsigned long blink_period = DISCONNECTED_BLINK_PERIOD;
+unsigned long last_blink = 0;
+
 // If true, all sensors will push their current readings to the host, even if they haven't changed
 // since last polling.
 bool force_sensors = false;
@@ -75,7 +81,7 @@ ros::NodeHandle nh;
 //http://wiki.ros.org/common_msgs
 std_msgs::Int16 int16_msg;
 //std_msgs::Byte byte_msg;
-//std_msgs::Bool bool_msg;
+std_msgs::Bool bool_msg;
 //std_msgs::Float32 float_msg;
 std_msgs::String string_msg;
 //std_msgs::Float32MultiArray float32ma_msg;
@@ -88,6 +94,9 @@ std_msgs::String string_msg;
 
 // Array representation of adafruit_bno055_offsets_t.
 //uint16_t imu_calibration_array[11] = {0};
+
+bool rgb_led_state; // false = all rgb values are off, true = at least one is one
+int rgb_led_r_value, rgb_led_g_value, rgb_led_b_value;
 
 #define MAX_OUT_CHARS 50
 char buffer[MAX_OUT_CHARS + 1];  //buffer used to format a line (+1 is for trailing 0)
@@ -128,6 +137,9 @@ void halt_all_activity() {
 // rostopic echo /head_arduino/pan_degrees
 ros::Publisher pan_angle_publisher = ros::Publisher("pan_degrees", &int16_msg);
 
+// rostopic echo /head_arduino/pan_freeze_get
+ros::Publisher pan_freeze_get_publisher = ros::Publisher("pan_freeze_get", &bool_msg);
+
 // rostopic echo /head_arduino/pan_error
 ros::Publisher pan_error_publisher = ros::Publisher("pan_error", &int16_msg);
 
@@ -136,21 +148,22 @@ ros::Publisher tilt_angle_publisher = ros::Publisher("tilt_degrees", &int16_msg)
 
 // rostopic pub --once /head_arduino/force_sensors std_msgs/Empty
 void on_force_sensors(const std_msgs::Empty& msg) {
+    nh.loginfo("Forcing sensor output.");
     force_sensors = true;
 }
 ros::Subscriber<std_msgs::Empty> on_force_sensors_sub("force_sensors", &on_force_sensors);
 
 // rostopic pub --once /head_arduino/pan_calibrate std_msgs/Empty
 void on_pan_angle_calibrate(const std_msgs::Empty& msg) {
+    nh.loginfo("Beginning pan controller calibration.");
     pan_controller.calibrate();
 }
 ros::Subscriber<std_msgs::Empty> on_pan_angle_calibrate_sub("pan_calibrate", &on_pan_angle_calibrate);
 
 void on_torso_imu_euler_z(const std_msgs::Int16& msg) {
-    //pan_controller.torso_imu_euler_z1 = msg.data;
     pan_controller.update_torso_z(msg.data);
-    snprintf(buffer, MAX_OUT_CHARS, "received torso z: %d", msg.data);//TODO
-    nh.loginfo(buffer);
+    //snprintf(buffer, MAX_OUT_CHARS, "received torso z: %d", msg.data);
+    //nh.loginfo(buffer);
 }
 ros::Subscriber<std_msgs::Int16> on_torso_imu_euler_z_sub("/torso_arduino/imu_euler_z", &on_torso_imu_euler_z);
 
@@ -177,9 +190,11 @@ ros::Subscriber<std_msgs::Float32MultiArray> on_pan_pid_set_sub("pan_pid_set", &
 // 360=origin/forward/center
 // 356=head facing true center
 void on_pan_angle_set(const std_msgs::Int16& msg) {
+    snprintf(buffer, MAX_OUT_CHARS, "Setting pan angle to %d.", msg.data);
+    nh.loginfo(buffer);
     pan_controller.active = true;
     pan_controller.set_target_angle(msg.data);
-    snprintf(buffer, MAX_OUT_CHARS, "Set pan angle: %d", msg.data);
+    snprintf(buffer, MAX_OUT_CHARS, "Pan angle set to %d.", msg.data);
     nh.loginfo(buffer);
 }
 ros::Subscriber<std_msgs::Int16> on_pan_angle_set_sub("pan_set", &on_pan_angle_set);
@@ -203,6 +218,9 @@ void on_pan_freeze_set(const std_msgs::Bool& msg) {
     pan_controller.set_freeze(msg.data);
     snprintf(buffer, MAX_OUT_CHARS, "Pan angle freeze set: %d", msg.data);
     nh.loginfo(buffer);
+
+    bool_msg.data = msg.data;
+    pan_freeze_get_publisher.publish(&bool_msg);
 }
 ros::Subscriber<std_msgs::Bool> on_pan_freeze_set_sub("pan_freeze_set", &on_pan_freeze_set);
 
@@ -220,17 +238,6 @@ void on_halt(const std_msgs::Empty& msg) {
     halt_all_activity();
 }
 ros::Subscriber<std_msgs::Empty> on_halt_sub("halt", &on_halt);
-
-void toggle_led() {
-    digitalWrite(13, HIGH-digitalRead(13));   // blink the led
-}
-// rostopic pub --once /head_arduino/toggle_led std_msgs/Empty
-// rostopic pub --rate 1 /head_arduino/toggle_led std_msgs/Empty
-void on_toggle_led(const std_msgs::Empty& msg) {
-    nh.loginfo("LED toggled.");
-    toggle_led();
-}
-ros::Subscriber<std_msgs::Empty> toggle_led_sub("toggle_led", &on_toggle_led);
 
 // rostopic pub --once /head_arduino/linelaser_set std_msgs/Bool 1
 // rostopic pub --rate 1 /head_arduino/linelaser_set std_msgs/Bool
@@ -254,12 +261,44 @@ void on_set_ultrabright(const std_msgs::Int16& msg) {
 }
 ros::Subscriber<std_msgs::Int16> set_ultrabright_sub("ultrabright_set", &on_set_ultrabright);
 
+void toggle_led(bool default_r=true, bool default_g=false, bool default_b=false) {
+    rgb_led_state = !rgb_led_state;
+    if(rgb_led_state) {
+        if(rgb_led_r_value || rgb_led_g_value || rgb_led_b_value) {
+            digitalWrite(STATUS_LED_RED, rgb_led_r_value);
+            digitalWrite(STATUS_LED_GREEN, rgb_led_g_value);
+            digitalWrite(STATUS_LED_BLUE, rgb_led_b_value);
+        } else {
+            digitalWrite(STATUS_LED_RED, default_r);
+            digitalWrite(STATUS_LED_GREEN, default_g);
+            digitalWrite(STATUS_LED_BLUE, default_b);
+        }
+    } else {
+        digitalWrite(STATUS_LED_RED, 0);
+        digitalWrite(STATUS_LED_GREEN, 0);
+        digitalWrite(STATUS_LED_BLUE, 0);
+    }
+}
+
+// rostopic pub --once /head_arduino/toggle_led std_msgs/Empty
+// rostopic pub --rate 1 /head_arduino/toggle_led std_msgs/Empty
+void on_toggle_led(const std_msgs::Empty& msg) {
+    nh.loginfo("LED toggled.");
+    toggle_led();
+}
+ros::Subscriber<std_msgs::Empty> toggle_led_sub("toggle_led", &on_toggle_led);
+
 // rostopic pub --once /head_arduino/rgb_set std_msgs/UInt8MultiArray "{layout:{dim:[], data_offset: 0}, data:[1, 0, 0]}"
 void on_set_rgb(const std_msgs::UInt8MultiArray& msg) {
     // msg.data should be between [0-1]
-    digitalWrite(STATUS_LED_RED, msg.data[0]);
-    digitalWrite(STATUS_LED_GREEN, msg.data[1]);
-    digitalWrite(STATUS_LED_BLUE, msg.data[2]);
+    rgb_led_r_value = msg.data[0];
+    rgb_led_g_value = msg.data[1];
+    rgb_led_b_value = msg.data[2];
+    if(rgb_led_state) {
+        digitalWrite(STATUS_LED_RED, rgb_led_r_value);
+        digitalWrite(STATUS_LED_GREEN, rgb_led_g_value);
+        digitalWrite(STATUS_LED_BLUE, rgb_led_b_value);
+    }
 }
 ros::Subscriber<std_msgs::UInt8MultiArray> set_rgb_sub("rgb_set", &on_set_rgb);
 
@@ -299,6 +338,7 @@ void setup() {
     nh.advertise(pan_angle_publisher);
     nh.advertise(tilt_angle_publisher);
     nh.advertise(pan_error_publisher);
+    nh.advertise(pan_freeze_get_publisher);
 
     attachInterrupt(digitalPinToInterrupt(PAN_MOTOR_ENCODER_A), on_pan_encoder_change, CHANGE);
     attachInterrupt(digitalPinToInterrupt(PAN_MOTOR_POSITION_REF), on_pan_reference_change, CHANGE);
@@ -320,6 +360,9 @@ void setup() {
     //digitalWrite(ULTRABRIGHT_LED_2, 0);
     //igitalWrite(ULTRABRIGHT_LED_3, 0);
 
+    rgb_led_state = false;
+    rgb_led_r_value = rgb_led_g_value = rgb_led_b_value = 0;
+
     pinMode(STATUS_LED_RED, OUTPUT);
     pinMode(STATUS_LED_GREEN, OUTPUT);
     pinMode(STATUS_LED_BLUE, OUTPUT);
@@ -329,6 +372,9 @@ void setup() {
 
     pinMode(LINE_LASER_SET, OUTPUT);
     digitalWrite(LINE_LASER_SET, 0);
+    
+    blink_period = DISCONNECTED_BLINK_PERIOD;
+    last_blink = 0;
 }
 
 //long ftol(double v) {
@@ -380,16 +426,23 @@ void loop() {
         //nh.loginfo(buffer);
     }
 
+    // Managed the diagnostic blink.
+    if (millis() - last_blink >= blink_period) {
+        toggle_led();
+        last_blink = millis();
+    }
+
     // Track connection status with host.
     if (nh.connected()) {
-        //digitalWrite(STATUS_LED_PIN, 1);
         connected = true;
+        blink_period = HEALTHY_BLINK_PERIOD;
     } else if (connected) {
         // If we just became disconnected from the host, then immediately halt all motors as a safety precaution.
-        //digitalWrite(STATUS_LED_PIN, 0);
         halt_all_activity();
+        nh.spinOnce();
         delay(50);
         connected = false;
+        blink_period = DISCONNECTED_BLINK_PERIOD;
     }
 
     // Output sensor readings.

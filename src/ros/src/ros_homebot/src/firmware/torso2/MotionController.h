@@ -278,8 +278,9 @@ class MotionController: public Sensor
         int _movement_error_code = 0;
         bool _movement_encoder_changed = false;
         bool _movement_send_done = false;
-        unsigned long _movement_start_millis = 0;
+        unsigned long _movement_start_ms = 0;
         unsigned int _movement_status = MOVEMENT_COMPLETE;
+        unsigned long _movement_duration_ms = 0;
         
         // The current angle along the z-axis as given by the IMU.
         int _z_degrees1 = 0;
@@ -383,9 +384,10 @@ class MotionController: public Sensor
             _movement_force = 0;
             _movement_status = MOVEMENT_COMPLETE;
             _movement_encoder_changed = false;
+            _movement_duration_ms = 0;
         }
 
-        bool set(int left_speed, int right_speed){
+        bool set(int left_speed=0, int right_speed=0, int duration_ms=0){
             if(connection_error){
                 return false;
             }
@@ -394,6 +396,9 @@ class MotionController: public Sensor
             _motor_right.set_speed(right_speed);
             //NA NA left right
             set_motor_speeds(0, 0, _motor_left.get_speed(), _motor_right.get_speed());
+
+            _movement_start_ms = millis();
+            _movement_duration_ms = duration_ms;
 
             return true;
         }
@@ -414,19 +419,19 @@ class MotionController: public Sensor
             return _motor_right.is_on();
         }
 
-        void set_movement(float linear, float angular, float seconds, int force){
-            reset_movement();
-            _movement_linear = linear; // meter/second
-            _movement_angular = angular; // radians/second
-            _movement_seconds = seconds;
-            _movement_force = force;
-            _movement_start_millis = millis();
-            _movement_status = MOVEMENT_ACTIVE;
-            _movement_send_done = false;
-            float left_speed_out = (linear - angular*TORSO_TREAD_WIDTH_METERS/2) * VELOCITY_TO_SPEED;
-            float right_speed_out = (linear + angular*TORSO_TREAD_WIDTH_METERS/2) * VELOCITY_TO_SPEED;
-            set(left_speed_out, right_speed_out);
-        }
+        //void set_movement(float linear, float angular, float seconds, int force){
+            //reset_movement();
+            //_movement_linear = linear; // meter/second
+            //_movement_angular = angular; // radians/second
+            //_movement_seconds = seconds;
+            //_movement_force = force;
+            //_movement_start_ms = millis();
+            //_movement_status = MOVEMENT_ACTIVE;
+            //_movement_send_done = false;
+            //float left_speed_out = (linear - angular*TORSO_TREAD_WIDTH_METERS/2) * VELOCITY_TO_SPEED;
+            //float right_speed_out = (linear + angular*TORSO_TREAD_WIDTH_METERS/2) * VELOCITY_TO_SPEED;
+            //set(left_speed_out, right_speed_out);
+        //}
 
         // http://answers.ros.org/question/11482/whats-the-best-way-to-use-ros-to-control-motors-on-a-simple-robot/
         // linear is in meter/sec, angular is in rad/sec
@@ -441,10 +446,14 @@ class MotionController: public Sensor
             //return _motor_left.get_speed() > 0 && _motor_right.get_speed() > 0; // for treads
             return _motor_left.get_speed() < 0 && _motor_right.get_speed() < 0; // for reverse geared wheels
         }
-
-        bool is_executing_movement(){
-            return MOVEMENT_ACTIVE == _movement_status;
+        
+        bool is_moving(){
+            return _motor_left.get_speed() || _motor_right.get_speed();
         }
+
+        //bool is_executing_movement(){
+            //return MOVEMENT_ACTIVE == _movement_status;
+        //}
 
         bool is_checking_movement_error(){
             return !_movement_force;
@@ -452,29 +461,29 @@ class MotionController: public Sensor
 
         bool is_encoder_stalled(){
             // Motors/encoders are considered stalled if we should be moving but haven't received an encoder update in 500ms.
-            return !_movement_encoder_changed && (millis() - _movement_start_millis) > 500;
+            return !_movement_encoder_changed && (millis() - _movement_start_ms) > 500;
         }
 
-        void end_movement(int error_code){
+        //void end_movement(int error_code){
 
-            reset_movement();
+            //reset_movement();
 
-            // Queue a movement completion status report.
-            _movement_send_done = true;
-            _movement_error_code = error_code;
+            //// Queue a movement completion status report.
+            //_movement_send_done = true;
+            //_movement_error_code = error_code;
 
-            if(error_code){
-                // Something bad may have just happened (like we just detected an edge or wall) so stop immediately.
-                stop();
-            }else{
-                // Movement completed without issue, so stop gradually using deceleration.
-                set(0, 0);
-            }
-        }
+            //if(error_code){
+                //// Something bad may have just happened (like we just detected an edge or wall) so stop immediately.
+                //stop();
+            //}else{
+                //// Movement completed without issue, so stop gradually using deceleration.
+                //set(0, 0);
+            //}
+        //}
 
-        bool has_movement_expired(){
-            return is_executing_movement() && (millis() - _movement_start_millis)/1000 >= _movement_seconds;
-        }
+        //bool has_movement_expired(){
+            //return is_executing_movement() && (millis() - _movement_start_ms)/1000 >= _movement_seconds;
+        //}
         
         void set_acceleration(unsigned int a){
             _motor_left.set_acceleration(a);
@@ -578,6 +587,10 @@ class MotionController: public Sensor
                 }
             }
             
+            // If we've been told to move for a specific amount of time, then stop after that time has elapsed.
+            if(_movement_duration_ms && is_moving() && millis() - _movement_start_ms >= _movement_duration_ms){
+                stop();
+            }
             
         }
         

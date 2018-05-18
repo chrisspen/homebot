@@ -54,6 +54,12 @@
 #define HEALTHY_BLINK_PERIOD 3000
 #define DISCONNECTED_BLINK_PERIOD 250
 
+// The time it spends moving backwards trying to detach from the dock coupling before giving up.
+#define UNDOCKING_START_TIMEOUT_MS 3000
+
+// The time it spends moving backwards after detaching from the dock coupling to clear the docking station.
+#define UNDOCKING_CLEAR_TIMEOUT_MS 1000
+
 // Debug levels.
 #define ONLY_ERRORS 0 // default
 #define UP_TO_OK 1
@@ -465,19 +471,18 @@ void on_cmd_vel(const geometry_msgs::Twist& msg) {
 }
 ros::Subscriber<geometry_msgs::Twist> cmd_vel_sub("cmd_vel", &on_cmd_vel);
 
-// rostopic pub --once /torso_arduino/motor_speed std_msgs/Int16MultiArray "{layout:{dim:[], data_offset: 0}, data:[64, 64]}"
+// rostopic pub --once /torso_arduino/motor_speed std_msgs/Int16MultiArray "{layout:{dim:[], data_offset: 0}, data:[64, 64, 10]}"
 // Note, if you get a connection error, that probably means main battery power was not on when you connected to the Arduino,
 // and so the ComMotion didn't initialize properly.
 // Fix this by turning on main battery power and then resetting the Arduino.
+// The third parameter is the time to travel in milliseconds before stopping. If 0, implies the movement will continue until explicitly stopped..
 void on_motor_speed(const std_msgs::Int16MultiArray& msg) {
     nh.loginfo("Setting motor speed...");
-    //toggle_led();
     if (motion_controller.connection_error) {
         nh.loginfo("Unable to set motor speed due to connection error.");
     } else {
-        //set_motor_speeds(0, 0, msg.data[0], msg.data[1]);
-        //motion_controller.set(msg.data[0], msg.data[1]); // for treads
-        motion_controller.set(-msg.data[0], -msg.data[1]); // for reverse geared wheels
+        //motion_controller.set(msg.data[0], msg.data[1], msg.data[2]); // for treads
+        motion_controller.set(-msg.data[0], -msg.data[1], msg.data[2]); // for reverse geared wheels
         nh.loginfo("Motor speed set.");
         publish_motor_targets();
     }
@@ -882,17 +887,18 @@ void loop() {
 
     // Process undock.
     if (undock) {
-        if (is_docked() && (millis() - undock_start < 3000)) {
+        if (is_docked() && (millis() - undock_start < UNDOCKING_START_TIMEOUT_MS)) {
             // Reverse at 1/4 speed until we no longer sense the dock or timeout after 3 seconds.
             motion_controller.set(128, 128); // for reverse geared wheels
         } else if (!undocked_time) {
             // We've undocked. Record time so we know how long to time our motor stop.
             undocked_time = millis();
             motion_controller.set(64, 64); // for reverse geared wheels
-        } else if (millis() - undocked_time > 250) {
+        } else if (millis() - undocked_time > UNDOCKING_CLEAR_TIMEOUT_MS) {
             // After N seconds, we've completely reversed out of the dock.
             motion_controller.stop();
             undock = false;
+            undocked_time = 0;
         }
     }
 
