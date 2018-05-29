@@ -1459,6 +1459,11 @@ void loop() {
         }
     }
 
+    // Publish motor status when implicit or pre-planned speed changes occur.
+    if (motion_controller.get_and_clear_changed() || force_sensors) {
+        publish_motor_targets();
+    }
+
     // Publish overall torso status.
     if (general_status == diagnostic_msgs::DiagnosticStatus::OK) {
         snprintf(buffer, MAX_OUT_CHARS, "status:%d", diagnostic_msgs::DiagnosticStatus::OK);

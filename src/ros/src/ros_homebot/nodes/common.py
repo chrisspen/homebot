@@ -1,5 +1,8 @@
 import importlib
+import time
 from commands import getoutput
+
+import yaml
 
 import rospy
 
@@ -36,7 +39,7 @@ def subscribe(topic, cb):
     rospy.loginfo('subscribing to: %s %s %s', topic, typ_cls, cb)
     return rospy.Subscriber(topic, typ_cls, cb)
 
-def publish(topic, data=None, queue_size=1):
+def publish(topic, data=None, queue_size=10, init_seconds=5):
     """
     Dynamically looks up the publisher for a topic, as well as the type class, wraps the data in the class, and then publishes it.
     """
@@ -48,11 +51,37 @@ def publish(topic, data=None, queue_size=1):
     typ_module_name, typ_cls_name = typ.split('/')
     typ_cls = getattr(importlib.import_module('%s.msg' % typ_module_name), typ_cls_name)
     if topic not in _publisher_cache:
-        _publisher_cache[topic] = rospy.Publisher(topic, typ_cls, queue_size=queue_size)
+        pub = _publisher_cache[topic] = rospy.Publisher(topic, typ_cls, queue_size=queue_size)
+        # When first creating the publisher, wait for a maximum of N seconds or when a subscriber appears, so our first message doesn't get lost in the ether.
+        t0 = time.time()
+        while not pub.get_num_connections() and time.time() - t0 <= init_seconds:
+            rospy.loginfo("Waiting for subscriber to connect.")
+            rospy.sleep(1)
     pub = _publisher_cache[topic]
     if typ == 'std_msgs/Empty':
         data = typ_cls()
+    elif hasattr(typ_cls, 'layout') and hasattr(typ_cls, 'data'):
+        # MultiArray types have both layout and data attributes, but layout is optional and will be implied by the data list.
+        # However, we must explicitly specify the attribute name, otherwise the type will complain about mismatched types.
+        if isinstance(data, basestring):
+            data = yaml.load(data)
+        assert isinstance(data, (dict, list)), 'MultiArray type data must be a list, not %s.' % type(data)
+        if isinstance(data, list):
+            data = typ_cls(data=data)
+        else:
+            data = typ_cls(**data)
     else:
         data = typ_cls(data)
     rospy.loginfo('publishing %s to %s', data, topic)
     pub.publish(data)
+
+if __name__ == '__main__':
+    import sys
+    action = sys.argv[1]
+    if action == 'pub':
+        #TODO:fix? This can't connect to rosmaster?
+        rospy.init_node('common_wrapper')
+        time.sleep(2)
+        publish(sys.argv[2], sys.argv[3])
+    else:
+        raise NotImplementedError('Unknown action: %s' % action)

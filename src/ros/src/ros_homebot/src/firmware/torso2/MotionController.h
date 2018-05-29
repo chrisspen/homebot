@@ -267,7 +267,10 @@ class MotionController: public Sensor
         SpeedController _motor_left;
 
         SpeedController _motor_right;
-        
+
+        // Set to true if the speed is changed on either the left or right channels.
+        bool speed_changed = false;
+
         unsigned long _last_encoder_check;
 
         // Movement parameters.
@@ -396,6 +399,7 @@ class MotionController: public Sensor
             _motor_right.set_speed(right_speed);
             //NA NA left right
             set_motor_speeds(0, 0, _motor_left.get_speed(), _motor_right.get_speed());
+            speed_changed = true;
 
             _movement_start_ms = millis();
             _movement_duration_ms = duration_ms;
@@ -609,6 +613,7 @@ class MotionController: public Sensor
             _motor_right.set_speed(0);
             //NA NA left right
             set_motor_speeds(0, 0, _motor_left.get_speed_instantly(), _motor_right.get_speed_instantly());
+            speed_changed = true;
 
             if(_z_rotate_enabled){
                 _z_rotate_enabled = false;
@@ -646,6 +651,10 @@ class MotionController: public Sensor
         }
 
         virtual bool get_and_clear_changed(){
+            if(speed_changed){
+                speed_changed = false;
+                return true;
+            }
             return false;
         }
 

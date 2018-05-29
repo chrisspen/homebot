@@ -1,17 +1,57 @@
+"""
+Test with:
+
+    python state.py Test.test_trigger
+
+"""
 import unittest
 import time
 import re
+import uuid
+# from functools import partial
+from threading import RLock
 
+
+class TriggerTimeout(Exception):
+    pass
+
+
+class TriggerHandle(object):
+    """
+    Wraps management routines for inspecting a state trigger.
+    """
+
+    def __init__(self, tid, callback):
+        self.tid = tid
+        self.callback = callback
+
+    def __call__(self):
+        return self.callback(tid=self.tid)
+
+    def wait(self, timeout=10, rate=0.5):
+        """
+        Blocks until the trigger or timeout occurs.
+        """
+        t0 = time.time()
+        while not timeout or (time.time() - t0 <= timeout):
+            if self():
+                return
+            time.sleep(rate)
+        raise TriggerTimeout
 
 class State(object):
     """
-    Helper object to keep track of message values as a key/value lookup.
+    Thread-safe helper object to keep track of message values as a key/value lookup.
     """
 
     def __init__(self):
         self._values = {} # {name: value}
         self._times_last_updated = {} # {name: time last updated}
         self._times_to_stale = {}
+        self._lock = RLock()
+        self._or_trigger_callables = {} # {tid: callable}
+        self._or_trigger_results = {} # {tid: callable}
+        self._or_trigger_dependencies = {} # {tid: [tid]}
 
     def clean_name(self, name, validate=True):
         name = re.sub(r'/+', '_', name)
@@ -33,17 +73,18 @@ class State(object):
         try:
             return super(State, self).__getattribute__(name)
         except AttributeError:
-            if name in self._values:
-                if self._times_to_stale[name]:
-                    if time.time() - self._times_last_updated[name] <= self._times_to_stale[name]:
-                        # If the value can go stale, only return a value if it's still fresh.
-                        return self._values[name]
-                    else:
-                        # Key is stale, so return nothing.
-                        return
-                # Otherwise, value never goes stale, so return what we have.
-                return self._values[name]
-            raise
+            with self._lock:
+                if name in self._values:
+                    if self._times_to_stale[name]:
+                        if time.time() - self._times_last_updated[name] <= self._times_to_stale[name]:
+                            # If the value can go stale, only return a value if it's still fresh.
+                            return self._values[name]
+                        else:
+                            # Key is stale, so return nothing.
+                            return
+                    # Otherwise, value never goes stale, so return what we have.
+                    return self._values[name]
+                raise
 
     def get(self, name):
         name = self.clean_name(name)
@@ -57,10 +98,87 @@ class State(object):
         if self._times_last_updated[name] >= t:
             return getattr(self, name)
 
+    def get_since_until(self, name, t=0, timeout=10):
+        """
+        Like get_since(), but retries for `timeout` seconds.
+        """
+        t0 = time.time()
+        while time.time() - t0 <= timeout:
+            value = self.get_since(name=name, t=t)
+            if value is not None:
+                return value
+            time.sleep(0.5)
+        raise Exception('Value "%s" not seen in %i seconds.' % (name, timeout))
+
+    def has_triggered(self, tid):
+        """
+        Returns true if the given trigger has activated, without removing it.
+        """
+        return tid not in self._or_trigger_callables
+
     def set(self, name, value):
-        name = self.clean_name(name)
-        self._values[name] = value
-        self._times_last_updated[name] = time.time()
+        with self._lock:
+            name = self.clean_name(name)
+            self._values[name] = value
+            self._times_last_updated[name] = time.time()
+
+            # Check to see if any ORed triggers have been met.
+            for tid, criteria in self._or_trigger_callables.items():
+
+                # Skip this trigger if it does not use the current name.
+                if name not in criteria:
+                    continue
+
+                # Skip this trigger if it's already been activated.
+                if tid in self._or_trigger_results:
+                    continue
+
+                # Check to see if this trigger has any dependencies blocking it.
+                if any(not self.has_triggered(dep_tid) for dep_tid in self._or_trigger_dependencies.get(tid, [])):
+                    continue
+
+                # Otherwise, check the value against the trigger's logic.
+                target_value = criteria[name]
+                if isinstance(target_value, bool) and target_value == bool(value):
+                    # If target is a boolean, then check boolean value of incoming value.
+                    self._or_trigger_results[tid] = True
+                elif target_value == value:
+                    # Otherwise check literal value.
+                    self._or_trigger_results[tid] = True
+
+    def check_or_trigger(self, tid):
+        """
+        Returns True if the trigger has been activated.
+        Note, to avoid a memory leak, once the activated, the trigger will be deleted, so further checks will fail.
+        """
+        assert tid in self._or_trigger_callables
+        if tid in self._or_trigger_results:
+            del self._or_trigger_callables[tid]
+            return True
+        return False
+
+    def set_or_trigger(self, **kwargs):
+        """
+        Registers a check for one or more state values going from a high to low state or vice versa.
+
+        As an ORed trigger, the criteria will be met if any one of the sub-conditions are met.
+
+        The optional parameter `dependencies` is a list of TriggerHandle instances representing other triggers that must be activated before
+        this new trigger is allowed to activate.
+
+        Returns a helper callable that will return True when the trigger has been activated.
+        """
+        dependencies = kwargs.pop('dependencies', None) or []
+        assert isinstance(dependencies, (tuple, list))
+        tid = uuid.uuid4()
+        for k, v in kwargs.items():
+            self.clean_name(k)
+        self._or_trigger_callables[tid] = dict(kwargs)
+        for dep in dependencies:
+            self._or_trigger_dependencies.setdefault(tid, [])
+            self._or_trigger_dependencies[tid].append(dep.tid)
+        #return partial(self.check_or_trigger, tid=tid)
+        return TriggerHandle(tid=tid, callback=self.check_or_trigger)
 
 class Test(unittest.TestCase):
 
@@ -97,6 +215,40 @@ class Test(unittest.TestCase):
         s.set('qr_image', 'xyz')
         # Now that we've updated it more recently, get_since() should return something.
         self.assertEqual(s.get_since('qr_image', t0), 'xyz')
+
+    def test_trigger(self):
+        s = State()
+        s.register('encoder_a')
+        s.register('encoder_b')
+        s.set('encoder_a', 0)
+        s.set('encoder_b', 0)
+
+        trigger_up = s.set_or_trigger(encoder_a=True, encoder_b=True)
+        trigger_down = s.set_or_trigger(encoder_a=False, encoder_b=False, dependencies=[trigger_up])
+        self.assertEqual(trigger_up(), False)
+        self.assertEqual(trigger_up(), False)
+        self.assertEqual(trigger_down(), False)
+        self.assertEqual(trigger_down(), False)
+        s.set('encoder_a', 0)
+        s.set('encoder_b', 0)
+
+        # Because the down trigger is dependent on the up trigger, the up trigger must activate first.
+        # Therefore, no matter how many times our target values match our activation criteria, our trigger will remain unactivated.
+        self.assertEqual(trigger_down(), False)
+        s.set('encoder_a', -45)
+        self.assertEqual(trigger_up(), True)
+        with self.assertRaises(AssertionError):
+            trigger_up()
+        s.set('encoder_b', -45)
+
+        self.assertEqual(trigger_down(), False)
+        self.assertEqual(trigger_down(), False)
+        s.set('encoder_a', 0)
+        s.set('encoder_b', 0)
+        # Now that the up trigger has activated, the down trigger is allowed to activate.
+        self.assertEqual(trigger_down(), True)
+        with self.assertRaises(AssertionError):
+            trigger_down()
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,0 +1,5 @@
+<launch>
+    <node name="dock_node" pkg="ros_homebot" type="dock.py" output="screen">
+        <param name="audible" type="bool" value="true" />
+    </node>
+</launch>
