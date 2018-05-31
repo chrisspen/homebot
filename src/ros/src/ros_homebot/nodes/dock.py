@@ -19,6 +19,7 @@ You can cancel the docking procedure by sending the topic:
 """
 from __future__ import print_function
 
+import os
 from functools import partial
 from commands import getoutput
 import time
@@ -136,6 +137,10 @@ class DockNode(object):
 
         # Track QR matches.
         self.register('/qr_tracker/matches', time_to_stale=1.0)
+        #TODO:only launch when flag passed
+        self.qr_viewer_thread = Thread(target=self.launch_qr_viewer)
+        self.qr_viewer_thread.daemon = True
+        self.qr_viewer_thread.start()
 
         rospy.Service('~cancel', Empty, self.on_cancel)
 
@@ -159,6 +164,10 @@ class DockNode(object):
             except StopIteration:
                 break
         time.sleep(3)
+
+    def launch_qr_viewer(self):
+        rospy.loginfo('Launching QR viewer...')
+        os.system('export ROS_MASTER_URI=http://rae.local:11311; rosrun rqt_image_view rqt_image_view image:=/qr_tracker/images _image_transport:=compressed')
 
     def emergency_cancel(self, *args, **kwargs):
         """
@@ -270,7 +279,7 @@ class DockNode(object):
         """
         Return true if we're docked to a powered docking station. Returns false otherwise.
         """
-        return self.state.torso_arduino_power_external_0 and self.state.torso_arduino_power_external_1
+        return self.state.torso_arduino_power_external_0 #and self.state.torso_arduino_power_external_1
 
     def is_dead_docked(self):
         """
@@ -285,6 +294,7 @@ class DockNode(object):
 
         Returns false otherwise.
         """
+        #TODO:deprecated? power_external_1 not reliable, sends false positives?
         return not self.state.torso_arduino_power_external_0 and self.state.torso_arduino_power_external_1
 
     def center_head(self):
@@ -469,7 +479,7 @@ class DockNode(object):
     def announce_status(self, status):
         rospy.loginfo(status)
         if self.audible:
-            self.say(re.sub(r'[^a-zA-Z0-9]+', ' ', status))
+            self.say(re.sub(r'[^a-zA-Z0-9]+', ' ', status)[:100])
 
     def move_torso(self, left_speed, right_speed, milliseconds):
         """
@@ -487,7 +497,10 @@ class DockNode(object):
         rospy.loginfo('Waiting for motors to start...')
         trigger_up.wait()
         rospy.loginfo('Waiting for motors to stop...')
-        trigger_down.wait()
+        try:
+            trigger_down.wait()
+        except TriggerTimeout:
+            pass
 
     def rotate_torso(self, degrees, double_down=False):
         """
@@ -562,7 +575,7 @@ class DockNode(object):
             time.sleep(0.5)
         raise Exception('Unable to set head_pan_freeze_get to %s.' % value)
 
-    def rotate_head_absolute(self, degrees, threshold=3, timeout=15):
+    def rotate_head_absolute(self, degrees, threshold=3, timeout=15, forgive=False):
         """
         Rotates the head to an absolute angle.
         """
@@ -572,7 +585,8 @@ class DockNode(object):
                 return
             publish('/head_arduino/pan_set', degrees)
             time.sleep(1)
-        raise Exception('Unable to pan head to angle %s.' % degrees)
+        if not forgive:
+            raise Exception('Unable to pan head to angle %s.' % degrees)
 
     def rotate_head_relative(self, degrees, threshold=3, timeout=15):
         """
@@ -664,6 +678,7 @@ class DockNode(object):
             if self.is_docked():
                 rospy.loginfo('Docking achieved!')
                 return
+            rospy.loginfo('Not docked.')
 
             # Realign ourselves using the QR code.
             qr_tracker_matches = self.state.qr_tracker_matches
@@ -677,11 +692,13 @@ class DockNode(object):
                 last_jitter = not last_jitter
             else:
                 # If we still see the QR code, the realign so we can drive straight.
+                rospy.loginfo('Centered torso toward QR code.')
                 self.center_qr_code_using_torso()
 
             # Drive forward at quarter speed (64/256.) for half a second.
             try:
-                self.move_torso(left_speed=64, right_speed=64, milliseconds=1000)
+                rospy.loginfo('Moving forward toward dock.')
+                self.move_torso(left_speed=64, right_speed=64, milliseconds=750)
             except TriggerTimeout:
                 # If we dock during our approach movement, then the motor controller's safety protocol will cutoff the motors
                 # and not give us a proper transition, leading to a trigger timeout.
@@ -717,6 +734,8 @@ class DockNode(object):
                 raise Terminate('QR code not found.')#TODO:remove
                 # self.find_qr_code()
 
+            self.rotate_head_absolute(20, forgive=True)
+            self.rotate_head_absolute(360-20, forgive=True)
             self.rotate_head_absolute(0)
             self.center_qr_code_using_torso()
             self.move_forward_until_docked()
