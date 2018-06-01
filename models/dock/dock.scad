@@ -342,6 +342,76 @@ module make_dock_mast_head(){
     translate([0,74-0.1,-66.5/2+5/2])
     cube([66.5, 1.3, 66.5], center=true);
 
+
+}
+
+module dock_mast_recessor(){
+    
+    offset_y = 75;
+    
+    difference(){
+        
+        // main mass
+        color("orange")
+        translate([0,111+4+2-2-10/2+1,55+5/2])
+        cube([78, 85+10+5, 10], center=true);
+     
+        difference(){
+            color("red")
+            cylinder(d=180+0.5, h=60, $fn=100);
+            
+            // center cutout
+            cylinder(d=120, h=200, center=true, $fn=100);
+            
+            // half cutout
+            translate([0,-200/2,0])
+            cube([200,200,200], center=true);
+
+        }//end diff
+    
+        // recharge cavity
+        translate([0,95+5,53])
+        cube([55,100,40], center=true);
+    
+        // center cutout
+        cylinder(d=160, h=200, center=true, $fn=100);    
+
+        // post holes
+        color("red")
+        translate([0,80,0])
+        for(i=[0:1])
+        mirror([i,0,0])
+        rotate([0,0,23])
+        translate([0,85,100/2])
+        cylinder(d=7.4+0.25/2, h=100, center=true, $fn=100);
+
+        // side arch cutout
+        translate([0,0,52.5])
+        scale([1,1,.2])
+        rotate([0,90,0])
+        translate([0,120.5,0])
+        cylinder(d=60, h=150, center=true, $fn=100);
+        
+        // back arch cutout
+        translate([0,0,52.5])
+        scale([1,1,.2])
+        translate([0,120.5,0])
+        rotate([0,0,90])
+        rotate([0,90,0])
+        cylinder(d=55, h=150, center=true, $fn=100);
+
+    }// end diff
+    
+    // post nubs
+    color("blue")
+    translate([0,0,0])
+    for(i=[0:1])
+    mirror([i,0,0])
+    rotate([0,0,23])
+    translate([0,85,100/2+54-93/2+1])
+    cylinder(d=7.4-0.5/2, h=100-93, center=true, $fn=100);
+    
+
 }
 
 torso_height = 155;
@@ -372,12 +442,25 @@ translate([0,25,0])
 translate([0,150/2-20-30,48])
 make_recharge_plug_male(half=0);
 
-if(1)
+if(0)
 make_bottom_dock_rim(holes=0, part=0);
+
+if(1){
+    import("../printable/dock_rim_part1.stl");
+    import("../printable/dock_rim_part2.stl");
+    import("../printable/dock_rim_part3.stl");
+    import("../printable/dock_rim_part4.stl");
+    import("../printable/dock_rim_part5.stl");
+}
+
+if(1)
+translate([0,0,0])
+dock_mast_recessor();
 
 if(0)
 translate([0,0,100])
-make_dock_mast_head();
+//make_dock_mast_head();
+import("../printable/dock_masthead.stl");
 
 // mock masts
 if(0)
