@@ -4,6 +4,7 @@ Test with:
     python state.py Test.test_trigger
 
 """
+from __future__ import print_function
 import unittest
 import time
 import re
@@ -21,12 +22,20 @@ class TriggerHandle(object):
     Wraps management routines for inspecting a state trigger.
     """
 
-    def __init__(self, tid, callback):
+    def __init__(self, tid, callback, state):
         self.tid = tid
         self.callback = callback
+        self.state = state
 
     def __call__(self):
         return self.callback(tid=self.tid)
+
+    def destroy(self):
+        if not self.tid:
+            raise Exception('Trigger has already been destroyed.')
+        self.state.unset_trigger(self.tid)
+        self.callback = None
+        self.tid = None
 
     def wait(self, timeout=10, rate=0.5):
         """
@@ -38,6 +47,7 @@ class TriggerHandle(object):
                 return
             time.sleep(rate)
         raise TriggerTimeout
+
 
 class State(object):
     """
@@ -114,9 +124,11 @@ class State(object):
         """
         Returns true if the given trigger has activated, without removing it.
         """
-        return tid not in self._or_trigger_callables
+        # return tid not in self._or_trigger_callables
+        return tid in self._or_trigger_results
 
-    def set(self, name, value):
+    def set(self, name, value, verbose=False):
+        # if verbose: print('setting %s=%s' % (name, value))
         with self._lock:
             name = self.clean_name(name)
             self._values[name] = value
@@ -124,27 +136,42 @@ class State(object):
 
             # Check to see if any ORed triggers have been met.
             for tid, criteria in self._or_trigger_callables.items():
+                # if verbose: print('checking tid:', tid, criteria)
 
                 # Skip this trigger if it does not use the current name.
                 if name not in criteria:
+                    # if verbose: print('name not in criteria')
                     continue
 
                 # Skip this trigger if it's already been activated.
-                if tid in self._or_trigger_results:
+                # if tid in self._or_trigger_results:
+                if self.has_triggered(tid):
+                    # if verbose: print('tid already in results')
                     continue
 
                 # Check to see if this trigger has any dependencies blocking it.
-                if any(not self.has_triggered(dep_tid) for dep_tid in self._or_trigger_dependencies.get(tid, [])):
+                has_untriggered_dep = False
+                for dep_tid in self._or_trigger_dependencies.get(tid, []):
+                    # if verbose: print('checking dep_tid %s triggered: %s' % (dep_tid, self.has_triggered(dep_tid)))
+                    if not self.has_triggered(dep_tid):
+                        has_untriggered_dep = True
+                        break
+                if has_untriggered_dep:
+                    # if verbose: print('skipping because this has an untriggered dependency')
                     continue
 
                 # Otherwise, check the value against the trigger's logic.
                 target_value = criteria[name]
                 if isinstance(target_value, bool) and target_value == bool(value):
                     # If target is a boolean, then check boolean value of incoming value.
+                    # if verbose: print('triggered based on boolean!')
                     self._or_trigger_results[tid] = True
                 elif target_value == value:
                     # Otherwise check literal value.
+                    # if verbose: print('triggered based on literal!')
                     self._or_trigger_results[tid] = True
+                # else:
+                    # if verbose: print('not triggered')
 
     def check_or_trigger(self, tid):
         """
@@ -178,7 +205,15 @@ class State(object):
             self._or_trigger_dependencies.setdefault(tid, [])
             self._or_trigger_dependencies[tid].append(dep.tid)
         #return partial(self.check_or_trigger, tid=tid)
-        return TriggerHandle(tid=tid, callback=self.check_or_trigger)
+        return TriggerHandle(tid=tid, callback=self.check_or_trigger, state=self)
+
+    def unset_trigger(self, tid):
+        if tid in self._or_trigger_dependencies:
+            del self._or_trigger_dependencies[tid]
+        if tid in self._or_trigger_callables:
+            del self._or_trigger_callables[tid]
+        if tid in self._or_trigger_results:
+            del self._or_trigger_results[tid]
 
 class Test(unittest.TestCase):
 

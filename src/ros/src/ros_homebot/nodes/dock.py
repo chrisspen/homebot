@@ -136,7 +136,7 @@ class DockNode(object):
         self.register('/head_arduino/pan_freeze_get')
 
         # Track QR matches.
-        self.register('/qr_tracker/matches', time_to_stale=1.0)
+        self.register('/qr_tracker/matches', time_to_stale=3.0)
         #TODO:only launch when flag passed
         self.qr_viewer_thread = Thread(target=self.launch_qr_viewer)
         self.qr_viewer_thread.daemon = True
@@ -193,7 +193,11 @@ class DockNode(object):
         if isinstance(msg, Percept):
             # Percept messages from the QR code tracker are stored in their entirety.
             data = msg
-        self.state.set(topic, data)
+        verbose = False
+        # if 'motor_target' in topic:
+            # print('SETTING', topic, data)
+            # verbose = True
+        self.state.set(topic, data, verbose=verbose)
 
     def force_sensors(self):
         """
@@ -235,6 +239,7 @@ class DockNode(object):
         Called when the ROS master signals a shutdown, or our parent signals a cancellation of the docking process.
         """
         self.announce_status('Shutting down.')
+        publish('/head_arduino/ultrabright_set', 0)
         self.halt_motors()
         rospy.loginfo('Shutting down...')
         if self.qr_tracker_process:
@@ -439,24 +444,57 @@ class DockNode(object):
             rospy.loginfo('new angle: %s', new_angle)
             time.sleep(1)
 
+    def qr_match_to_position_ratio(self, match):
+        """
+        Returns the ratio of how far the match along the x-axis.
+        Bounded in [0:1].
+        A value < 0.4 means QR code is to the left.
+        A value > 0.6 means QR code is to the right.
+        """
+        if not match:
+            return
+        x = (match.a[0] + match.b[0] + match.c[0] + match.d[0])/4.
+        width = match.width
+        # Ideally, this should be 0.5, indicating the QR code is exactly in the center of the horizontal view.
+        # In practice, we'll likely never accomplish this, but we'll try to get it within [0.4:0.6]
+        position_ratio = x/float(width)
+        return position_ratio
+
     def center_qr_code_using_torso(self, direction=1):
         """
         Centers the QR code in view using only the torso motors to rotate the entire body.
+
+        direction := the direction of rotation to rotate the torso to search for the QR code if not already found.
+            A value of 1 = CW.
+            A value of -1 = CCW.
         """
+        last_qr_matches = None
+        last_euler_z = None
         angle_of_adjustment = 2
         for _ in range(20):
 
             # Check to see if we have a QR match.
+            euler_z = self.state.torso_arduino_imu_euler_z
             qr_matches = self.state.qr_tracker_matches
+
+            if not qr_matches and last_qr_matches and abs(last_euler_z - euler_z) <= 5:
+                # If the QR match was lost (due to noise or low-light) and we haven't moved much, then use the last known match.
+                qr_matches = last_qr_matches
+            elif qr_matches:
+                # Otherwise, update our last match.
+                last_euler_z = euler_z
+                last_qr_matches = qr_matches
+
             if qr_matches:
-                x = (qr_matches.a[0] + qr_matches.b[0] + qr_matches.c[0] + qr_matches.d[0])/4.
-                # y = (self.state.qr_matches.a[1] + self.state.qr_matches.b[1] + self.state.qr_matches.c[1] + self.state.qr_matches.d[1])/4.
-                width = qr_matches.width
+                # x = (qr_matches.a[0] + qr_matches.b[0] + qr_matches.c[0] + qr_matches.d[0])/4.
+                # # y = (self.state.qr_matches.a[1] + self.state.qr_matches.b[1] + self.state.qr_matches.c[1] + self.state.qr_matches.d[1])/4.
+                # width = qr_matches.width
                 # height = qr_matches.height
 
                 # Ideally, this should be 0.5, indicating the QR code is exactly in the center of the horizontal view.
                 # In practice, we'll likely never accomplish this, but we'll try to get it within [0.4:0.6]
-                position_ratio = x/float(width)
+                # position_ratio = x/float(width)
+                position_ratio = self.qr_match_to_position_ratio(qr_matches)
                 rospy.loginfo('position_ratio: %s', position_ratio)
                 if 0.4 <= position_ratio <= 0.6:
                     rospy.loginfo('Torso centering threshold achieved!')
@@ -471,8 +509,8 @@ class DockNode(object):
 
             else:
                 # Rotate blindly until we see a QR code.
-                rospy.logwarn('No QR code found. Searching blindly.')
-                self.rotate_torso(degrees=1*direction)
+                rospy.logwarn('No QR code found! Searching blindly!')
+                self.rotate_torso(degrees=2*direction, double_down=True)
                 # Give QR tracker time to acquire.
                 time.sleep(1)
 
@@ -514,6 +552,8 @@ class DockNode(object):
             return
         # imu_euler_z0 = self.state.torso_arduino_imu_euler_z
         # print('torso.imu_euler_z0:', imu_euler_z0)
+        trigger_up = None
+        trigger_down = None
         for _ in range(10):
             try:
                 # Tell the state machine to expect a start in motion.
@@ -523,13 +563,15 @@ class DockNode(object):
                 publish('/torso_arduino/motor_rotate', degrees)
                 rospy.loginfo('Waiting for rotation to start...')
                 trigger_up.wait()
+                rospy.loginfo('Rotation started.')
                 rospy.loginfo('Waiting for rotation to stop...')
                 try:
                     trigger_down.wait(timeout=5)
+                    rospy.loginfo('Rotation stopped.')
                 except TriggerTimeout:
                     # If we timeout waiting for the motor to stop, that's likely because it already has and even our trigger wasn't fast enough to catch it,
                     # so ignore the timeout.
-                    pass
+                    rospy.logerr('Rotation stop timed out!')
                 break
             except TriggerTimeout:
                 # A timeout occurred waiting for the motors to start.
@@ -542,6 +584,14 @@ class DockNode(object):
             except TorsoMotorError as exc:
                 rospy.logerr('Error rotating torso: %s', exc)
                 traceback.print_exc()
+
+            # Cleanup triggers.
+            if trigger_up:
+                trigger_up.destroy()
+                trigger_up = None
+            if trigger_down:
+                trigger_down.destroy()
+                trigger_down = None
 
         # FIXME? Disabled, since for large degrees, sometimes causes torso to rotate multiple times if rotation isn't precise enough.
         # Wait until torso stops rotating.
@@ -673,6 +723,7 @@ class DockNode(object):
         Assumes head and torso alignment are locked and torso is already centered on QR code.
         """
         last_jitter = True
+        qr_tracker_matches0 = None
         while 1:
 
             if self.is_docked():
@@ -684,21 +735,26 @@ class DockNode(object):
             qr_tracker_matches = self.state.qr_tracker_matches
             if not qr_tracker_matches:
                 rospy.logerr('QR code match lost!')
-                # If we've lost the QR code, then do the jitterbug, hoping we're close enough to connect.
-                if last_jitter:
-                    self.move_torso(left_speed=64, right_speed=32, milliseconds=250)
-                else:
-                    self.move_torso(left_speed=32, right_speed=64, milliseconds=250)
-                last_jitter = not last_jitter
+                direction = 1
+                if qr_tracker_matches0:
+                    position_ratio = self.qr_match_to_position_ratio(qr_tracker_matches0)
+                    if position_ratio < 0.5:
+                        # Match was to the left of the screen, so rotate CCW to bring it back into view.
+                        direction = -1
+                    else:
+                        # Otherwise match was to the right of the screen, so rotate CW to bring it back into view.
+                        direction = +1
+                rospy.loginfo('Centered torso toward QR code using last known match.')
+                self.center_qr_code_using_torso(direction=direction)
             else:
-                # If we still see the QR code, the realign so we can drive straight.
+                # If we still see the QR code, then realign so we can drive straight.
                 rospy.loginfo('Centered torso toward QR code.')
                 self.center_qr_code_using_torso()
 
             # Drive forward at quarter speed (64/256.) for half a second.
             try:
                 rospy.loginfo('Moving forward toward dock.')
-                self.move_torso(left_speed=64, right_speed=64, milliseconds=750)
+                self.move_torso(left_speed=64, right_speed=64, milliseconds=500)
             except TriggerTimeout:
                 # If we dock during our approach movement, then the motor controller's safety protocol will cutoff the motors
                 # and not give us a proper transition, leading to a trigger timeout.
@@ -707,6 +763,8 @@ class DockNode(object):
 
             # Give the QR tracker time to catch up.
             time.sleep(1)
+
+            qr_tracker_matches0 = qr_tracker_matches
 
     def dock_iter(self):
         """
@@ -730,14 +788,28 @@ class DockNode(object):
                 # time.sleep(5)
                 # yield
 
+            # Turn on ultrabrights to help us see the QR code.
+            publish('/head_arduino/ultrabright_set', 254)
+            time.sleep(2)
+
+            # for _ in range(10):
+                # print('rotate:', _)
+                # self.rotate_torso(degrees=2, double_down=True)
+                # time.sleep(3)
+            # return
+
             if not self.qr_code_found():
                 raise Terminate('QR code not found.')#TODO:remove
                 # self.find_qr_code()
 
+            # Ensure head is centered. Since there's too much friction to move it by only a couple degrees when we're already close to 0,
+            # ensure it's centered by wiggling it back and forth.
             self.rotate_head_absolute(20, forgive=True)
             self.rotate_head_absolute(360-20, forgive=True)
             self.rotate_head_absolute(0)
+
             self.center_qr_code_using_torso()
+
             self.move_forward_until_docked()
             return
 
