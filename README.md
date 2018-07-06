@@ -16,7 +16,7 @@ Basic features include:
 
 Demo:
 
-    [Undocking And Docking](https://youtu.be/g7_KL-V0nWs)
+[Undocking And Docking](https://youtu.be/g7_KL-V0nWs)
 
 Shortcuts:
 
