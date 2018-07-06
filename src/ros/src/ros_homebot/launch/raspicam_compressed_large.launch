@@ -1,0 +1,100 @@
+<!--
+See a list of supported resolutions at:
+
+    https://www.raspberrypi.org/documentation/raspbian/applications/camera.md
+
+-->
+<launch>
+    <group ns="raspicam">
+        <node name="raspicam_node" pkg="raspicam" type="raspicam_node" output="screen">
+            <!-- these get ignored if set elsewhere? -->
+            <param name="framerate" type="int" value="20" />
+            
+            <!--<param name="quality" type="int" value="10" /> Minimum usable quality? -->
+                        
+            <!-- Fast, but insufficent for QR. Only works at 1 foot, not the maximum 2 foot distance from QR code.
+            <param name="width" type="int" value="800" />
+            <param name="height" type="int" value="600" />
+            <param name="quality" type="int" value="100" />
+            -->
+            
+            <!-- Fast, works at ~1 foot from QR code, but not further.
+            Invalid resolution, actual image returned is 640x480.
+            <param name="width" type="int" value="1296" />
+            <param name="height" type="int" value="972" />
+            <param name="quality" type="int" value="100" />
+            -->
+
+            <!-- 
+            Raw image latency = ~1sec
+            QR detection latency = ~3sec
+            QR success with low light = 10%
+            QR success with high light = 20%
+            <param name="width" type="int" value="1640" />
+            <param name="height" type="int" value="1232" />
+            <param name="quality" type="int" value="10" />
+            -->
+            
+            <!-- Best? Good at short-range, but can go all the way to docked position.
+            Raw image latency = ~1sec
+            QR detection latency = ~3sec
+            QR success with low light at 50cm = 80%
+            QR success with high light at 50cm = 100%
+            QR success with low light at 60cm = 20%
+            QR success with high light at 60cm = 50%
+            -->
+            <param name="width" type="int" value="1640" />
+            <param name="height" type="int" value="1232" />
+            <param name="quality" type="int" value="100" />
+
+            <!-- Good for QR, decent in low light, but incredibly expensive, ~3 second latency in image processing.
+            Raw image latency = ~0.1 sec
+            QR detection latency = ~3 sec
+            QR success with low light = ~100%
+            QR success with high light = ~95%
+            Best of all worlds?
+            CLIPS QR TOP AND BOTTOM
+            <param name="width" type="int" value="1920" />
+            <param name="height" type="int" value="1080" />
+            <param name="quality" type="int" value="10" />
+            -->
+            
+            <!-- Good for QR, but incredibly expensive, ~5 second latency in image processing.
+            Note, all quality values higher than 50 cause node to crash for just this resolution?
+            Raw image latency = ~1 sec
+            QR detection latency = ~5 sec
+            QR success with low light = ~80%
+            QR success with high light = ~60%
+            <param name="width" type="int" value="1920" />
+            <param name="height" type="int" value="1080" />
+            <param name="quality" type="int" value="50" />
+            -->
+            
+            <!-- Resolution is valid, but for some reason the camera zooms in, narrowing the focal length.
+            <param name="width" type="int" value="2592" />
+            <param name="height" type="int" value="1944" />
+            <param name="quality" type="int" value="10" />
+            -->
+
+            <!-- Good at long distances, but high latency, high cpu, and for some reason the camera zooms in, narrowing the focal length.
+            Raw image latency = ~1sec
+            QR detection latency = ~10sec
+            QR success with low light at 50cm = 100%
+            QR success with high light at 50cm = 100%
+            QR success with low light at 60cm = 100%
+            QR success with high light at 60cm = 100%
+            QR success with low light at 65cm = 100%
+            QR success with high light at 65cm = 100%
+            QR success with low light at  70cm = 50%
+            QR success with high light at 70cm = 70%
+            <param name="width" type="int" value="3280" />
+            <param name="height" type="int" value="2464" />
+            <param name="quality" type="int" value="10" />
+            -->
+
+            <param name="hflip" type="int" value="1" />
+            <param name="vflip" type="int" value="1" />
+            <param name="start" type="int" value="1" />
+        </node>
+    </group>
+</launch>
