@@ -130,7 +130,7 @@ class HeadPanCalibrateNode(object):
 
                 scores[i] = sum(errors)/float(len(positions))
                 print('mae: %.02f' % scores[i])
-            except Exception as exc:
+            except Exception as exc: # pylint: disable=broad-except
                 self.exc_count += 1
                 traceback.print_exc()
 
@@ -154,4 +154,4 @@ class HeadPanCalibrateNode(object):
         self.last_error_report_time = time.time()
 
 if __name__ == '__main__':
-  HeadPanCalibrateNode()
+    HeadPanCalibrateNode()

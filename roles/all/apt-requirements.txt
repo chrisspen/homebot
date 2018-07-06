@@ -60,6 +60,7 @@ ros-kinetic-compressed-image-transport
 #libcamera-info-manager0d
 #libcamera-info-manager-dev
 ros-kinetic-camera-info-manager
+libopencv-calib3d-dev
 
 # Needed by homebot_description.
 ros-kinetic-diagnostics

@@ -14,7 +14,9 @@ Basic features include:
 * Raspberry Pi 3 for running ROS and high-level control
 * charging dock
 
-[Click here for documentation](http://chrisspen.github.io/homebot).
+Demo:
+
+    [Undocking And Docking](https://youtu.be/g7_KL-V0nWs)
 
 Shortcuts:
 

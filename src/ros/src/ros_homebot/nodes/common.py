@@ -25,6 +25,51 @@ def get_published_topics(target=None):
             topic_types[topic] = type_name
     return topic_types
 
+
+class TopicWaitTimeout(Exception):
+    pass
+
+
+def wait_for_topic(topic, timeout=10):
+    """
+    Blocks until the given topic is listed by the `rostopic list`.
+
+    Timeout is in seconds.
+    """
+    t0 = time.time()
+    while 1:
+        if getoutput('rostopic list | grep %s' % topic):
+            return
+        if timeout and time.time() - t0 >= timeout:
+            raise TopicWaitTimeout
+
+
+class NodeWaitTimeout(Exception):
+    pass
+
+
+def wait_for_node(node, timeout=10):
+    """
+    Blocks until the given node is listed by the `rosnode list`.
+
+    Timeout is in seconds.
+    """
+    t0 = time.time()
+    while 1:
+        if getoutput('rosnode list | grep %s' % node):
+            return
+        if timeout and time.time() - t0 >= timeout:
+            raise NodeWaitTimeout
+
+
+def has_camera():
+    """
+    Returns true if a supported physical camera is connected to the localhost.
+    """
+    ret = getoutput('vcgencmd get_camera') or ''
+    return 'supported=1' in ret
+
+
 def subscribe(topic, cb):
     """
     Dynamically looks up the subscriber for a topic, as well as the type class, and subscribes.

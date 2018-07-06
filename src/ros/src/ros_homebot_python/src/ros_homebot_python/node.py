@@ -465,7 +465,7 @@ class BaseArduinoNode():
                 publisher.publish(msg)
 
             #except ROSSerializationException as e:
-            except Exception as e:
+            except Exception as e: # pylint: disable=broad-except
                 traceback.print_exc(file=sys.stderr)
                 #self.log(e)
         else:
@@ -708,7 +708,7 @@ class BaseArduinoNode():
             # Process packet.
             try:
                 self._arduino_to_ros_handler(packet)
-            except Exception as e:
+            except Exception as e: # pylint: disable=broad-except
                 self.print('Error sending packet to ros.')
                 self.print(traceback.format_exc())
 

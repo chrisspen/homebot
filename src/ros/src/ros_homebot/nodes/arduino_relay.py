@@ -241,7 +241,7 @@ class ArduinoRelay:
         rospy.loginfo('Received shutdown signal. Issuing halt command in 3 seconds...')
         try:
             say(c.SYSTEM_SHUTDOWN_SPEECH)
-        except Exception as exc:
+        except Exception as exc: # pylint: disable=broad-except
             rospy.logerr('Unable to speak about shutdown: %s', exc)
         time.sleep(3)
         os.system('sudo halt')

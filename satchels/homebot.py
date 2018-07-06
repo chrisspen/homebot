@@ -260,6 +260,14 @@ class HomebotSatchel(ServiceSatchel):
 
     @task
     def build_raspicam(self):
+        """
+        Uploads our custom raspicam code to the robot and recompiles it.
+
+        To be run like:
+
+            fab prod homebot.build_raspicam
+
+        """
         assert os.path.isdir('src/overlay/src/raspicam_node')
         r = self.local_renderer
         r.local('rsync --recursive --verbose --perms --times --links --compress --copy-links '

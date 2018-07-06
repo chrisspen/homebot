@@ -89,6 +89,6 @@ class HeadMotionServer:
 
 
 if __name__ == '__main__':
-  rospy.init_node('head_motion')
-  server = HeadMotionServer(rospy.get_name())
-  rospy.spin()
+    rospy.init_node('head_motion')
+    server = HeadMotionServer(rospy.get_name())
+    rospy.spin()

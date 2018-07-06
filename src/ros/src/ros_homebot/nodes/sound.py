@@ -109,7 +109,7 @@ class SoundServer:
     #                 os.system('nice -n -19 espeak -v%s "%s"' % (voice, line))
                     os.system('sudo nice -n -19 espeak -v%s "%s" --stdout | aplay' % (voice, line))
 
-            except Exception as e:
+            except Exception as e: # pylint: disable=broad-except
                 success = False
                 traceback.print_exc(file=sys.stderr)
             finally:

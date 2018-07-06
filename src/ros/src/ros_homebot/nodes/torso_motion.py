@@ -54,7 +54,7 @@ class TorsoMotionClient(object):
             # Prints out the result of executing the action
             self.client.get_result()  # A WanderResult
 
-        except Exception as e:
+        except Exception as e: # pylint: disable=broad-except
             traceback.print_exc(file=sys.stderr)
 
     def shutdown(self):

@@ -11,8 +11,14 @@
     <!-- Relays complex messages from the arduinos. -->
     <include file="$(find ros_homebot)/launch/arduino_relay.launch" />
 
-    <!-- Reads from the Pi camera and publishes it as compressed ROS image messages. -->
+    <!-- Reads from the Pi camera and publishes it as compressed ROS image messages.
+    CKS 2018-6-21 Disabled, because camera type is dependent on need.
+    Sometimes you need a fast, low-resolution, low-quality image.
+    Other times you need a lower, but higher-resolution, high-quality image.
+    It makes no sense to always run a singlel camera instance that's not even being used, and often isn't appropriate.
+    Therefore, a case-specific launch file should be used on-demand instead.
     <include file="$(find ros_homebot)/launch/raspicam_compressed_800.launch" />
+    -->
 
     <!-- Handles generating speech from text. -->
     <include file="$(find ros_homebot)/launch/sound.launch" />

@@ -215,6 +215,36 @@ class State(object):
         if tid in self._or_trigger_results:
             del self._or_trigger_results[tid]
 
+
+class QRMatch(object):
+    """
+    Wraps a QR match message and binds manipulation functionality.
+    """
+
+    def __init__(self, match, euler_z):
+        self.match = match # the raw match message
+        self.euler_z = euler_z
+        self.t0 = time.time()
+
+    @property
+    def position_ratio(self):
+        """
+        Returns the ratio of how far the match along the x-axis.
+        Bounded in [0:1].
+        A value < 0.4 means QR code is to the left.
+        A value > 0.6 means QR code is to the right.
+        """
+        match = self.match
+        if not match:
+            return
+        x = (match.a[0] + match.b[0] + match.c[0] + match.d[0])/4.
+        width = match.width
+        # Ideally, this should be 0.5, indicating the QR code is exactly in the center of the horizontal view.
+        # In practice, we'll likely never accomplish this, but we'll try to get it within [0.4:0.6]
+        position_ratio = x/float(width)
+        return position_ratio
+
+
 class Test(unittest.TestCase):
 
     def test_state(self):

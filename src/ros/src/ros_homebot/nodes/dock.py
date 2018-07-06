@@ -31,17 +31,20 @@ import traceback
 
 import rospy
 from rospy.service import ServiceException
-import roslaunch
-from std_srvs.srv import Empty, EmptyResponse
+import roslaunch # pylint: disable=import-error
+from std_srvs.srv import Empty, EmptyResponse # pylint: disable=import-error
 
-from ros_qr_tracker.srv import SetTarget
-from ros_qr_tracker.msg import Percept
+from ros_qr_tracker.srv import SetTarget # pylint: disable=import-error
+from ros_qr_tracker.msg import Percept # pylint: disable=import-error
 
-import ros_homebot_msgs.srv
+import ros_homebot_msgs.srv # pylint: disable=import-error
 
 # pylint: disable=relative-import
-from common import subscribe, publish
-from state import State, TriggerTimeout
+from common import subscribe, publish, wait_for_node, has_camera
+from state import State, TriggerTimeout, QRMatch
+
+
+ROS_MASTER_URI = os.environ['ROS_MASTER_URI']
 
 
 class Terminate(Exception):
@@ -100,6 +103,12 @@ class DockNode(object):
 
         self.qr_code = "d=homebot,sd=dock,w=55,h=55"
 
+        self.shutting_down = False
+
+        self.shut_down = False
+
+        self.last_qr_match_obj = None
+
         rospy.on_shutdown(self.on_shutdown)
 
         # Launch qr tracker
@@ -135,8 +144,22 @@ class DockNode(object):
         self.register('/head_arduino/pan_degrees')
         self.register('/head_arduino/pan_freeze_get')
 
+        # Enable camera.
+        self.raspicam_thread = None
+        if has_camera():
+            self.raspicam_thread = Thread(target=self.launch_raspicam)
+            self.raspicam_thread.daemon = True
+            self.raspicam_thread.start()
+        else:
+            rospy.logwarn('No local camera detected. This either means the camera is not attached or we are not running on the robot. '
+                'This means we cannot automatically start the camera. So if camera wait fails, ensure raspicam is running on the robot.')
+        rospy.loginfo('Waiting for raspicam node to start...')
+        # wait_for_topic('/raspicam/image/compressed')
+        wait_for_node('/raspicam/raspicam_node')
+        rospy.loginfo('Raspicam started!')
+
         # Track QR matches.
-        self.register('/qr_tracker/matches', time_to_stale=3.0)
+        self.register('/qr_tracker/matches', time_to_stale=2.0)
         #TODO:only launch when flag passed
         self.qr_viewer_thread = Thread(target=self.launch_qr_viewer)
         self.qr_viewer_thread.daemon = True
@@ -165,9 +188,49 @@ class DockNode(object):
                 break
         time.sleep(3)
 
+    def launch_raspicam(self):
+        rospy.loginfo('Launching raspicam...')
+        cmd = 'export ROS_MASTER_URI=%s; roslaunch ros_homebot raspicam_compressed_large.launch' % ROS_MASTER_URI
+        print('cmd:', cmd)
+        os.system(cmd)
+
     def launch_qr_viewer(self):
+        #TODO:don't run this on robot, only desktop for debugging
+        # if getoutput('rosnode list | grep rqt_gui_cpp_node'):
+            # # Note, this may be bad. The QR tracker should not be running by default, and we're the only thing that launches it.
+            # # If we previously crashed, the rosmaster may be incorrectly reporting that /qr_tracker still exists.
+            # # Unfortunately, killing the node doesn't fix this, since the node is actually already dead.
+            # # The only solution in this case is to stop and restart master.
+            # rospy.logwarn('QR viewer already running.')
+            # return
         rospy.loginfo('Launching QR viewer...')
-        os.system('export ROS_MASTER_URI=http://rae.local:11311; rosrun rqt_image_view rqt_image_view image:=/qr_tracker/images _image_transport:=compressed')
+        os.system('export ROS_MASTER_URI=%s; rosrun rqt_image_view rqt_image_view image:=/qr_tracker/images _image_transport:=compressed' \
+            % ROS_MASTER_URI)
+
+    def start_qr_tracker(self):
+        """
+        Launches a child node to detect the QR code from the primary camera video feed.
+        This code will tell us where the docking station is.
+        """
+        if getoutput('rosnode list | grep /qr_tracker'):
+            # Note, this may be bad. The QR tracker should not be running by default, and we're the only thing that launches it.
+            # If we previously crashed, the rosmaster may be incorrectly reporting that /qr_tracker still exists.
+            # Unfortunately, killing the node doesn't fix this, since the node is actually already dead.
+            # The only solution in this case is to stop and restart master.
+            rospy.logwarn('QR tracker already running.')
+            return
+
+        node = roslaunch.core.Node(
+            package='ros_qr_tracker',
+            node_type='qr_tracker.py',
+            name='qr_tracker',
+            args='_topic:=/raspicam/image/compressed _start:=1 _mode:=2',
+            output='screen')
+        launch = roslaunch.scriptapi.ROSLaunch()
+        launch.start()
+        process = launch.launch(node)
+        rospy.loginfo('qr_tracker.py is_alive: %s', process.is_alive())
+        time.sleep(5)
 
     def emergency_cancel(self, *args, **kwargs):
         """
@@ -238,39 +301,20 @@ class DockNode(object):
         """
         Called when the ROS master signals a shutdown, or our parent signals a cancellation of the docking process.
         """
+        self.shutting_down = True
         self.announce_status('Shutting down.')
         publish('/head_arduino/ultrabright_set', 0)
         self.halt_motors()
         rospy.loginfo('Shutting down...')
         if self.qr_tracker_process:
             self.qr_tracker_process.stop()
+        if has_camera():
+            cmd = 'export ROS_MASTER_URI=%s; rosnode kill /raspicam/raspicam_node' % ROS_MASTER_URI
+            print('cmd:', cmd)
+            os.system(cmd)
         self.set_pan_freeze(0)
         rospy.loginfo('Done.')
-
-    def start_qr_tracker(self):
-        """
-        Launches a child node to detect the QR code from the primary camera video feed.
-        This code will tell us where the docking station is.
-        """
-        if getoutput('rosnode list | grep /qr_tracker'):
-            # Note, this may be bad. The QR tracker should not be running by default, and we're the only thing that launches it.
-            # If we previously crashed, the rosmaster may be incorrectly reporting that /qr_tracker still exists.
-            # Unfortunately, killing the node doesn't fix this, since the node is actually already dead.
-            # The only solution in this case is to stop and restart master.
-            rospy.logwarn('QR tracker already running.')
-            return
-
-        node = roslaunch.core.Node(
-            package='ros_qr_tracker',
-            node_type='qr_tracker.py',
-            name='qr_tracker',
-            args='_topic:=/raspicam/image/compressed _start:=1 _mode:=2',
-            output='screen')
-        launch = roslaunch.scriptapi.ROSLaunch()
-        launch.start()
-        process = launch.launch(node)
-        rospy.loginfo('qr_tracker.py is_alive: %s', process.is_alive())
-        time.sleep(5)
+        self.shut_down = True
 
     def qr_code_found(self, t0=0):
         """
@@ -444,22 +488,6 @@ class DockNode(object):
             rospy.loginfo('new angle: %s', new_angle)
             time.sleep(1)
 
-    def qr_match_to_position_ratio(self, match):
-        """
-        Returns the ratio of how far the match along the x-axis.
-        Bounded in [0:1].
-        A value < 0.4 means QR code is to the left.
-        A value > 0.6 means QR code is to the right.
-        """
-        if not match:
-            return
-        x = (match.a[0] + match.b[0] + match.c[0] + match.d[0])/4.
-        width = match.width
-        # Ideally, this should be 0.5, indicating the QR code is exactly in the center of the horizontal view.
-        # In practice, we'll likely never accomplish this, but we'll try to get it within [0.4:0.6]
-        position_ratio = x/float(width)
-        return position_ratio
-
     def center_qr_code_using_torso(self, direction=1):
         """
         Centers the QR code in view using only the torso motors to rotate the entire body.
@@ -484,6 +512,7 @@ class DockNode(object):
                 # Otherwise, update our last match.
                 last_euler_z = euler_z
                 last_qr_matches = qr_matches
+                self.last_qr_match_obj = QRMatch(match=qr_matches, euler_z=euler_z)
 
             if qr_matches:
                 # x = (qr_matches.a[0] + qr_matches.b[0] + qr_matches.c[0] + qr_matches.d[0])/4.
@@ -494,7 +523,7 @@ class DockNode(object):
                 # Ideally, this should be 0.5, indicating the QR code is exactly in the center of the horizontal view.
                 # In practice, we'll likely never accomplish this, but we'll try to get it within [0.4:0.6]
                 # position_ratio = x/float(width)
-                position_ratio = self.qr_match_to_position_ratio(qr_matches)
+                position_ratio = self.last_qr_match_obj.position_ratio
                 rospy.loginfo('position_ratio: %s', position_ratio)
                 if 0.4 <= position_ratio <= 0.6:
                     rospy.loginfo('Torso centering threshold achieved!')
@@ -508,9 +537,10 @@ class DockNode(object):
                 time.sleep(1)
 
             else:
+                #TODO:use z to search in right direction
                 # Rotate blindly until we see a QR code.
                 rospy.logwarn('No QR code found! Searching blindly!')
-                self.rotate_torso(degrees=2*direction, double_down=True)
+                self.rotate_torso(degrees=3*direction, double_down=True)
                 # Give QR tracker time to acquire.
                 time.sleep(1)
 
@@ -555,6 +585,8 @@ class DockNode(object):
         trigger_up = None
         trigger_down = None
         for _ in range(10):
+            if self.shutting_down:
+                return
             try:
                 # Tell the state machine to expect a start in motion.
                 trigger_up = self.state.set_or_trigger(torso_arduino_motor_target_a=True, torso_arduino_motor_target_b=True)
@@ -618,6 +650,8 @@ class DockNode(object):
             rospy.loginfo('Ensuring pan angle is set.')
             publish('/head_arduino/pan_set', self.state.head_arduino_pan_degrees)
         for _ in range(10):
+            if self.shutting_down:
+                return
             if self.state.head_arduino_pan_freeze_get == value:
                 return
             publish('/head_arduino/pan_freeze_set', value)
@@ -630,6 +664,8 @@ class DockNode(object):
         Rotates the head to an absolute angle.
         """
         for _ in range(timeout):
+            if self.shutting_down:
+                return
             print('self.state.head_arduino_pan_degrees:', self.state.head_arduino_pan_degrees)
             if abs(normalize_angle_change(self.state.head_arduino_pan_degrees, degrees)) <= threshold:
                 return
@@ -645,6 +681,8 @@ class DockNode(object):
         deg0 = self.state.head_arduino_pan_degrees
         deg_abs_target = (deg0 + degrees) % 360
         for _ in range(timeout):
+            if self.shutting_down:
+                return
             t0 = time.time()
             dist = self.state.head_arduino_pan_degrees - deg0
             if degrees < 0:
@@ -676,6 +714,9 @@ class DockNode(object):
         """
         deflection_angle_degrees0 = None
         while 1:
+
+            if self.shutting_down:
+                return
 
             # self.announce_status('Un-freezing head angle.')
             self.set_pan_freeze(0)
@@ -723,8 +764,10 @@ class DockNode(object):
         Assumes head and torso alignment are locked and torso is already centered on QR code.
         """
         last_jitter = True
-        qr_tracker_matches0 = None
         while 1:
+
+            if self.shutting_down:
+                return
 
             if self.is_docked():
                 rospy.loginfo('Docking achieved!')
@@ -733,23 +776,27 @@ class DockNode(object):
 
             # Realign ourselves using the QR code.
             qr_tracker_matches = self.state.qr_tracker_matches
-            if not qr_tracker_matches:
+            if qr_tracker_matches:
+                # If we still see the QR code, then realign so we can drive straight.
+                rospy.loginfo('Centered torso toward QR code.')
+                self.last_qr_match_obj = QRMatch(match=qr_tracker_matches, euler_z=self.state.torso_arduino_imu_euler_z)
+                self.center_qr_code_using_torso()
+            else:
                 rospy.logerr('QR code match lost!')
                 direction = 1
-                if qr_tracker_matches0:
-                    position_ratio = self.qr_match_to_position_ratio(qr_tracker_matches0)
+                if self.last_qr_match_obj:
+                    rospy.loginfo('Using previous QR code match.')
+                    position_ratio = self.last_qr_match_obj.position_ratio
                     if position_ratio < 0.5:
                         # Match was to the left of the screen, so rotate CCW to bring it back into view.
                         direction = -1
                     else:
                         # Otherwise match was to the right of the screen, so rotate CW to bring it back into view.
                         direction = +1
-                rospy.loginfo('Centered torso toward QR code using last known match.')
+                    rospy.loginfo('Centered torso toward QR code using last known match.')
+                else:
+                    rospy.logwarn('Centered torso toward QR code blindly!')
                 self.center_qr_code_using_torso(direction=direction)
-            else:
-                # If we still see the QR code, then realign so we can drive straight.
-                rospy.loginfo('Centered torso toward QR code.')
-                self.center_qr_code_using_torso()
 
             # Drive forward at quarter speed (64/256.) for half a second.
             try:
@@ -762,9 +809,7 @@ class DockNode(object):
                 pass
 
             # Give the QR tracker time to catch up.
-            time.sleep(1)
-
-            qr_tracker_matches0 = qr_tracker_matches
+            time.sleep(2)
 
     def dock_iter(self):
         """
@@ -776,9 +821,9 @@ class DockNode(object):
             self.announce_status('Beginning docking procedure.')
 
             # self.announce_status('Checking current state.')
-            # if self.is_docked():
-                # self.announce_status('We are already docked. Nothing to do.')
-                # return
+            if self.is_docked():
+                self.announce_status('We are already docked. Nothing to do.')
+                return
 
             # if self.is_dead_docked():
                 # self.announce_status('We sense the docking magnet, but no power, possibly from a previous failed docking attempt.')
@@ -886,7 +931,7 @@ class DockNode(object):
         except Terminate as exc:
             self.announce_status('Docking procedure terminated. %s' % exc)
             traceback.print_exc()
-        except Exception as exc:
+        except Exception as exc: # pylint: disable=broad-except
             self.announce_status('An unexpected error occurred. %s' % exc)
             traceback.print_exc()
         else:
