@@ -16,7 +16,7 @@ rsync
 # Debugging helpers.
 htop
 curl
-screen
+screen==1.0.1
 git
 
 # Needed by numpy/scipy
